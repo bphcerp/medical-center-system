@@ -1,21 +1,21 @@
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-import viteReact from "@vitejs/plugin-react";
+import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 const config = defineConfig({
+	server: {
+		port: 3000
+	},
 	plugins: [
 		// this is the plugin that enables path aliases
 		tsconfigPaths({
 			projects: ["./tsconfig.json"],
 		}),
+		tanstackStart(),
+		react(),
 		tailwindcss(),
-		tanstackStart({
-			customViteReactPlugin: true,
-			target: "bun",
-		}),
-		viteReact(),
 	],
 });
 
