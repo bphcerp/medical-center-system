@@ -18,6 +18,7 @@ const serverSchema = z.object({
 	PGPORT: z.coerce.number().default(5432),
 	FRONTEND_URL: z.string().url().min(1),
 	FRONTEND_PORT: z.coerce.number().default(3000),
+	JWT_SECRET: z.string().min(1),
 });
 
 const parsed = serverSchema.parse(process.env);
