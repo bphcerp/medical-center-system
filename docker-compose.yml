@@ -1,0 +1,35 @@
+services:
+  db:
+    image: "postgres:18.0-bookworm"
+    env_file:
+      - .env
+    ports:
+      - "${PGPORT}:${PGPORT}"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+    volumes:
+      - ./data:/var/lib/postgresql/18/docker
+    profiles:
+      - "dev"
+      - "prod"
+
+  app:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile.dev
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    volumes:
+      - type: bind
+        source: ./src
+        target: /usr/local/app/src
+    ports:
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+    profiles:
+      - "dev"

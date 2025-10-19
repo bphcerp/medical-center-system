@@ -8,7 +8,7 @@ export const Route = createFileRoute("/")({
 function App() {
 	return (
 		<div className="h-screen flex flex-col items-center justify-center">
-			<Button>Piss Yourself</Button>
+			<Button>Help Yourself</Button>
 		</div>
 	);
 }
