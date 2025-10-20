@@ -16,7 +16,7 @@ const serverSchema = z.object({
 	POSTGRES_PASSWORD: z.string().min(1),
 	POSTGRES_DB: z.string().min(1),
 	PGPORT: z.coerce.number().default(5432),
-	FRONTEND_URL: z.string().url().min(1),
+	FRONTEND_URL: z.url().min(1),
 	FRONTEND_PORT: z.coerce.number().default(3000),
 	JWT_SECRET: z.string().min(1),
 });
