@@ -6,18 +6,23 @@ import { setCookie } from "hono/cookie";
 import { jwt, sign } from "hono/jwt";
 import z from "zod";
 import env from "@/config/env";
-import { usersTable } from "@/db/auth";
+import { rolesTable, usersTable } from "@/db/auth";
 import { db } from ".";
 import user from "./user";
+import rbac from "./rbac";
 
 export type JWTPayload = {
 	passwordHash: null;
+	role: {
+		id: number;
+		name: string;
+		allowed: string[];
+	};
 	id: number;
 	username: string;
 	email: string;
 	name: string;
 	phone: string;
-	role: number;
 };
 
 export const unauthenticated = new Hono()
@@ -36,6 +41,7 @@ export const unauthenticated = new Hono()
 				.select()
 				.from(usersTable)
 				.where(eq(usersTable.username, username))
+				.innerJoin(rolesTable, eq(rolesTable.id, usersTable.role))
 				.limit(1);
 			if (users.length < 1) {
 				return c.json(
@@ -46,9 +52,11 @@ export const unauthenticated = new Hono()
 				);
 			}
 
+			const user = users[0].users;
+
 			const isMatch = await Bun.password.verify(
 				password,
-				users[0].passwordHash,
+				user.passwordHash,
 				"bcrypt",
 			);
 			if (!isMatch) {
@@ -62,8 +70,9 @@ export const unauthenticated = new Hono()
 			}
 
 			const payload: JWTPayload = {
-				...users[0],
+				...user,
 				passwordHash: null,
+				role: users[0].roles,
 			};
 			const jwt = await sign(payload, env.JWT_SECRET);
 
@@ -113,4 +122,5 @@ export const authenticated = new Hono()
 			secret: env.JWT_SECRET,
 		}),
 	)
-	.route("/user", user);
+	.route("/user", user)
+	.route("/rbac", rbac);

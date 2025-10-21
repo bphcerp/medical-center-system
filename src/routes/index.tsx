@@ -16,7 +16,13 @@ export const Route = createFileRoute("/")({
 				to: "/login",
 			});
 		}
-		return user;
+
+		let check = { message: "You don't have the permission" };
+		const perms = await client.api.rbac.$get();
+		if (perms.status === 200) {
+			check = await perms.json();
+		}
+		return { check, user };
 	},
 	component: App,
 });
