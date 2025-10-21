@@ -21,6 +21,8 @@ export const finalizedStateEnum = pgEnum("finalized_state", [
 	"admitted",
 	"referred",
 ]);
+export const identifierTypes = ["psrn", "student_id", "phone"] as const;
+export const identifierType = pgEnum("identifier_type", identifierTypes);
 
 export const diseasesTable = pgTable(
 	"diseases",
@@ -60,6 +62,12 @@ export const casePrescriptionsTable = pgTable("case_prescriptions", {
 		.notNull(),
 	dosage: varchar({ length: 255 }).notNull(),
 	frequency: varchar({ length: 255 }).notNull(),
+});
+
+export const unprocessed = pgTable("unprocessed", {
+	id: integer().primaryKey().generatedAlwaysAsIdentity(),
+	identifierType: identifierType("identifier_type").notNull(),
+	identifier: varchar({ length: 255 }).notNull(),
 });
 
 export const casesTable = pgTable("cases", {

@@ -7,6 +7,7 @@ import { jwt, sign } from "hono/jwt";
 import z from "zod";
 import env from "@/config/env";
 import { rolesTable, usersTable } from "@/db/auth";
+import { identifierTypes, unprocessed } from "@/db/case";
 import { db } from ".";
 import rbac from "./rbac";
 import user from "./user";
@@ -111,6 +112,30 @@ export const unauthenticated = new Hono()
 			});
 			return c.json({
 				success: true,
+			});
+		},
+	)
+	.post(
+		"/register",
+		zValidator(
+			"json",
+			z.object({
+				identifierType: z.enum(identifierTypes),
+				identifier: z.string().min(1),
+			}),
+		),
+		async (c) => {
+			const { identifierType, identifier } = c.req.valid("json");
+			const token = await db
+				.insert(unprocessed)
+				.values({
+					identifier,
+					identifierType,
+				})
+				.returning();
+			return c.json({
+				success: true,
+				token: token[0].id,
 			});
 		},
 	);
