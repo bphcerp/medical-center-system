@@ -16,7 +16,6 @@ export const rolesTable = pgTable("roles", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	name: varchar({ length: 255 }).notNull(),
 	allowed: text("allowed").array().notNull().default(sql`'{}'::text[]`),
-	disallowed: text("allowed").array().notNull().default(sql`'{}'::text[]`),
 });
 
 export const usersTable = pgTable(
