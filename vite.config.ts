@@ -6,14 +6,18 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 const config = defineConfig({
 	server: {
-		port: 3000
+		port: 3000,
 	},
 	plugins: [
 		// this is the plugin that enables path aliases
 		tsconfigPaths({
 			projects: ["./tsconfig.json"],
 		}),
-		tanstackStart(),
+		tanstackStart({
+			spa: {
+				enabled: true,
+			},
+		}),
 		react(),
 		tailwindcss(),
 	],
