@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { hc } from "hono/client";
 import honoApp from "@/api";
 
 const handle = async ({ request }: { request: Request }) =>
@@ -11,5 +12,11 @@ export const Route = createFileRoute("/api/$")({
 			GET: handle,
 			DELETE: handle,
 		},
+	},
+});
+
+export const client = hc<typeof honoApp>("/", {
+	init: {
+		credentials: "include",
 	},
 });
