@@ -8,8 +8,8 @@ import z from "zod";
 import env from "@/config/env";
 import { rolesTable, usersTable } from "@/db/auth";
 import { db } from ".";
-import user from "./user";
 import rbac from "./rbac";
+import user from "./user";
 
 export type JWTPayload = {
 	passwordHash: null;
