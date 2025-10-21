@@ -55,6 +55,7 @@ function Login() {
 								type="text"
 								placeholder="Username"
 								name="username"
+								required
 							/>
 						</Field>
 						<Field>
@@ -64,6 +65,7 @@ function Login() {
 								type="password"
 								placeholder="Password"
 								name="password"
+								required
 							/>
 						</Field>
 						<Field>
