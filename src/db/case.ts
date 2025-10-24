@@ -62,9 +62,10 @@ export const casePrescriptionsTable = pgTable("case_prescriptions", {
 		.notNull(),
 	dosage: varchar({ length: 255 }).notNull(),
 	frequency: varchar({ length: 255 }).notNull(),
+	// TODO: Add a comment column
 });
 
-export const unprocessed = pgTable("unprocessed", {
+export const unprocessedTable = pgTable("unprocessed", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	identifierType: identifierType("identifier_type").notNull(),
 	identifier: varchar({ length: 255 }).notNull(),
