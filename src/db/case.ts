@@ -69,6 +69,9 @@ export const unprocessedTable = pgTable("unprocessed", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	identifierType: identifierType("identifier_type").notNull(),
 	identifier: varchar({ length: 255 }).notNull(),
+	patientId: integer()
+		.references(() => patientsTable.id)
+		.notNull(),
 });
 
 export const casesTable = pgTable("cases", {
