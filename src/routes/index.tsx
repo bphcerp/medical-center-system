@@ -4,7 +4,6 @@ import { client } from "./api/$";
 export const Route = createFileRoute("/")({
 	loader: async () => {
 		const res = await client.api.user.$get();
-		console.log(res.status);
 		if (res.status !== 200) {
 			throw redirect({
 				to: "/login",
