@@ -18,7 +18,8 @@ const vitals = new Hono()
 			.innerJoin(
 				patientsTable,
 				eq(unprocessedTable.patientId, patientsTable.id),
-			);
+			)
+			.orderBy(unprocessedTable.id);
 
 		return c.json({
 			unprocessed,
