@@ -185,7 +185,7 @@ function Vitals() {
 									Entering Vitals for {focusedPatient.patients.name} (Token:{" "}
 									{focusedPatient.unprocessed.id})
 								</h2>
-								<div className="grid grid-cols-5 gap-4">
+								<div className="grid grid-cols-4 gap-4">
 									<Field>
 										<FieldLabel htmlFor={bodyTemperatureId}>
 											Body Temperature (optional)
@@ -228,6 +228,20 @@ function Vitals() {
 											<InputGroupAddon align="inline-end">
 												per minute
 											</InputGroupAddon>
+										</InputGroup>
+									</Field>
+									<Field>
+										<FieldLabel htmlFor={weightId}>
+											Weight (optional)
+										</FieldLabel>
+										<InputGroup>
+											<InputGroupInput
+												id={weightId}
+												type="number"
+												placeholder="Weight"
+												name="weight"
+											/>
+											<InputGroupAddon align="inline-end">kg</InputGroupAddon>
 										</InputGroup>
 									</Field>
 									<Field>
@@ -288,20 +302,6 @@ function Vitals() {
 											<InputGroupAddon align="inline-end">
 												mg/dL
 											</InputGroupAddon>
-										</InputGroup>
-									</Field>
-									<Field>
-										<FieldLabel htmlFor={weightId}>
-											Weight (optional)
-										</FieldLabel>
-										<InputGroup>
-											<InputGroupInput
-												id={weightId}
-												type="number"
-												placeholder="Weight"
-												name="weight"
-											/>
-											<InputGroupAddon align="inline-end">kg</InputGroupAddon>
 										</InputGroup>
 									</Field>
 								</div>
