@@ -76,6 +76,7 @@ export const unprocessedTable = pgTable("unprocessed", {
 
 export const casesTable = pgTable("cases", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
+	token: integer().notNull().unique(),
 	patient: integer()
 		.references(() => patientsTable.id)
 		.notNull(),
