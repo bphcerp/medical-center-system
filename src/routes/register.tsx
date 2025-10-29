@@ -68,62 +68,6 @@ const RegistrationCard = (
 	};
 
 	const handleRegister = async () => {
-		if (!showDetails) {
-			if (identifier === "") return;
-			const res = await client.api.existing.$get({
-				query: {
-					identifier,
-					identifierType: identifierType,
-				},
-			});
-			if (res.status === 400) {
-				alert(
-					"No existing record found. Please register as a visitor temporarily.",
-				);
-				setSelectedTab("visitor");
-				return;
-			}
-			if (res.status !== 200 && res.status !== 404) {
-				alert("Error registering. Please report this to the front desk.");
-				resetState();
-				return;
-			}
-
-			setShowDetails(true);
-			const data = await res.json();
-			if (!data.exists) {
-				return;
-			}
-
-			setDisableForm(true);
-			if ("dependents" in data) {
-				setOptions(
-					[
-						{
-							id: data.professor.id,
-							name: data.professor.name,
-							age: data.professor.age,
-							sex: data.professor.sex,
-						},
-					].concat(
-						data.dependents.map((d) => ({
-							id: d.id,
-							name: d.name,
-							age: d.age,
-							sex: d.sex,
-						})),
-					),
-				);
-				return;
-			}
-
-			setPatientId(data.id);
-			setName(data.name);
-			setAge(data.age);
-			setSex(data.sex);
-			return;
-		}
-
 		// TODO: Test the flow for:
 		// 1. Student existing
 		// 2. Professor/Dependent existing
@@ -132,7 +76,6 @@ const RegistrationCard = (
 		// 4. New Visitor [Done]
 		// 5. Student new (should redirect to new visitor flow) [Done]
 		// 6. Professor/Dependent new (should redirect to new visitor flow) [Done]
-
 		const res = disableForm
 			? await client.api.register.$post({
 					json: {
@@ -160,10 +103,66 @@ const RegistrationCard = (
 		resetState();
 	};
 
+	const handleCheckExisting = async () => {
+		if (identifier === "") return;
+		const res = await client.api.existing.$get({
+			query: {
+				identifier,
+				identifierType: identifierType,
+			},
+		});
+		if (res.status === 400) {
+			alert(
+				"No existing record found. Please register as a visitor temporarily.",
+			);
+			setSelectedTab("visitor");
+			return;
+		}
+		if (res.status !== 200 && res.status !== 404) {
+			alert("Error registering. Please report this to the front desk.");
+			resetState();
+			return;
+		}
+
+		setShowDetails(true);
+		const data = await res.json();
+		if (!data.exists) {
+			return;
+		}
+
+		setDisableForm(true);
+		if ("dependents" in data) {
+			setOptions(
+				[
+					{
+						id: data.professor.id,
+						name: data.professor.name,
+						age: data.professor.age,
+						sex: data.professor.sex,
+					},
+				].concat(
+					data.dependents.map((d) => ({
+						id: d.id,
+						name: d.name,
+						age: d.age,
+						sex: d.sex,
+					})),
+				),
+			);
+			return;
+		}
+
+		setPatientId(data.id);
+		setName(data.name);
+		setAge(data.age);
+		setSex(data.sex);
+		return;
+	};
+
 	return (
 		<TabsContent value={key}>
 			<Card>
-				<form action={handleRegister}>
+				<form action={showDetails ? handleRegister : handleCheckExisting}>
 					<CardHeader>
 						<CardTitle>{title}</CardTitle>
 					</CardHeader>
