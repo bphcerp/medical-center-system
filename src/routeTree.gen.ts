@@ -10,14 +10,21 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VitalsRouteImport } from './routes/vitals'
+import { Route as ResultEntryRouteImport } from './routes/result-entry'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LabDashboardRouteImport } from './routes/lab-dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
 
 const VitalsRoute = VitalsRouteImport.update({
   id: '/vitals',
   path: '/vitals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResultEntryRoute = ResultEntryRouteImport.update({
+  id: '/result-entry',
+  path: '/result-entry',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -28,6 +35,11 @@ const RegisterRoute = RegisterRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LabDashboardRoute = LabDashboardRouteImport.update({
+  id: '/lab-dashboard',
+  path: '/lab-dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -43,38 +55,68 @@ const ApiSplatRoute = ApiSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/lab-dashboard': typeof LabDashboardRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/result-entry': typeof ResultEntryRoute
   '/vitals': typeof VitalsRoute
   '/api/$': typeof ApiSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/lab-dashboard': typeof LabDashboardRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/result-entry': typeof ResultEntryRoute
   '/vitals': typeof VitalsRoute
   '/api/$': typeof ApiSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/lab-dashboard': typeof LabDashboardRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/result-entry': typeof ResultEntryRoute
   '/vitals': typeof VitalsRoute
   '/api/$': typeof ApiSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/register' | '/vitals' | '/api/$'
+  fullPaths:
+    | '/'
+    | '/lab-dashboard'
+    | '/login'
+    | '/register'
+    | '/result-entry'
+    | '/vitals'
+    | '/api/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register' | '/vitals' | '/api/$'
-  id: '__root__' | '/' | '/login' | '/register' | '/vitals' | '/api/$'
+  to:
+    | '/'
+    | '/lab-dashboard'
+    | '/login'
+    | '/register'
+    | '/result-entry'
+    | '/vitals'
+    | '/api/$'
+  id:
+    | '__root__'
+    | '/'
+    | '/lab-dashboard'
+    | '/login'
+    | '/register'
+    | '/result-entry'
+    | '/vitals'
+    | '/api/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LabDashboardRoute: typeof LabDashboardRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  ResultEntryRoute: typeof ResultEntryRoute
   VitalsRoute: typeof VitalsRoute
   ApiSplatRoute: typeof ApiSplatRoute
 }
@@ -86,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/vitals'
       fullPath: '/vitals'
       preLoaderRoute: typeof VitalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/result-entry': {
+      id: '/result-entry'
+      path: '/result-entry'
+      fullPath: '/result-entry'
+      preLoaderRoute: typeof ResultEntryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -100,6 +149,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lab-dashboard': {
+      id: '/lab-dashboard'
+      path: '/lab-dashboard'
+      fullPath: '/lab-dashboard'
+      preLoaderRoute: typeof LabDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -121,8 +177,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LabDashboardRoute: LabDashboardRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  ResultEntryRoute: ResultEntryRoute,
   VitalsRoute: VitalsRoute,
   ApiSplatRoute: ApiSplatRoute,
 }
