@@ -4,6 +4,7 @@ import "dotenv/config";
 import { drizzle } from "drizzle-orm/node-postgres";
 import env from "@/config/env";
 import { authenticated, unauthenticated } from "./auth";
+import files from "./files";
 
 // You can specify any property from the node-postgres connection options
 export const db = drizzle({
@@ -15,6 +16,7 @@ export const db = drizzle({
 const app = new Hono()
 	.basePath("/api")
 	.route("/", unauthenticated)
+	.route("/files", files)
 	.route("/", authenticated);
 
 export default app;
