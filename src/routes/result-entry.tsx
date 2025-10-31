@@ -20,13 +20,9 @@ function ResultEntry() {
 
 		setUploading(true);
 		try {
-			const file = new File([selectedFile], selectedFile.name, {
-				type: selectedFile.type,
-			});
-
 			const res = await client.api.files.upload.$post({
 				form: {
-					file: file,
+					file: selectedFile,
 				},
 			});
 
@@ -54,6 +50,7 @@ function ResultEntry() {
 		if (selectedFile) {
 			const fileURL = URL.createObjectURL(selectedFile);
 			window.open(fileURL, "_blank");
+			URL.revokeObjectURL(fileURL);
 		}
 	};
 

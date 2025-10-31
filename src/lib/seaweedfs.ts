@@ -65,9 +65,4 @@ export class SeaweedFSClient {
 			throw new Error("Failed to delete file from SeaweedFS volume");
 		}
 	}
-
-	async getFileUrl(fid: string): Promise<string> {
-		const assignment = await this.assignFileId();
-		return `${assignment.publicUrl}/${fid}`;
-	}
 }
