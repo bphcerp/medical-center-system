@@ -13,7 +13,7 @@ export const labReportTypeEnum = pgEnum("lab_report_type", [
 	"Urinalysis",
 ]);
 
-export const caseLabReportsTable = pgTable("case_prescriptions", {
+export const caseLabReportsTable = pgTable("case_lab_reports", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	caseId: integer()
 		.references(() => casesTable.id)
