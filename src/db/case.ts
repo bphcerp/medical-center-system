@@ -37,7 +37,7 @@ export const diseasesTable = pgTable(
 
 export const medicinesTable = pgTable("medicines", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
-	drug: varchar({ length: 1023 }).notNull(),
+	drug: varchar({ length: 4095 }).notNull(),
 	type: medicineTypeEnum("type").notNull(),
 });
 
