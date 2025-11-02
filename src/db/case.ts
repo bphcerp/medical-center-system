@@ -35,20 +35,9 @@ export const diseasesTable = pgTable(
 	(table) => [uniqueIndex("icd_idx").on(table.icd)],
 );
 
-export const drugsTable = pgTable(
-	"drugs",
-	{
-		id: integer().primaryKey().generatedAlwaysAsIdentity(),
-		drug: varchar({ length: 1023 }).notNull(),
-	},
-	(table) => [uniqueIndex("drug_idx").on(table.drug)],
-);
-
 export const medicinesTable = pgTable("medicines", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
-	drug: integer()
-		.notNull()
-		.references(() => drugsTable.id),
+	drug: varchar({ length: 1023 }).notNull(),
 	type: medicineTypeEnum("type").notNull(),
 });
 
