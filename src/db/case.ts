@@ -10,12 +10,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { patientsTable } from "./patient";
 
-export const medicineTypeEnum = pgEnum("medicine_type", [
-	"tablet",
-	"syrup",
-	"injection",
-	"drops",
-]);
 export const finalizedStateEnum = pgEnum("finalized_state", [
 	"opd",
 	"admitted",
@@ -37,8 +31,12 @@ export const diseasesTable = pgTable(
 
 export const medicinesTable = pgTable("medicines", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
-	drug: varchar({ length: 4095 }).notNull(),
-	type: medicineTypeEnum("type").notNull(),
+	drug: varchar({ length: 1023 }).notNull(),
+	company: varchar({ length: 1023 }).notNull(),
+	brand: varchar({ length: 1023 }).notNull(),
+	strength: varchar({ length: 255 }).notNull(),
+	type: varchar({ length: 255 }).notNull(),
+	price: real().notNull(),
 });
 
 export const casePrescriptionsTable = pgTable("case_prescriptions", {
@@ -51,7 +49,7 @@ export const casePrescriptionsTable = pgTable("case_prescriptions", {
 		.notNull(),
 	dosage: varchar({ length: 255 }).notNull(),
 	frequency: varchar({ length: 255 }).notNull(),
-	// TODO: Add a comment column
+	comment: text(),
 });
 
 export const unprocessedTable = pgTable("unprocessed", {
