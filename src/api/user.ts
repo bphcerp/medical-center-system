@@ -18,10 +18,9 @@ const user = new Hono()
 			.where(eq(usersTable.id, jwtPayload.id))
 			.limit(1);
 		if (users.length < 1) {
-			c.status(404);
 			return c.json({
 				error: "User Not Found",
-			});
+			}, 404);
 		}
 		return c.json(users[0]);
 	})
@@ -36,7 +35,7 @@ const user = new Hono()
 		return c.json({ users: users });
 	})
 	// probably will have more to edit than just roles in the future
-	.patch(
+	.post(
 		"/:id",
 		rbacCheck({ permissions: ["manage-users"] }),
 		zValidator(
@@ -61,10 +60,9 @@ const user = new Hono()
 				.where(eq(usersTable.id, id));
 
 			if (users.rowCount !== 1) {
-				c.status(404);
 				return c.json({
 					error: "User Not Found",
-				});
+				}, 404);
 			}
 
 			return c.json({ success: true });

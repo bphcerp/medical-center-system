@@ -59,7 +59,7 @@ function Admin() {
 	const { users, roles } = Route.useLoaderData();
 
 	const handleRoleChange = async (userId: number, roleId: number) => {
-		const res = await client.api.user[":id"].$patch({
+		const res = await client.api.user[":id"].$post({
 			param: { id: userId.toString() },
 			json: { role: roleId },
 		});
