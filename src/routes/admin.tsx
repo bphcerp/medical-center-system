@@ -1,4 +1,5 @@
-import { Button } from "@/components/ui/button";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useState } from "react";
 import {
 	Select,
 	SelectContent,
@@ -13,8 +14,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState } from "react";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/admin")({
@@ -64,7 +63,6 @@ function Admin() {
 			param: { id: userId.toString() },
 			json: { role: roleId },
 		});
-
 		return res.status === 200;
 	};
 
@@ -100,7 +98,7 @@ function Admin() {
 	);
 }
 
-const RoleSelect = ({
+function RoleSelect({
 	role,
 	roles,
 	setRole,
@@ -108,33 +106,22 @@ const RoleSelect = ({
 	role: string;
 	roles: typeof Route.types.loaderData.roles;
 	setRole: (roleId: number) => Promise<boolean>;
-}) => {
+}) {
 	const [roleId, setRoleId] = useState(role);
-	const [tempRoleId, setTempRoleId] = useState(role);
-
-	const [loading, setLoading] = useState(false);
 
 	const handleSetRole = async (newRoleId: string) => {
-		if (loading) return;
-		setLoading(true);
-
-		try {
-			const success = await setRole(Number(newRoleId));
-			if (!success) {
-				setTempRoleId(roleId);
-				// change this to some toast thing in the future
-				alert("Failed to update role");
-			}
-
+		const success = await setRole(Number(newRoleId));
+		if (success) {
 			setRoleId(newRoleId);
-		} finally {
-			setLoading(false);
+		} else {
+			// change this to some toast thing in the future
+			alert("Failed to update role");
 		}
 	};
 
 	return (
 		<div className="flex gap-2">
-			<Select value={tempRoleId} onValueChange={setTempRoleId}>
+			<Select value={roleId} onValueChange={handleSetRole}>
 				<SelectTrigger size="sm" className="w-full focus-visible:ring-0">
 					<SelectValue />
 				</SelectTrigger>
@@ -146,20 +133,11 @@ const RoleSelect = ({
 					))}
 				</SelectContent>
 			</Select>
-			{tempRoleId !== roleId && (
-				<Button
-					size="sm"
-					onClick={() => handleSetRole(tempRoleId)}
-					disabled={loading}
-				>
-					Save
-				</Button>
-			)}
 		</div>
 	);
-};
+}
 
-const RowItem = ({
+function RowItem({
 	name,
 	username,
 	roleNode,
@@ -169,7 +147,7 @@ const RowItem = ({
 	name: string;
 	username: string;
 	roleNode: React.ReactNode;
-}) => {
+}) {
 	return (
 		<TableRow className={"flex items-center"}>
 			<TableCell className="whitespace-break-spaces flex-2">{name}</TableCell>
@@ -179,4 +157,4 @@ const RowItem = ({
 			<TableCell className="flex-1">{roleNode}</TableCell>
 		</TableRow>
 	);
-};
+}
