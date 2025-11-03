@@ -1,5 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -17,24 +15,39 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { identifierTypes } from "@/db/case";
+import { createFileRoute } from "@tanstack/react-router";
+import { ArrowLeft, ArrowRight, CheckIcon } from "lucide-react";
+import { useEffect, useId, useState } from "react";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/register")({
 	component: Register,
 });
 
-const RegistrationCard = (
-	identifierType: (typeof identifierTypes)[number],
-	key: string,
-	title: string,
-	labelText: string,
-	inputHint: string,
-	setSelectedTab: React.Dispatch<
-		React.SetStateAction<"student" | "prof" | "visitor">
-	>,
-) => {
+const TOKEN_DISPLAY_DURATION_MS = 30_000;
+
+type RegistrationType = "student" | "prof" | "visitor";
+
+type RegistrationCardProps = {
+	identifierType: (typeof identifierTypes)[number];
+	registrationType: RegistrationType;
+	title: string;
+	labelText: string;
+	inputHint: string;
+	setSelectedTab: React.Dispatch<React.SetStateAction<RegistrationType | null>>;
+	setToken: (token: number) => void;
+};
+
+function RegistrationCard({
+	identifierType,
+	registrationType,
+	title,
+	labelText,
+	inputHint,
+	setSelectedTab,
+	setToken,
+}: RegistrationCardProps) {
 	const id = useId();
 	const nameId = useId();
 	const emailId = useId();
@@ -62,20 +75,13 @@ const RegistrationCard = (
 		setIdentifier("");
 		setName("");
 		setEmail("");
-		setAge(-1);
+		setAge(0);
 		setSex(undefined);
-		setSelectedTab("student");
 	};
 
-	const handleRegister = async () => {
-		// TODO: Test the flow for:
-		// 1. Student existing
-		// 2. Professor/Dependent existing
-		// 3. Visitor existing
+	const resetTab = () => setSelectedTab(null);
 
-		// 4. New Visitor [Done]
-		// 5. Student new (should redirect to new visitor flow) [Done]
-		// 6. Professor/Dependent new (should redirect to new visitor flow) [Done]
+	const handleRegister = async () => {
 		const res = disableForm
 			? await client.api.register.$post({
 					json: {
@@ -96,11 +102,13 @@ const RegistrationCard = (
 		if (res.status !== 200) {
 			alert("Error registering. Please report this to the front desk.");
 			resetState();
+			resetTab();
 			return;
 		}
 		const data = await res.json();
-		alert(`Registration successful! Your token is: ${data.token}`);
+		setToken(data.token);
 		resetState();
+		resetTab();
 	};
 
 	const handleCheckExisting = async () => {
@@ -160,27 +168,39 @@ const RegistrationCard = (
 	};
 
 	return (
-		<TabsContent value={key}>
+		<div className="flex flex-col gap-2">
+			<Button className="self-start" variant="ghost" onClick={resetTab}>
+				<ArrowLeft />
+				Back
+			</Button>
 			<Card>
 				<form action={showDetails ? handleRegister : handleCheckExisting}>
 					<CardHeader>
-						<CardTitle>{title}</CardTitle>
+						<CardTitle className="text-xl">{title}</CardTitle>
 					</CardHeader>
-					<CardContent className="grid gap-6">
+					<CardContent className="grid gap-6 mt-2">
 						<div className="grid gap-3">
 							<Label htmlFor={id}>{labelText}</Label>
-							<Input
-								id={id}
-								value={identifier}
-								onChange={(e) => setIdentifier(e.target.value)}
-								disabled={showDetails}
-								name={identifierType}
-								placeholder={inputHint}
-								required
-							/>
+							<div className="flex gap-2">
+								<Input
+									id={id}
+									value={identifier}
+									onChange={(e) => setIdentifier(e.target.value)}
+									disabled={showDetails}
+									name={identifierType}
+									placeholder={inputHint}
+									required
+									autoFocus
+								/>
+								{showDetails && (
+									<Button size={"lg"} variant={"outline"} onClick={resetState}>
+										Change
+									</Button>
+								)}
+							</div>
 							{showDetails && (
 								<>
-									{key === "prof" && options.length > 0 && (
+									{registrationType === "prof" && options.length > 0 && (
 										<>
 											<Label htmlFor={nameId}>Select Dependent/Professor</Label>
 											<Select
@@ -194,7 +214,7 @@ const RegistrationCard = (
 													setSex(option.sex);
 												}}
 											>
-												<SelectTrigger>
+												<SelectTrigger className="w-full border-ring">
 													<SelectValue placeholder="Select Dependent/Professor" />
 												</SelectTrigger>
 												<SelectContent>
@@ -218,7 +238,7 @@ const RegistrationCard = (
 										onChange={(e) => setName(e.target.value)}
 										required
 									/>
-									{key === "visitor" && (
+									{registrationType === "visitor" && (
 										<>
 											<Label htmlFor={emailId}>Email</Label>
 											<Input
@@ -264,67 +284,147 @@ const RegistrationCard = (
 						</div>
 					</CardContent>
 					<CardFooter className="pt-4 flex w-full justify-end">
-						<Button type="submit">
+						<Button type="submit" size="lg">
 							{showDetails ? "Register" : "Continue"}
+							{showDetails ? <CheckIcon /> : <ArrowRight />}
 						</Button>
 					</CardFooter>
 				</form>
 			</Card>
-		</TabsContent>
+		</div>
 	);
-};
+}
+
+function TokenDisplay({
+	token,
+	resetTab,
+}: {
+	token: number;
+	resetTab: () => void;
+}) {
+	const [showHomeButton, setShowHomeButton] = useState(false);
+
+	useEffect(() => {
+		const timer1 = setTimeout(() => setShowHomeButton(true), 3000);
+		const timer2 = setTimeout(resetTab, TOKEN_DISPLAY_DURATION_MS);
+
+		return () => {
+			clearTimeout(timer1);
+			clearTimeout(timer2);
+		};
+	}, [resetTab]);
+
+	return (
+		<div className="flex flex-col items-center pt-32 gap-8">
+			<span className="italic">Your token number is</span>
+			<h1 className="text-9xl font-medium">{token}</h1>
+			{showHomeButton && (
+				<Button variant="outline" size="lg" onClick={resetTab}>
+					Go home
+				</Button>
+			)}
+		</div>
+	);
+}
+
+function RegistrationTypeButton({
+	// icon,
+	title,
+	...props
+}: {
+	// icon: React.ReactNode;
+	title: string;
+} & React.ComponentProps<"button">) {
+	return (
+		<Button
+			variant="card"
+			className="w-1/3 h-90 px-10 text-3xl whitespace-break-spaces rounded-lg"
+			{...props}
+		>
+			{title}
+		</Button>
+	);
+}
+
+function RegistrationTypeSelector({
+	setSelected,
+}: {
+	setSelected: React.Dispatch<React.SetStateAction<RegistrationType | null>>;
+}) {
+	return (
+		<div className="gap-10 flex md:w-3/5 justify-center">
+			<RegistrationTypeButton
+				title="Student"
+				onClick={() => setSelected("student")}
+			/>
+			<RegistrationTypeButton
+				title={"Professor / Dependant"}
+				onClick={() => setSelected("prof")}
+			/>
+			<RegistrationTypeButton
+				title="Visitor"
+				onClick={() => setSelected("visitor")}
+			/>
+		</div>
+	);
+}
 
 function Register() {
-	const [selectedTab, setSelectedTab] = useState<
-		"student" | "prof" | "visitor"
-	>("student");
+	const [selectedTab, setSelectedTab] = useState<RegistrationType | null>(null);
+
+	const [token, setToken] = useState<number | null>(null);
+
+	const handleToken = (token: number) => {
+		setToken(token);
+	};
+	const handleResetTab = () => {
+		setToken(null);
+		setSelectedTab(null);
+	};
+
 	return (
 		<div className="flex w-full gap-6 justify-center pt-48">
-			<div className="w-1/3 flex flex-col">
-				<Tabs value={selectedTab}>
-					<TabsList>
-						<TabsTrigger
-							value="student"
-							onClick={() => setSelectedTab("student")}
-						>
-							Student
-						</TabsTrigger>
-						<TabsTrigger value="prof" onClick={() => setSelectedTab("prof")}>
-							Professor/Dependent
-						</TabsTrigger>
-						<TabsTrigger
-							value="visitor"
-							onClick={() => setSelectedTab("visitor")}
-						>
-							Visitor
-						</TabsTrigger>
-					</TabsList>
-					{RegistrationCard(
-						"student_id",
-						"student",
-						"Student",
-						"Student ID",
-						"e.g. 2024A1PS0001H",
-						setSelectedTab,
+			{token !== null ? (
+				<TokenDisplay token={token} resetTab={handleResetTab} />
+			) : selectedTab === null ? (
+				<RegistrationTypeSelector setSelected={setSelectedTab} />
+			) : (
+				<div className="w-1/3 flex flex-col">
+					{selectedTab === "student" && (
+						<RegistrationCard
+							identifierType="student_id"
+							registrationType="student"
+							title="Student"
+							labelText="Student ID"
+							inputHint="e.g. 2024A1PS0001H"
+							setSelectedTab={setSelectedTab}
+							setToken={handleToken}
+						/>
 					)}
-					{RegistrationCard(
-						"psrn",
-						"prof",
-						"Professor/Dependent",
-						"Professor PSRN",
-						"e.g. H0001",
-						setSelectedTab,
+					{selectedTab === "prof" && (
+						<RegistrationCard
+							identifierType="psrn"
+							registrationType="prof"
+							title="Professor/Dependent"
+							labelText="PSRN"
+							inputHint="e.g. H0001"
+							setSelectedTab={setSelectedTab}
+							setToken={handleToken}
+						/>
 					)}
-					{RegistrationCard(
-						"phone",
-						"visitor",
-						"Visitor",
-						"Phone No.",
-						"e.g. 1234567890",
-						setSelectedTab,
+					{selectedTab === "visitor" && (
+						<RegistrationCard
+							identifierType="phone"
+							registrationType="visitor"
+							title="Visitor"
+							labelText="Phone No."
+							inputHint="e.g. 1234567890"
+							setSelectedTab={setSelectedTab}
+							setToken={handleToken}
+						/>
 					)}
-				</Tabs>
-			</div>
+				</div>
+			)}
 		</div>
 	);
 }
