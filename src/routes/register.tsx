@@ -15,11 +15,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent } from "@/components/ui/tabs";
 import type { identifierTypes } from "@/db/case";
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, CheckIcon } from "lucide-react";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/register")({
@@ -397,41 +396,39 @@ function Register() {
 				<RegistrationTypeSelector setSelected={setSelectedTab} />
 			) : (
 				<div className="w-1/3 flex flex-col">
-					<Tabs value={selectedTab}>
-						<TabsContent value="student">
-							<RegistrationCard
-								identifierType="student_id"
-								registrationType="student"
-								title="Student"
-								labelText="Student ID"
-								inputHint="e.g. 2024A1PS0001H"
-								setSelectedTab={setSelectedTab}
-								setToken={handleToken}
-							/>
-						</TabsContent>
-						<TabsContent value="prof">
-							<RegistrationCard
-								identifierType="psrn"
-								registrationType="prof"
-								title="Professor/Dependent"
-								labelText="PSRN"
-								inputHint="e.g. H0001"
-								setSelectedTab={setSelectedTab}
-								setToken={handleToken}
-							/>
-						</TabsContent>
-						<TabsContent value="visitor">
-							<RegistrationCard
-								identifierType="phone"
-								registrationType="visitor"
-								title="Visitor"
-								labelText="Phone No."
-								inputHint="e.g. 1234567890"
-								setSelectedTab={setSelectedTab}
-								setToken={handleToken}
-							/>
-						</TabsContent>
-					</Tabs>
+					{selectedTab === "student" && (
+						<RegistrationCard
+							identifierType="student_id"
+							registrationType="student"
+							title="Student"
+							labelText="Student ID"
+							inputHint="e.g. 2024A1PS0001H"
+							setSelectedTab={setSelectedTab}
+							setToken={handleToken}
+						/>
+					)}
+					{selectedTab === "prof" && (
+						<RegistrationCard
+							identifierType="psrn"
+							registrationType="prof"
+							title="Professor/Dependent"
+							labelText="PSRN"
+							inputHint="e.g. H0001"
+							setSelectedTab={setSelectedTab}
+							setToken={handleToken}
+						/>
+					)}
+					{selectedTab === "visitor" && (
+						<RegistrationCard
+							identifierType="phone"
+							registrationType="visitor"
+							title="Visitor"
+							labelText="Phone No."
+							inputHint="e.g. 1234567890"
+							setSelectedTab={setSelectedTab}
+							setToken={handleToken}
+						/>
+					)}
 				</div>
 			)}
 		</div>
