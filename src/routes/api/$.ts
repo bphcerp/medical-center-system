@@ -11,6 +11,7 @@ export const Route = createFileRoute("/api/$")({
 			POST: handle,
 			GET: handle,
 			DELETE: handle,
+			PATCH: handle,
 		},
 	},
 });
