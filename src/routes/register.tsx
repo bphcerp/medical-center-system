@@ -25,7 +25,7 @@ export const Route = createFileRoute("/register")({
 	component: Register,
 });
 
-const TOKEN_DISPLAY_DURATION_MS = 10000;
+const TOKEN_DISPLAY_DURATION_MS = 30_000;
 
 type RegistrationType = "student" | "prof" | "visitor";
 
@@ -75,7 +75,7 @@ function RegistrationCard({
 		setIdentifier("");
 		setName("");
 		setEmail("");
-		setAge(-1);
+		setAge(0);
 		setSex(undefined);
 	};
 
@@ -315,9 +315,9 @@ function TokenDisplay({
 	}, [resetTab]);
 
 	return (
-		<div className="flex flex-col items-center pt-32">
+		<div className="flex flex-col items-center pt-32 gap-8">
 			<span className="italic">Your token number is</span>
-			<h1 className="text-[9rem] font-medium">{token}</h1>
+			<h1 className="text-9xl font-medium">{token}</h1>
 			{showHomeButton && (
 				<Button variant="outline" size="lg" onClick={resetTab}>
 					Go home
