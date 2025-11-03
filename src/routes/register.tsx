@@ -29,6 +29,16 @@ const TOKEN_DISPLAY_DURATION_MS = 10000;
 
 type RegistrationType = "student" | "prof" | "visitor";
 
+type RegistrationCardProps = {
+	identifierType: (typeof identifierTypes)[number];
+	registrationType: RegistrationType;
+	title: string;
+	labelText: string;
+	inputHint: string;
+	setSelectedTab: React.Dispatch<React.SetStateAction<RegistrationType | null>>;
+	setToken: (token: number) => void;
+};
+
 function RegistrationCard({
 	identifierType,
 	registrationType,
@@ -37,15 +47,7 @@ function RegistrationCard({
 	inputHint,
 	setSelectedTab,
 	setToken,
-}: {
-	identifierType: (typeof identifierTypes)[number];
-	registrationType: RegistrationType;
-	title: string;
-	labelText: string;
-	inputHint: string;
-	setSelectedTab: React.Dispatch<React.SetStateAction<RegistrationType | null>>;
-	setToken: (token: number) => void;
-}) {
+}: RegistrationCardProps) {
 	const id = useId();
 	const nameId = useId();
 	const emailId = useId();
