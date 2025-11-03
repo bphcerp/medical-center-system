@@ -80,14 +80,6 @@ function RegistrationCard({
 	const resetTab = () => setSelectedTab(null);
 
 	const handleRegister = async () => {
-		// TODO: Test the flow for:
-		// 1. Student existing [Done]
-		// 2. Professor/Dependent existing [Done]
-		// 3. Visitor existing [Done]
-
-		// 4. New Visitor [Done]
-		// 5. Student new (should redirect to new visitor flow) [Done]
-		// 6. Professor/Dependent new (should redirect to new visitor flow) [Done]
 		const res = disableForm
 			? await client.api.register.$post({
 					json: {
