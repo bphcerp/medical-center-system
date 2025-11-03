@@ -1,17 +1,17 @@
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
+	Table,
+	TableBody,
+	TableCell,
+	TableHeader,
+	TableRow,
 } from "@/components/ui/table";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
@@ -21,6 +21,7 @@ export const Route = createFileRoute("/admin")({
 	component: Admin,
 	loader: async () => {
 		const usersRes = await client.api.user.all.$get();
+		handleUnauthorized(usersRes.status);
 		const rolesRes = await client.api.role.all.$get();
 		handleUnauthorized(rolesRes.status);
 
@@ -113,19 +114,22 @@ const RoleSelect = ({
 
 	const [loading, setLoading] = useState(false);
 
-	const handleSetRole = async (newRoleId: number) => {
+	const handleSetRole = async (newRoleId: string) => {
 		if (loading) return;
 		setLoading(true);
 
-		const success = await setRole(newRoleId);
-		if (!success) {
-			setTempRoleId(roleId);
-			// change this to some toast thing in the future
-			alert("Failed to update role");
-		}
+		try {
+			const success = await setRole(Number(newRoleId));
+			if (!success) {
+				setTempRoleId(roleId);
+				// change this to some toast thing in the future
+				alert("Failed to update role");
+			}
 
-    setRoleId(tempRoleId);
-		setLoading(false);
+			setRoleId(newRoleId);
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	return (
@@ -145,7 +149,7 @@ const RoleSelect = ({
 			{tempRoleId !== roleId && (
 				<Button
 					size="sm"
-					onClick={() => handleSetRole(Number(tempRoleId))}
+					onClick={() => handleSetRole(tempRoleId)}
 					disabled={loading}
 				>
 					Save

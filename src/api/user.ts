@@ -58,7 +58,13 @@ const user = new Hono()
 				.update(usersTable)
 				.set({ role: role })
 				.where(eq(usersTable.id, id));
-			console.log(users.rowCount);
+
+			if (users.rowCount !== 1) {
+				c.status(404);
+				return c.json({
+					error: "User Not Found",
+				});
+			}
 
 			return c.json({ success: true });
 		},
