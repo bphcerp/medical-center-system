@@ -1,9 +1,15 @@
 import "dotenv/config";
-import { arrayContains, eq, inArray } from "drizzle-orm";
+import { arrayContains, eq, inArray, and, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { casesTable } from "@/db/case";
 import { caseLabReportsTable } from "@/db/lab";
-import { patientsTable } from "@/db/patient";
+import {
+	dependentsTable,
+	patientsTable,
+	professorsTable,
+	studentsTable,
+	visitorsTable,
+} from "@/db/patient";
 import { db } from ".";
 import { rbacCheck } from "./rbac";
 import type { JWTPayload } from "./auth";
@@ -71,6 +77,56 @@ const doctor = new Hono()
 			});
 
 		return c.json({ queue });
+	})
+	.get("/consultation/:caseId", async (c) => {
+		const payload = c.get("jwtPayload") as JWTPayload;
+		const userId = payload.id;
+		const caseId = Number(c.req.param("caseId"));
+
+		const caseDetails = await db.select({
+			caseId: casesTable.id,
+			token: casesTable.token,
+			finalizedState: casesTable.finalizedState,
+			patientName: patientsTable.name,
+			patientAge: patientsTable.age,
+			patientSex: patientsTable.sex,
+			patientType: patientsTable.type,
+			identifier: sql<string>`
+				COALESCE(${professorsTable.psrn},
+						${studentsTable.studentId},
+						${visitorsTable.phone},
+						${dependentsTable.psrn})`,
+			weight: casesTable.weight,
+			temperature: casesTable.temperature,
+			heartRate: casesTable.heartRate,
+			respiratoryRate: casesTable.respiratoryRate,
+			bloodPressureSystolic: casesTable.bloodPressureSystolic,
+			bloodPressureDiastolic: casesTable.bloodPressureDiastolic,
+			bloodSugar: casesTable.bloodSugar,
+			spo2: casesTable.spo2,
+		})
+		.from(casesTable)
+		.innerJoin(patientsTable, eq(casesTable.patient, patientsTable.id))
+		.leftJoin(professorsTable, eq(professorsTable.patientId, patientsTable.id))
+		.leftJoin(studentsTable, eq(studentsTable.patientId, patientsTable.id))
+		.leftJoin(visitorsTable, eq(visitorsTable.patientId, patientsTable.id))
+		.leftJoin(dependentsTable, eq(dependentsTable.patientId, patientsTable.id))
+		.where(
+			and(
+				eq(casesTable.id, caseId),
+				arrayContains(casesTable.associatedUsers, [userId])
+			)
+		)
+		.orderBy(casesTable.id)
+		.limit(1);
+
+		const caseDetail = caseDetails[0];
+
+		if (!caseDetail) {
+			return c.json({ error: "Case not found" }, 404);
+		}
+		
+		return c.json({ caseDetail });
 	});
 
 export default doctor;
