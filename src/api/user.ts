@@ -1,7 +1,7 @@
 import { zValidator } from "@hono/zod-validator";
 import { usersTable } from "@/db/auth";
 import "dotenv/config";
-import { eq, getTableColumns } from "drizzle-orm";
+import { desc, eq, getTableColumns } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
 import { db } from ".";
@@ -30,7 +30,8 @@ const user = new Hono()
 
 		const users = await db
 			.select({ id, name, username, role })
-			.from(usersTable);
+			.from(usersTable)
+			.orderBy(desc(role));
 
 		return c.json({ users: users });
 	})
