@@ -66,7 +66,7 @@ function RegistrationCard({
 	const [age, setAge] = useState(0);
 	const [sex, setSex] = useState<"male" | "female" | undefined>(undefined);
 
-	const resetState = (alsoResetTab: boolean = true) => {
+	const resetState = () => {
 		setShowDetails(false);
 		setDisableForm(false);
 		setOptions([]);
@@ -76,11 +76,9 @@ function RegistrationCard({
 		setEmail("");
 		setAge(-1);
 		setSex(undefined);
-
-		if (alsoResetTab) {
-			setSelectedTab(null);
-		}
 	};
+
+	const resetTab = () => setSelectedTab(null);
 
 	const handleRegister = async () => {
 		// TODO: Test the flow for:
@@ -111,11 +109,13 @@ function RegistrationCard({
 		if (res.status !== 200) {
 			alert("Error registering. Please report this to the front desk.");
 			resetState();
+			resetTab();
 			return;
 		}
 		const data = await res.json();
 		setToken(data.token);
 		resetState();
+		resetTab();
 	};
 
 	const handleCheckExisting = async () => {
@@ -174,18 +174,9 @@ function RegistrationCard({
 		return;
 	};
 
-	const handleBackClick = () => {
-		console.log(showDetails);
-		if (showDetails) {
-			resetState(false);
-		} else {
-			setSelectedTab(null);
-		}
-	};
-
 	return (
 		<div className="flex flex-col gap-2">
-			<Button className="self-start" variant="ghost" onClick={handleBackClick}>
+			<Button className="self-start" variant="ghost" onClick={resetTab}>
 				<ArrowLeft />
 				Back
 			</Button>
@@ -197,16 +188,23 @@ function RegistrationCard({
 					<CardContent className="grid gap-6 mt-2">
 						<div className="grid gap-3">
 							<Label htmlFor={id}>{labelText}</Label>
-							<Input
-								id={id}
-								value={identifier}
-								onChange={(e) => setIdentifier(e.target.value)}
-								disabled={showDetails}
-								name={identifierType}
-								placeholder={inputHint}
-								required
-								autoFocus
-							/>
+							<div className="flex gap-2">
+								<Input
+									id={id}
+									value={identifier}
+									onChange={(e) => setIdentifier(e.target.value)}
+									disabled={showDetails}
+									name={identifierType}
+									placeholder={inputHint}
+									required
+									autoFocus
+								/>
+								{showDetails && (
+									<Button size={"lg"} variant={"outline"} onClick={resetState}>
+										Change
+									</Button>
+								)}
+							</div>
 							{showDetails && (
 								<>
 									{registrationType === "prof" && options.length > 0 && (
@@ -358,17 +356,20 @@ function RegistrationTypeSelector({
 function Register() {
 	const [selectedTab, setSelectedTab] = useState<RegistrationType | null>(null);
 
-	const [token, setToken] = useState<number>();
+	const [token, setToken] = useState<number | null>(null);
 
 	const handleToken = (token: number) => {
 		setToken(token);
-		setTimeout(() => setToken(undefined), TOKEN_DISPLAY_DURATION_MS);
+	};
+	const handleResetTab = () => {
+		setToken(null);
+		setSelectedTab(null);
 	};
 
 	return (
 		<div className="flex w-full gap-6 justify-center pt-48">
-			{token !== undefined ? (
-				<TokenDisplay token={token} />
+			{token !== null ? (
+				<TokenDisplay token={token} resetTab={handleResetTab} />
 			) : selectedTab === null ? (
 				<RegistrationTypeSelector setSelected={setSelectedTab} />
 			) : (
