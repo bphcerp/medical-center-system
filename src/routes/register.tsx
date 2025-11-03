@@ -302,11 +302,34 @@ function RegistrationCard({
 	);
 }
 
-function TokenDisplay({ token }: { token: number }) {
+function TokenDisplay({
+	token,
+	resetTab,
+}: {
+	token: number;
+	resetTab: () => void;
+}) {
+	const [showHomeButton, setShowHomeButton] = useState(false);
+
+	useEffect(() => {
+		const timer1 = setTimeout(() => setShowHomeButton(true), 3000);
+		const timer2 = setTimeout(resetTab, TOKEN_DISPLAY_DURATION_MS);
+
+		return () => {
+			clearTimeout(timer1);
+			clearTimeout(timer2);
+		};
+	}, [resetTab]);
+
 	return (
 		<div className="flex flex-col items-center pt-32">
 			<span className="italic">Your token number is</span>
 			<h1 className="text-[9rem] font-medium">{token}</h1>
+			{showHomeButton && (
+				<Button variant="outline" size="lg" onClick={resetTab}>
+					Go home
+				</Button>
+			)}
 		</div>
 	);
 }
@@ -322,7 +345,7 @@ function RegistrationTypeButton({
 	return (
 		<Button
 			variant="card"
-			className="w-1/3 h-90 text-3xl whitespace-break-spaces rounded-lg"
+			className="w-1/3 h-90 px-10 text-3xl whitespace-break-spaces rounded-lg"
 			{...props}
 		>
 			{title}
@@ -342,7 +365,7 @@ function RegistrationTypeSelector({
 				onClick={() => setSelected("student")}
 			/>
 			<RegistrationTypeButton
-				title={"Professor/\nDependant"}
+				title={"Professor / Dependant"}
 				onClick={() => setSelected("prof")}
 			/>
 			<RegistrationTypeButton
