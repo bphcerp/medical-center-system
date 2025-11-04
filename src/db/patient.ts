@@ -59,7 +59,6 @@ export const dependentsTable = pgTable(
 		psrn: varchar({ length: 255 })
 			.notNull()
 			.references(() => professorsTable.psrn),
-		name: varchar({ length: 255 }).notNull(),
 		patientId: integer()
 			.unique()
 			.references(() => patientsTable.id)
