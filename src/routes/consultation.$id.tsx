@@ -53,7 +53,7 @@ function ConsultationPage() {
 	const { id } = Route.useParams();
 	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
 	const [finaliseButtonValue, setFinaliseButtonValue] =
-		useState<string>("Finalise (OPD)");
+		useState<string>("Finalize (OPD)");
 	if (!caseDetail) {
 		return (
 			<div className="container mx-auto p-6">
@@ -201,7 +201,7 @@ function ConsultationPage() {
 								</DropdownMenuTrigger>
 								<DropdownMenuContent align="end">
 									<DropdownMenuItem
-										onClick={() => setFinaliseButtonValue("Finalise (OPD)")}
+										onClick={() => setFinaliseButtonValue("Finalize (OPD)")}
 									>
 										Finalise (OPD)
 									</DropdownMenuItem>

@@ -1,6 +1,8 @@
 import "dotenv/config";
 import { arrayContains, eq, inArray, and, sql } from "drizzle-orm";
 import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
+import z from "zod";
 import { casesTable } from "@/db/case";
 import { caseLabReportsTable } from "@/db/lab";
 import {
@@ -134,6 +136,36 @@ const doctor = new Hono()
 		}
 
 		return c.json({ caseDetail });
-	});
+	})
+	.post(
+		"updateCaseFinalizedState",
+		zValidator(
+			"json",
+			z.object({
+				caseId: z.number().int(),
+				finalizedState: z.enum(["opd", "admitted", "referred"]),
+			}),
+		),
+		async (c) => {
+			const { caseId, finalizedState } = c.req.valid("json");
+			const updated = await db
+				.update(casesTable)
+				.set({
+					finalizedState,
+				})
+				.where(eq(casesTable.id, caseId))
+				.returning();
+
+			if (updated.length === 0) {
+				return c.json({ success: false, message: "Case not found" }, 404);
+			}
+
+			return c.json({
+				success: true,
+				message: "Finalized state updated successfully",
+				case: updated[0],
+			});
+		},
+	);
 
 export default doctor;
