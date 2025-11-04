@@ -45,7 +45,7 @@ function Login() {
 
 	return (
 		<div className="h-screen w-full flex justify-center">
-			<form className="w-2/3 pt-48" action={handleLogin}>
+			<form className="w-1/3 pt-48" action={handleLogin}>
 				<FieldSet>
 					<FieldGroup>
 						<Field>
