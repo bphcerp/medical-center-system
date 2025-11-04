@@ -1,5 +1,11 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { Search } from "lucide-react";
 import { useState } from "react";
+import {
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+} from "@/components/ui/input-group";
 import {
 	Select,
 	SelectContent,
@@ -56,7 +62,8 @@ function handleUnauthorized(status: number) {
 }
 
 function Admin() {
-	const { users, roles } = Route.useLoaderData();
+	const { users: allUsers, roles } = Route.useLoaderData();
+	const [users, setUsers] = useState(allUsers);
 
 	const handleRoleChange = async (userId: number, roleId: number) => {
 		const res = await client.api.user[":id"].$post({
@@ -66,10 +73,37 @@ function Admin() {
 		return res.status === 200;
 	};
 
+	const handleFilter = (query: string) => {
+		query = query.toLowerCase().trim();
+		if (query === "") {
+			setUsers(allUsers);
+			return;
+		}
+		const filtered = allUsers.filter(
+			(user) =>
+				user.name.toLowerCase().includes(query) ||
+				user.username.toLowerCase().includes(query),
+		);
+		setUsers(filtered);
+	};
+
 	return (
 		<div className="flex justify-center w-full">
-			<div className="w-2/3 m-10 flex flex-col gap-8">
-				<h1 className="font-bold text-4xl">Role Management</h1>
+			<div className="w-2/3 m-10 flex flex-col gap-6">
+				<div className="flex flex-wrap items-end gap-4 justify-between">
+					<h1 className="font-bold text-4xl">Role Management</h1>
+					<InputGroup className="w-80">
+						<InputGroupAddon>
+							<Search />
+						</InputGroupAddon>
+						<InputGroupInput
+							type="search"
+							placeholder="Search by name or username"
+							className=""
+							onChange={(e) => handleFilter(e.target.value)}
+						/>
+					</InputGroup>
+				</div>
 				<div className="rounded-md border overflow-clip">
 					<Table>
 						<TableHeader className="">
