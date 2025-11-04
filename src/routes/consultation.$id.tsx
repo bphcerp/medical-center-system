@@ -1,6 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { client } from "./api/$";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { Field, FieldLabel } from "@/components/ui/field";
 
 export const Route = createFileRoute("/consultation/$id")({
@@ -77,7 +79,7 @@ function ConsultationPage() {
 					</Field>
 				</div>
 			</Card>
-			<Card>
+			<Card className="mb-2">
 				<div className="flex gap-4 mx-3">
 					<Field>
 						<FieldLabel className="font-semibold">Body Temperature</FieldLabel>
@@ -137,6 +139,19 @@ function ConsultationPage() {
 					</Field>
 				</div>
 			</Card>
+			<div className="grid grid-cols-4 mb-2">
+				<Card className="col-span-3 row-span-1 rounded-tr-none rounded-br-none rounded-bl-none"></Card>
+				<Card className="col-span-1 row-span-2 rounded-tl-none rounded-bl-none rounded-br-none"></Card>
+				<Card className="col-span-3 row-span-1 rounded-none"></Card>
+				<Card className="col-span-4 row-span-1 rounded-tr-none rounded-tl-none py-2 px-2">
+					<div className="flex justify-end">
+						<ButtonGroup>
+							<Button variant="outline">Request Lab Tests</Button>
+							<Button variant="outline">Finalise (OPD)</Button>
+						</ButtonGroup>
+					</div>
+				</Card>
+			</div>
 		</div>
 	);
 }
