@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { client } from "./api/$";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ export const Route = createFileRoute("/consultation/$id")({
 function ConsultationPage() {
 	const { user, caseDetail } = Route.useLoaderData();
 	const { id } = Route.useParams();
+	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
 
 	if (!caseDetail) {
 		return (
@@ -166,13 +168,17 @@ function ConsultationPage() {
 						<Label className="font-semibold mx-3">Prescription: </Label>
 						<div className="relative w-full">
 							<Search className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground" />
-							<Input placeholder="Search..." className="pl-8" />
+							<Input
+								placeholder="Search..."
+								className="pl-8"
+								value={prescriptionQuery}
+								onChange={(e) => setPrescriptionQuery(e.target.value)}
+							/>
 						</div>
 						<Button variant="outline" className="flex items-center gap-2">
 							Type
 							<ChevronDown className="h-4 w-4 opacity-70" />
 						</Button>
-						<Button className="mx-3">Search</Button>
 					</div>
 				</Card>
 				<Card className="col-span-4 row-span-1 rounded-tr-none rounded-tl-none py-2 px-2">
