@@ -55,7 +55,7 @@ function ConsultationPage() {
 				Consultation for {caseDetail.patientName}
 			</h1>
 			<p className="text-muted-foreground my-2">Case ID: {id}</p>
-			<Card>
+			<Card className="mb-2">
 				<div className="flex gap-4 mx-3">
 					<Field>
 						<FieldLabel className="font-semibold">Patient Name</FieldLabel>
@@ -73,6 +73,66 @@ function ConsultationPage() {
 						<FieldLabel className="font-semibold">Gender</FieldLabel>
 						<div className="border rounded-md bg-muted text-sm px-2 py-1">
 							{caseDetail?.patientSex || "—"}
+						</div>
+					</Field>
+				</div>
+			</Card>
+			<Card>
+				<div className="flex gap-4 mx-3">
+					<Field>
+						<FieldLabel className="font-semibold">Body Temperature</FieldLabel>
+						<div className="border rounded-md bg-muted text-sm px-2 py-1">
+							{caseDetail?.temperature || "—"}
+						</div>
+					</Field>
+					<Field>
+						<FieldLabel className="font-semibold">Heart Rate</FieldLabel>
+						<div className="border rounded-md bg-muted text-sm px-2 py-1">
+							{caseDetail?.heartRate || "—"}
+						</div>
+					</Field>
+					<Field>
+						<FieldLabel className="font-semibold">Respiratory Rate</FieldLabel>
+						<div className="border rounded-md bg-muted text-sm px-2 py-1">
+							{caseDetail?.respiratoryRate || "—"}
+						</div>
+					</Field>
+				</div>
+				<div className="flex gap-4 mx-3">
+					<Field>
+						<FieldLabel className="font-semibold">
+							Blood Pressure Systolic
+						</FieldLabel>
+						<div className="border rounded-md bg-muted text-sm px-2 py-1">
+							{caseDetail?.bloodPressureSystolic || "—"}
+						</div>
+					</Field>
+					<Field>
+						<FieldLabel className="font-semibold">
+							Blood Pressure Diastolic
+						</FieldLabel>
+						<div className="border rounded-md bg-muted text-sm px-2 py-1">
+							{caseDetail?.bloodPressureDiastolic || "—"}
+						</div>
+					</Field>
+				</div>
+				<div className="flex gap-4 mx-3">
+					<Field>
+						<FieldLabel className="font-semibold">Blood Sugar</FieldLabel>
+						<div className="border rounded-md bg-muted text-sm px-2 py-1">
+							{caseDetail?.bloodSugar || "—"}
+						</div>
+					</Field>
+					<Field>
+						<FieldLabel className="font-semibold">SpO2</FieldLabel>
+						<div className="border rounded-md bg-muted text-sm px-2 py-1">
+							{caseDetail?.spo2 || "—"}
+						</div>
+					</Field>
+					<Field>
+						<FieldLabel className="font-semibold">Weight</FieldLabel>
+						<div className="border rounded-md bg-muted text-sm px-2 py-1">
+							{caseDetail?.weight || "—"}
 						</div>
 					</Field>
 				</div>
