@@ -52,7 +52,7 @@ function ConsultationPage() {
 	const { user, caseDetail } = Route.useLoaderData();
 	const { id } = Route.useParams();
 	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
-	const [finaliseButtonValue, setFinaliseButtonValue] =
+	const [finalizeButtonValue, setFinalizeButtonValue] =
 		useState<string>("Finalize (OPD)");
 	if (!caseDetail) {
 		return (
@@ -62,6 +62,41 @@ function ConsultationPage() {
 				<p className="mt-4">No consultation details found for this case.</p>
 			</div>
 		);
+	}
+
+	async function handleFinalize() {
+		let finalizedState: "opd" | "admitted" | "referred";
+		switch (finalizeButtonValue) {
+			case "Finalize (OPD)":
+				finalizedState = "opd";
+				break;
+			case "Admit":
+				finalizedState = "admitted";
+				break;
+			case "Referral":
+				finalizedState = "referred";
+				break;
+			default:
+				console.error(
+					"Finalized state not matching any of the types Finalize (OPD), Admit, or Referral",
+				);
+				return;
+		}
+		try {
+			const res = await (
+				await client.api.doctor.updateCaseFinalizedState.$post({
+					json: {
+						caseId: Number(id),
+						finalizedState: finalizedState,
+					},
+				})
+			).json();
+			if ("error" in res) {
+				alert(res.error);
+			}
+		} catch (err) {
+			console.error(err);
+		}
 	}
 
 	return (
@@ -192,7 +227,9 @@ function ConsultationPage() {
 					<div className="flex justify-end">
 						<ButtonGroup>
 							<Button variant="outline">Request Lab Tests</Button>
-							<Button variant="outline">{finaliseButtonValue}</Button>
+							<Button variant="outline" onClick={handleFinalize}>
+								{finalizeButtonValue}
+							</Button>
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<Button variant="outline">
@@ -201,17 +238,17 @@ function ConsultationPage() {
 								</DropdownMenuTrigger>
 								<DropdownMenuContent align="end">
 									<DropdownMenuItem
-										onClick={() => setFinaliseButtonValue("Finalize (OPD)")}
+										onClick={() => setFinalizeButtonValue("Finalize (OPD)")}
 									>
 										Finalise (OPD)
 									</DropdownMenuItem>
 									<DropdownMenuItem
-										onClick={() => setFinaliseButtonValue("Admit")}
+										onClick={() => setFinalizeButtonValue("Admit")}
 									>
 										Admit
 									</DropdownMenuItem>
 									<DropdownMenuItem
-										onClick={() => setFinaliseButtonValue("Referral")}
+										onClick={() => setFinalizeButtonValue("Referral")}
 									>
 										Referral
 									</DropdownMenuItem>
