@@ -7,19 +7,19 @@ import { db } from "./index";
 import { filesTable } from "@/db/files";
 import { SeaweedFSClient } from "@/lib/seaweedfs";
 
-const app = new Hono();
 const seaweedfs = new SeaweedFSClient(env.SEAWEEDFS_MASTER);
 
-app.post(
-	"/upload",
-	zValidator(
-		"form",
-		z.object({
-			file: z.instanceof(File),
-		}),
-	),
-	async (c) => {
-		try {
+const app = new Hono()
+	.basePath("/files")
+	.post(
+		"/upload",
+		zValidator(
+			"form",
+			z.object({
+				file: z.instanceof(File),
+			}),
+		),
+		async (c) => {
 			const { file } = c.req.valid("form");
 
 			console.log("Uploading file:", {
@@ -33,11 +33,12 @@ app.post(
 			const [fileRecord] = await db
 				.insert(filesTable)
 				.values({
-					seaweed_fileid: fid,
+					url: `http://seaweedfs-volume:8080/${fid}`,
+					// setup allowed array here
 				})
 				.returning();
 
-			const publicUrl = `${env.SEAWEEDFS_VOLUME_URL}/${fid}`;
+			const publicUrl = `/api/files/get/${fileRecord.id}`;
 
 			return c.json({
 				success: true,
@@ -50,54 +51,28 @@ app.post(
 					type: file.type,
 				},
 			});
-		} catch (error) {
-			console.error("File upload error:", error);
-			return c.json(
-				{
-					success: false,
-					error:
-						error instanceof Error ? error.message : "Failed to upload file",
-				},
-				500,
-			);
-		}
-	},
-);
-
-app.get("/list", async (c) => {
-	try {
+		},
+	)
+	.get("/list", async (c) => {
 		const files = await db.select().from(filesTable);
 
 		return c.json({
 			success: true,
 			files: files.map((file) => ({
 				id: file.id,
-				fid: file.seaweed_fileid,
-				url: `${env.SEAWEEDFS_VOLUME_URL}/${file.seaweed_fileid}`,
+				url: `/api/files/get/${file.id}`,
 			})),
 		});
-	} catch (error) {
-		console.error("File list error:", error);
-		return c.json(
-			{
-				success: false,
-				error: "Failed to list files",
-			},
-			500,
-		);
-	}
-});
-
-app.get(
-	"/info/:id",
-	zValidator(
-		"param",
-		z.object({
-			id: z.coerce.number(),
-		}),
-	),
-	async (c) => {
-		try {
+	})
+	.get(
+		"/info/:id",
+		zValidator(
+			"param",
+			z.object({
+				id: z.coerce.number(),
+			}),
+		),
+		async (c) => {
 			const { id } = c.req.valid("param");
 
 			const [file] = await db
@@ -120,33 +95,65 @@ app.get(
 				success: true,
 				file: {
 					id: file.id,
-					fid: file.seaweed_fileid,
-					url: `${env.SEAWEEDFS_VOLUME_URL}/${file.seaweed_fileid}`,
+					url: `/api/files/get/${file.id}`,
 				},
 			});
-		} catch (error) {
-			console.error("File info error:", error);
-			return c.json(
-				{
-					success: false,
-					error: "Failed to get file info",
-				},
-				500,
-			);
-		}
-	},
-);
+		},
+	)
+	.get(
+		"/get/:id",
+		zValidator(
+			"param",
+			z.object({
+				id: z.coerce.number(),
+			}),
+		),
+		async (c) => {
+			const { id } = c.req.valid("param");
 
-app.delete(
-	"/:id",
-	zValidator(
-		"param",
-		z.object({
-			id: z.coerce.number(),
-		}),
-	),
-	async (c) => {
-		try {
+			const [file] = await db
+				.select()
+				.from(filesTable)
+				.where(eq(filesTable.id, id))
+				.limit(1);
+
+			if (!file) {
+				return c.json({ success: false, error: "File not found" }, 404);
+			}
+
+			// allowed check here
+
+			const fileResponse = await fetch(file.url);
+
+			if (!fileResponse.body) {
+				console.error(`Fetched file from storage but body was null`);
+				return c.json(
+					{ success: false, error: "Failed to retrieve file content" },
+					500,
+				);
+			}
+
+			c.header(
+				"Content-Type",
+				fileResponse.headers.get("Content-Type") || "application/octet-stream",
+			);
+			c.header(
+				"Content-Length",
+				fileResponse.headers.get("Content-Length") || undefined,
+			);
+
+			if (fileResponse.body) return c.body(fileResponse.body);
+		},
+	)
+	.delete(
+		"/:id",
+		zValidator(
+			"param",
+			z.object({
+				id: z.coerce.number(),
+			}),
+		),
+		async (c) => {
 			const { id } = c.req.valid("param");
 
 			const [file] = await db
@@ -165,7 +172,7 @@ app.delete(
 				);
 			}
 
-			await seaweedfs.deleteFile(file.seaweed_fileid);
+			await seaweedfs.deleteFile(file.url);
 
 			await db.delete(filesTable).where(eq(filesTable.id, id));
 
@@ -173,17 +180,7 @@ app.delete(
 				success: true,
 				message: "File deleted successfully",
 			});
-		} catch (error) {
-			console.error("File deletion error:", error);
-			return c.json(
-				{
-					success: false,
-					error: "Failed to delete file",
-				},
-				500,
-			);
-		}
-	},
-);
+		},
+	);
 
 export default app;
