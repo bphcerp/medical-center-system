@@ -13,8 +13,14 @@ import { Route as VitalsRouteImport } from './routes/vitals'
 import { Route as ResultEntryRouteImport } from './routes/result-entry'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
+<<<<<<< HEAD
 import { Route as LabDashboardRouteImport } from './routes/lab-dashboard'
+=======
+import { Route as DoctorRouteImport } from './routes/doctor'
+import { Route as AdminRouteImport } from './routes/admin'
+>>>>>>> main
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ConsultationIdRouteImport } from './routes/consultation.$id'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
 
 const VitalsRoute = VitalsRouteImport.update({
@@ -37,14 +43,30 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+<<<<<<< HEAD
 const LabDashboardRoute = LabDashboardRouteImport.update({
   id: '/lab-dashboard',
   path: '/lab-dashboard',
+=======
+const DoctorRoute = DoctorRouteImport.update({
+  id: '/doctor',
+  path: '/doctor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+>>>>>>> main
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsultationIdRoute = ConsultationIdRouteImport.update({
+  id: '/consultation/$id',
+  path: '/consultation/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSplatRoute = ApiSplatRouteImport.update({
@@ -55,36 +77,55 @@ const ApiSplatRoute = ApiSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+<<<<<<< HEAD
   '/lab-dashboard': typeof LabDashboardRoute
+=======
+  '/admin': typeof AdminRoute
+  '/doctor': typeof DoctorRoute
+>>>>>>> main
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/result-entry': typeof ResultEntryRoute
   '/vitals': typeof VitalsRoute
   '/api/$': typeof ApiSplatRoute
+  '/consultation/$id': typeof ConsultationIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+<<<<<<< HEAD
   '/lab-dashboard': typeof LabDashboardRoute
+=======
+  '/admin': typeof AdminRoute
+  '/doctor': typeof DoctorRoute
+>>>>>>> main
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/result-entry': typeof ResultEntryRoute
   '/vitals': typeof VitalsRoute
   '/api/$': typeof ApiSplatRoute
+  '/consultation/$id': typeof ConsultationIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+<<<<<<< HEAD
   '/lab-dashboard': typeof LabDashboardRoute
+=======
+  '/admin': typeof AdminRoute
+  '/doctor': typeof DoctorRoute
+>>>>>>> main
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/result-entry': typeof ResultEntryRoute
   '/vitals': typeof VitalsRoute
   '/api/$': typeof ApiSplatRoute
+  '/consultation/$id': typeof ConsultationIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+<<<<<<< HEAD
     | '/lab-dashboard'
     | '/login'
     | '/register'
@@ -109,16 +150,51 @@ export interface FileRouteTypes {
     | '/result-entry'
     | '/vitals'
     | '/api/$'
+=======
+    | '/admin'
+    | '/doctor'
+    | '/login'
+    | '/register'
+    | '/vitals'
+    | '/api/$'
+    | '/consultation/$id'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/admin'
+    | '/doctor'
+    | '/login'
+    | '/register'
+    | '/vitals'
+    | '/api/$'
+    | '/consultation/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/doctor'
+    | '/login'
+    | '/register'
+    | '/vitals'
+    | '/api/$'
+    | '/consultation/$id'
+>>>>>>> main
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+<<<<<<< HEAD
   LabDashboardRoute: typeof LabDashboardRoute
+=======
+  AdminRoute: typeof AdminRoute
+  DoctorRoute: typeof DoctorRoute
+>>>>>>> main
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   ResultEntryRoute: typeof ResultEntryRoute
   VitalsRoute: typeof VitalsRoute
   ApiSplatRoute: typeof ApiSplatRoute
+  ConsultationIdRoute: typeof ConsultationIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -151,11 +227,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+<<<<<<< HEAD
     '/lab-dashboard': {
       id: '/lab-dashboard'
       path: '/lab-dashboard'
       fullPath: '/lab-dashboard'
       preLoaderRoute: typeof LabDashboardRouteImport
+=======
+    '/doctor': {
+      id: '/doctor'
+      path: '/doctor'
+      fullPath: '/doctor'
+      preLoaderRoute: typeof DoctorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+>>>>>>> main
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -163,6 +254,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/consultation/$id': {
+      id: '/consultation/$id'
+      path: '/consultation/$id'
+      fullPath: '/consultation/$id'
+      preLoaderRoute: typeof ConsultationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/$': {
@@ -177,12 +275,18 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+<<<<<<< HEAD
   LabDashboardRoute: LabDashboardRoute,
+=======
+  AdminRoute: AdminRoute,
+  DoctorRoute: DoctorRoute,
+>>>>>>> main
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   ResultEntryRoute: ResultEntryRoute,
   VitalsRoute: VitalsRoute,
   ApiSplatRoute: ApiSplatRoute,
+  ConsultationIdRoute: ConsultationIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

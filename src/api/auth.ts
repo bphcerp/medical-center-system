@@ -19,6 +19,8 @@ import { db } from ".";
 import rbac from "./rbac";
 import user from "./user";
 import vitals from "./vitals";
+import doctor from "./doctor";
+import role from "./role";
 
 export type JWTPayload = {
 	passwordHash: null;
@@ -289,6 +291,8 @@ export const authenticated = new Hono()
 			secret: env.JWT_SECRET,
 		}),
 	)
+	.route("/role", role)
 	.route("/user", user)
 	.route("/rbac", rbac)
-	.route("/vitals", vitals);
+	.route("/vitals", vitals)
+	.route("/doctor", doctor);
