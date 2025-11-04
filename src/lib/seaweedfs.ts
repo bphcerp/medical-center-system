@@ -5,41 +5,23 @@ export class SeaweedFSClient {
 		this.masterUrl = masterUrl;
 	}
 
-	async assignFileId(): Promise<{
-		fid: string;
-		url: string;
-		publicUrl: string;
-	}> {
-		const response = await fetch(`${this.masterUrl}/dir/assign`);
-		if (!response.ok) {
-			throw new Error("Failed to assign file ID from SeaweedFS");
-		}
-		const data = await response.json();
-		return {
-			fid: data.fid,
-			url: `http://${data.url}`,
-			publicUrl: `http://${data.publicUrl}`,
-		};
-	}
-
 	async uploadFile(file: File): Promise<{ fid: string; url: string }> {
-		const assignment = await this.assignFileId();
-
 		const formData = new FormData();
 		formData.append("file", file);
 
-		const response = await fetch(`${assignment.url}/${assignment.fid}`, {
+		const response = await fetch(`${this.masterUrl}/submit`, {
 			method: "POST",
 			body: formData,
 		});
 
 		if (!response.ok) {
-			throw new Error("Failed to upload file to SeaweedFS volume");
+			throw new Error("Failed to upload file to SeaweedFS");
 		}
 
+		const data = await response.json();
 		return {
-			fid: assignment.fid,
-			url: `${assignment.publicUrl}/${assignment.fid}`,
+			fid: data.fid,
+			url: `${data.fileUrl}`,
 		};
 	}
 
