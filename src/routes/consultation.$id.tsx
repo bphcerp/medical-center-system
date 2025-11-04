@@ -9,6 +9,12 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Search, ChevronDown } from "lucide-react";
 import { Label } from "@radix-ui/react-label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/consultation/$id")({
 	loader: async ({ params }: { params: { id: string } }) => {
@@ -46,7 +52,8 @@ function ConsultationPage() {
 	const { user, caseDetail } = Route.useLoaderData();
 	const { id } = Route.useParams();
 	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
-
+	const [finaliseButtonValue, setFinaliseButtonValue] =
+		useState<string>("Finalise (OPD)");
 	if (!caseDetail) {
 		return (
 			<div className="container mx-auto p-6">
@@ -185,10 +192,31 @@ function ConsultationPage() {
 					<div className="flex justify-end">
 						<ButtonGroup>
 							<Button variant="outline">Request Lab Tests</Button>
-							<Button variant="outline">
-								Finalise (OPD)
-								<ChevronDown className="h-4 w-4 opacity-70" />
-							</Button>
+							<Button variant="outline">{finaliseButtonValue}</Button>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button variant="outline">
+										<ChevronDown className="ml-2 h-4 w-4 opacity-70" />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuItem
+										onClick={() => setFinaliseButtonValue("Finalise (OPD)")}
+									>
+										Finalise (OPD)
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={() => setFinaliseButtonValue("Admit")}
+									>
+										Admit
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={() => setFinaliseButtonValue("Referral")}
+									>
+										Referral
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
 						</ButtonGroup>
 					</div>
 				</Card>
