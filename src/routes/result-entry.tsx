@@ -14,11 +14,13 @@ export const Route = createFileRoute("/result-entry")({
 function ResultEntry() {
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [uploading, setUploading] = useState(false);
+	const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
 
 	const handleUpload = async () => {
 		if (!selectedFile) return;
 
 		setUploading(true);
+		setUploadedFileUrl(null);
 		try {
 			const res = await client.api.files.upload.$post({
 				form: {
@@ -28,15 +30,16 @@ function ResultEntry() {
 
 			const data = await res.json();
 
-			if (res.ok && data.success) {
+			if (res.ok && data.success && data.file?.url) {
 				alert("File uploaded successfully!");
+				setUploadedFileUrl(data.file.url);
 				setSelectedFile(null);
 				const fileInput = document.getElementById(
 					"file-upload",
 				) as HTMLInputElement;
 				if (fileInput) fileInput.value = "";
 			} else {
-				alert("Upload failed: " + (data.error || "Unknown error"));
+				// alert("Upload failed: " + (data.error || "Unknown error"));
 			}
 		} catch (error) {
 			console.error("Upload error:", error);
@@ -47,10 +50,10 @@ function ResultEntry() {
 	};
 
 	const handleViewFile = () => {
-		if (selectedFile) {
-			const fileURL = URL.createObjectURL(selectedFile);
-			window.open(fileURL, "_blank");
-			URL.revokeObjectURL(fileURL);
+		if (uploadedFileUrl) {
+			window.open(uploadedFileUrl, "_blank");
+		} else {
+			alert("Please upload the file first.");
 		}
 	};
 
@@ -59,7 +62,7 @@ function ResultEntry() {
 			<div className="max-w-4xl mx-auto bg-transparent">
 				<div className="flex justify-between items-center mb-6">
 					<h1 className="text-3xl font-bold">Result Entry</h1>
-					<Button onClick={handleViewFile} disabled={!selectedFile}>
+					<Button onClick={handleViewFile} disabled={!uploadedFileUrl}>
 						Print Report
 					</Button>
 				</div>

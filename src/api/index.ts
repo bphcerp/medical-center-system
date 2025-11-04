@@ -16,7 +16,7 @@ export const db = drizzle({
 const app = new Hono()
 	.basePath("/api")
 	.route("/", unauthenticated)
-	.route("/files", files)
+	.route("/", files)
 	.route("/", authenticated);
 
 export default app;
