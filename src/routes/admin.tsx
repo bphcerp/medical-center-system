@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/table";
 import { client } from "./api/$";
 import { debounce } from "@/lib/hooks";
-import { string } from "zod";
 
 export const Route = createFileRoute("/admin")({
 	component: Admin,
@@ -150,20 +149,23 @@ function RoleSelect({
 	setRole: (roleId: number) => Promise<boolean>;
 }) {
 	const [roleId, setRoleId] = useState(role);
+	const [eagerRoleId, setEagerRoleId] = useState(role);
 
 	const handleSetRole = async (newRoleId: string) => {
+		setEagerRoleId(newRoleId);
 		const success = await setRole(Number(newRoleId));
 		if (success) {
 			setRoleId(newRoleId);
 		} else {
 			// change this to some toast thing in the future
+			setEagerRoleId(roleId);
 			alert("Failed to update role");
 		}
 	};
 
 	return (
 		<div className="flex gap-2">
-			<Select value={roleId} onValueChange={handleSetRole}>
+			<Select value={eagerRoleId} onValueChange={handleSetRole}>
 				<SelectTrigger size="sm" className="w-full focus-visible:ring-0">
 					<SelectValue />
 				</SelectTrigger>
