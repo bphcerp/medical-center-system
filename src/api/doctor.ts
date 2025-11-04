@@ -44,7 +44,11 @@ const doctor = new Hono()
 			.filter((c) => !c.finalizedState) //only show non-finalized cases
 			.map((c) => {
 				const reports = labReports.filter((r) => r.caseId === c.caseId);
-				let status = "Waiting for Consultation";
+				let status:
+					| "Waiting for Consultation"
+					| "Lab Results Ready"
+					| "Lab Tests in Progress"
+					| "Lab Tests Requested" = "Waiting for Consultation";
 
 				if (reports.length > 0) {
 					const hasDone = reports.some((r) => r.status === "Done");
