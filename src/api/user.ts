@@ -18,9 +18,12 @@ const user = new Hono()
 			.where(eq(usersTable.id, jwtPayload.id))
 			.limit(1);
 		if (users.length < 1) {
-			return c.json({
-				error: "User Not Found",
-			}, 404);
+			return c.json(
+				{
+					error: "User Not Found",
+				},
+				404,
+			);
 		}
 		return c.json(users[0]);
 	})
@@ -60,9 +63,12 @@ const user = new Hono()
 				.where(eq(usersTable.id, id));
 
 			if (users.rowCount !== 1) {
-				return c.json({
-					error: "User Not Found",
-				}, 404);
+				return c.json(
+					{
+						error: "User Not Found",
+					},
+					404,
+				);
 			}
 
 			return c.json({ success: true });
