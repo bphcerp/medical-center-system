@@ -7,6 +7,14 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/doctor")({
@@ -88,34 +96,28 @@ function DoctorDashboard() {
 							<p className="text-muted-foreground">No patients in queue</p>
 						</div>
 					) : (
-						<div className="overflow-x-auto">
-							<table className="w-full">
-								<thead>
-									<tr className="border-b">
-										<th className="text-left py-3 px-4 font-semibold">
-											Case ID
-										</th>
-										<th className="text-left py-3 px-4 font-semibold">
-											Patient Name
-										</th>
-										<th className="text-left py-3 px-4 font-semibold">Status</th>
-									</tr>
-								</thead>
-								<tbody>
-									{initialQueue.map((item) => (
-										<tr
-											key={item.caseId}
-											onClick={() => handleRowClick(item.caseId)}
-											className="border-b hover:bg-accent cursor-pointer transition-colors"
-										>
-											<td className="py-3 px-4">{item.caseId}</td>
-											<td className="py-3 px-4">{item.patientName}</td>
-											<td className="py-3 px-4">{item.status}</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Case ID</TableHead>
+									<TableHead>Patient Name</TableHead>
+									<TableHead>Status</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{initialQueue.map((item) => (
+									<TableRow
+										key={item.caseId}
+										onClick={() => handleRowClick(item.caseId)}
+										className="cursor-pointer"
+									>
+										<TableCell>{item.caseId}</TableCell>
+										<TableCell>{item.patientName}</TableCell>
+										<TableCell>{item.status}</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
 					)}
 				</CardContent>
 			</Card>
