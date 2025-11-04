@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Search } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
 import {
 	InputGroup,
 	InputGroupAddon,
@@ -107,7 +107,9 @@ function Admin() {
 				<div className="rounded-md border overflow-clip">
 					<Table>
 						<TableHeader className="">
-							<RowItem name="Name" username="Username" roleNode="Role" header />
+							<RowItem name="Name" username="Username" header>
+								Role
+							</RowItem>
 						</TableHeader>
 						<TableBody>
 							{users.map((user) => (
@@ -115,14 +117,13 @@ function Admin() {
 									key={user.username}
 									name={user.name}
 									username={user.username}
-									roleNode={
-										<RoleSelect
-											role={user.role.toString()}
-											roles={roles}
-											setRole={(id) => handleRoleChange(user.id, id)}
-										/>
-									}
-								/>
+								>
+									<RoleSelect
+										role={user.role.toString()}
+										roles={roles}
+										setRole={(id) => handleRoleChange(user.id, id)}
+									/>
+								</RowItem>
 							))}
 						</TableBody>
 					</Table>
@@ -174,21 +175,20 @@ function RoleSelect({
 function RowItem({
 	name,
 	username,
-	roleNode,
+	children,
 	header = false,
-}: {
+}: React.PropsWithChildren<{
 	header?: boolean;
 	name: string;
 	username: string;
-	roleNode: React.ReactNode;
-}) {
+}>) {
 	return (
 		<TableRow className={"flex items-center"}>
 			<TableCell className="whitespace-break-spaces flex-2">{name}</TableCell>
 			<TableCell className={`flex-2 ${header ? "" : "font-mono"}`}>
 				{username}
 			</TableCell>
-			<TableCell className="flex-1">{roleNode}</TableCell>
+			<TableCell className="flex-1">{children}</TableCell>
 		</TableRow>
 	);
 }
