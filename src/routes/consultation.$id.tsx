@@ -3,7 +3,10 @@ import { client } from "./api/$";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
+import { Search, ChevronDown } from "lucide-react";
+import { Label } from "@radix-ui/react-label";
 
 export const Route = createFileRoute("/consultation/$id")({
 	loader: async ({ params }: { params: { id: string } }) => {
@@ -83,7 +86,7 @@ function ConsultationPage() {
 				<div className="flex gap-4 mx-3">
 					<Field>
 						<FieldLabel className="font-semibold">Body Temperature</FieldLabel>
-						<div className="border rounded-md bg-muted text-sm px-2 py-1">
+						<div className="border rounded-md bg-muted text-sm px-2 py-1 max-width-20px">
 							{caseDetail?.temperature || "—"}
 						</div>
 					</Field>
@@ -140,14 +143,39 @@ function ConsultationPage() {
 				</div>
 			</Card>
 			<div className="grid grid-cols-4 mb-2">
-				<Card className="col-span-3 row-span-1 rounded-tr-none rounded-br-none rounded-bl-none"></Card>
+				<Card className="col-span-3 row-span-1 rounded-tr-none rounded-br-none rounded-bl-none min-h-[200px]">
+					<div className="flex items-center max-w-xl">
+						<Label className="font-semibold mx-3">Diagnosis: </Label>
+						<div className="relative w-full">
+							<Search className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground" />
+							<Input placeholder="Search..." className="pl-8" />
+						</div>
+						<Button className="mx-3">Search</Button>
+					</div>
+				</Card>
 				<Card className="col-span-1 row-span-2 rounded-tl-none rounded-bl-none rounded-br-none"></Card>
-				<Card className="col-span-3 row-span-1 rounded-none"></Card>
+				<Card className="col-span-3 row-span-1 rounded-none min-h-[200px]">
+					<div className="flex items-center max-w-xl">
+						<Label className="font-semibold mx-3">Prescription: </Label>
+						<div className="relative w-full">
+							<Search className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground" />
+							<Input placeholder="Search..." className="pl-8" />
+						</div>
+						<Button variant="outline" className="flex items-center gap-2">
+							Type
+							<ChevronDown className="h-4 w-4 opacity-70" />
+						</Button>
+						<Button className="mx-3">Search</Button>
+					</div>
+				</Card>
 				<Card className="col-span-4 row-span-1 rounded-tr-none rounded-tl-none py-2 px-2">
 					<div className="flex justify-end">
 						<ButtonGroup>
 							<Button variant="outline">Request Lab Tests</Button>
-							<Button variant="outline">Finalise (OPD)</Button>
+							<Button variant="outline">
+								Finalise (OPD)
+								<ChevronDown className="h-4 w-4 opacity-70" />
+							</Button>
 						</ButtonGroup>
 					</div>
 				</Card>
