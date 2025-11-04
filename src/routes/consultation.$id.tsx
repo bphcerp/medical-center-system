@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Search, ChevronDown } from "lucide-react";
 import { Label } from "@radix-ui/react-label";
+import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/consultation/$id")({
 	loader: async ({ params }: { params: { id: string } }) => {
@@ -153,7 +154,13 @@ function ConsultationPage() {
 						<Button className="mx-3">Search</Button>
 					</div>
 				</Card>
-				<Card className="col-span-1 row-span-2 rounded-tl-none rounded-bl-none rounded-br-none"></Card>
+				<Card className="col-span-1 row-span-2 rounded-tl-none rounded-bl-none rounded-br-none px-2 pt-4 pb-2">
+					<Label className="font-semibold text-lg">Consultation Notes</Label>
+					<Textarea
+						className="h-full -mt-3.5 resize-none"
+						placeholder="Write notes here..."
+					/>
+				</Card>
 				<Card className="col-span-3 row-span-1 rounded-none min-h-[200px]">
 					<div className="flex items-center max-w-xl">
 						<Label className="font-semibold mx-3">Prescription: </Label>
