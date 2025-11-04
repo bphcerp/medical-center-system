@@ -76,9 +76,9 @@ function ConsultationPage() {
 						</div>
 					</Field>
 					<Field>
-						<FieldLabel className="font-semibold">Gender</FieldLabel>
+						<FieldLabel className="font-semibold">ID/PSRN</FieldLabel>
 						<div className="border rounded-md bg-muted text-sm px-2 py-1">
-							{caseDetail?.patientSex || "—"}
+							{caseDetail?.identifier || "—"}
 						</div>
 					</Field>
 				</div>
