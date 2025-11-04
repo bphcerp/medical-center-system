@@ -19,8 +19,7 @@ const serverSchema = z.object({
 	FRONTEND_URL: z.url().min(1),
 	FRONTEND_PORT: z.coerce.number().default(3000),
 	JWT_SECRET: z.string().min(1),
-	SEAWEEDFS_MASTER: z.string().default("http://seaweedfs-master:9333"),
-	SEAWEEDFS_VOLUME_URL: z.string().default("http://localhost:8080"),
+	SEAWEEDFS_MASTER: z.url().min(1),
 });
 
 const parsed = serverSchema.parse(process.env);
