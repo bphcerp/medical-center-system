@@ -1,6 +1,6 @@
-import { rolesTable } from "@/db/auth";
 import { getTableColumns } from "drizzle-orm";
 import { Hono } from "hono";
+import { rolesTable } from "@/db/auth";
 import { db } from ".";
 import { rbacCheck } from "./rbac";
 

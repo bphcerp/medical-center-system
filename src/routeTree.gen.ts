@@ -12,9 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VitalsRouteImport } from './routes/vitals'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
+import { Route as AdminUserRouteImport } from './routes/admin/user'
+import { Route as AdminRoleRouteImport } from './routes/admin/role'
 
 const VitalsRoute = VitalsRouteImport.update({
   id: '/vitals',
@@ -31,7 +34,7 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminRoute = AdminRouteImport.update({
+const AdminRouteRoute = AdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => rootRouteImport,
@@ -41,42 +44,82 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const ApiSplatRoute = ApiSplatRouteImport.update({
   id: '/api/$',
   path: '/api/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUserRoute = AdminUserRouteImport.update({
+  id: '/user',
+  path: '/user',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminRoleRoute = AdminRoleRouteImport.update({
+  id: '/role',
+  path: '/role',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/vitals': typeof VitalsRoute
+  '/admin/role': typeof AdminRoleRoute
+  '/admin/user': typeof AdminUserRoute
   '/api/$': typeof ApiSplatRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/vitals': typeof VitalsRoute
+  '/admin/role': typeof AdminRoleRoute
+  '/admin/user': typeof AdminUserRoute
   '/api/$': typeof ApiSplatRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/vitals': typeof VitalsRoute
+  '/admin/role': typeof AdminRoleRoute
+  '/admin/user': typeof AdminUserRoute
   '/api/$': typeof ApiSplatRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/login' | '/register' | '/vitals' | '/api/$'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/login'
+    | '/register'
+    | '/vitals'
+    | '/admin/role'
+    | '/admin/user'
+    | '/api/$'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/login' | '/register' | '/vitals' | '/api/$'
+  to:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/vitals'
+    | '/admin/role'
+    | '/admin/user'
+    | '/api/$'
+    | '/admin'
   id:
     | '__root__'
     | '/'
@@ -84,12 +127,15 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/vitals'
+    | '/admin/role'
+    | '/admin/user'
     | '/api/$'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   VitalsRoute: typeof VitalsRoute
@@ -123,7 +169,7 @@ declare module '@tanstack/react-router' {
       id: '/admin'
       path: '/admin'
       fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
+      preLoaderRoute: typeof AdminRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -133,6 +179,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/api/$': {
       id: '/api/$'
       path: '/api/$'
@@ -140,12 +193,42 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/user': {
+      id: '/admin/user'
+      path: '/user'
+      fullPath: '/admin/user'
+      preLoaderRoute: typeof AdminUserRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/role': {
+      id: '/admin/role'
+      path: '/role'
+      fullPath: '/admin/role'
+      preLoaderRoute: typeof AdminRoleRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
   }
 }
 
+interface AdminRouteRouteChildren {
+  AdminRoleRoute: typeof AdminRoleRoute
+  AdminUserRoute: typeof AdminUserRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminRoleRoute: AdminRoleRoute,
+  AdminUserRoute: AdminUserRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   VitalsRoute: VitalsRoute,
