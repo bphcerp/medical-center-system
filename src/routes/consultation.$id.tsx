@@ -9,12 +9,27 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Search, ChevronDown } from "lucide-react";
 import { Label } from "@radix-ui/react-label";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { ChevronsUpDown } from "lucide-react";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
+import {
+	Popover,
+	PopoverTrigger,
+	PopoverContent,
+} from "@/components/ui/popover";
 
 export const Route = createFileRoute("/consultation/$id")({
 	loader: async ({ params }: { params: { id: string } }) => {
@@ -65,6 +80,20 @@ function ConsultationPage() {
 	const [finalizeButtonValue, setFinalizeButtonValue] = useState<
 		"Finalize (OPD)" | "Admit" | "Referral"
 	>("Finalize (OPD)");
+	const [medicinesSearchOpen, setmedicinesSearchOpen] =
+		useState<boolean>(false);
+
+	const filteredMedicines = medicines.filter((m) => {
+		const matchesType =
+			medicineTypeValue === "Type" || m.type === medicineTypeValue;
+
+		const matchesQuery =
+			prescriptionQuery === "" ||
+			m.drug.toLowerCase().includes(prescriptionQuery.toLowerCase()) ||
+			m.brand.toLowerCase().includes(prescriptionQuery.toLowerCase());
+
+		return matchesType && matchesQuery;
+	});
 
 	if (!caseDetail) {
 		return (
@@ -220,15 +249,51 @@ function ConsultationPage() {
 				<Card className="col-span-3 row-span-1 rounded-none min-h-[200px]">
 					<div className="flex items-center max-w-xl">
 						<Label className="font-semibold mx-3">Prescription: </Label>
-						<div className="relative w-full">
-							<Search className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground" />
-							<Input
-								placeholder="Search..."
-								className="pl-8"
-								value={prescriptionQuery}
-								onChange={(e) => setPrescriptionQuery(e.target.value)}
-							/>
-						</div>
+						<Popover
+							open={medicinesSearchOpen}
+							onOpenChange={setmedicinesSearchOpen}
+						>
+							<PopoverTrigger asChild>
+								<Button
+									variant="outline"
+									role="combobox"
+									className="w-[300px] justify-between"
+								>
+									{prescriptionQuery
+										? filteredMedicines.find(
+												(m) => m.drug === prescriptionQuery,
+											)?.brand
+										: "Select a medicine..."}
+									<ChevronsUpDown className="ml-2 h-4 w-4" />
+								</Button>
+							</PopoverTrigger>
+
+							<PopoverContent className="w-[300px] p-0">
+								<Command shouldFilter={false}>
+									<CommandInput
+										placeholder="Type a medicine to search..."
+										value={prescriptionQuery}
+										onValueChange={setPrescriptionQuery}
+									/>
+									<CommandList>
+										<CommandEmpty>No medicines found.</CommandEmpty>
+										<CommandGroup heading="Medicines">
+											{filteredMedicines.map((m) => (
+												<CommandItem
+													key={`${m.drug}-${m.brand}-${m.type}`}
+													onSelect={() => {
+														setPrescriptionQuery(m.drug);
+														setmedicinesSearchOpen(false);
+													}}
+												>
+													{m.brand}
+												</CommandItem>
+											))}
+										</CommandGroup>
+									</CommandList>
+								</Command>
+							</PopoverContent>
+						</Popover>
 						<ButtonGroup>
 							<Button variant="outline" className="flex items-center gap-2">
 								{medicineTypeValue}
