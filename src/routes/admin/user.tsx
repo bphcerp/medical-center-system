@@ -21,8 +21,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { client } from "../api/$";
 import { debounce } from "@/lib/utils";
+import { client } from "../api/$";
 
 export const Route = createFileRoute("/admin/user")({
 	component: Admin,
