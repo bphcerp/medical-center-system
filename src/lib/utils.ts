@@ -1,3 +1,4 @@
+import { redirect } from "@tanstack/react-router";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -6,12 +7,25 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const debounce = <I, O>(callback: (input: I) => O, wait: number) => {
-  let timeoutId: NodeJS.Timeout;
-  return (input: I) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => {
-      callback(input);
-    }, wait);
-  };
-}
+	let timeoutId: NodeJS.Timeout;
+	return (input: I) => {
+		clearTimeout(timeoutId);
+		timeoutId = setTimeout(() => {
+			callback(input);
+		}, wait);
+	};
+};
 
+export function handleUnauthorized(status: number) {
+	switch (status) {
+		case 401:
+			throw redirect({
+				to: "/login",
+			});
+		case 403:
+			alert("You don't have the permission to access this page.");
+			throw redirect({
+				to: "/",
+			});
+	}
+}

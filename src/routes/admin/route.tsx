@@ -19,11 +19,11 @@ function RouteComponent() {
 	return (
 		<SidebarProvider className="flex w-full items-stretch h-screen">
 			<AppSidebar />
-			<main className="flex-1 p-4 lg:p-10 pb-0">
+			<main className="flex-1 p-4 lg:p-10 pb-0 w-full">
 				<Outlet />
 			</main>
 		</SidebarProvider>
-	)
+	);
 }
 
 function AppSidebar() {
@@ -58,5 +58,5 @@ function AppSidebar() {
 				</SidebarGroup>
 			</SidebarContent>
 		</Sidebar>
-	)
+	);
 }

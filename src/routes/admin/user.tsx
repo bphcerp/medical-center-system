@@ -30,22 +30,21 @@ export const Route = createFileRoute("/admin/user")({
 		const rolesRes = await client.api.role.all.$get();
 		handleUnauthorized(rolesRes.status);
 
-		const rolesJson = (await rolesRes.json()).roles;
-		const usersJson = (await usersRes.json()).users;
+		const roles = (await rolesRes.json()).roles;
+		const users = (await usersRes.json()).users;
 
 		const rolesMap: { [key: number]: string } = {};
 
-		for (const role of rolesJson) {
+		for (const role of roles) {
 			rolesMap[role.id] = role.name;
 		}
 
 		return {
-			roles: rolesJson,
+			roles: roles,
 			rolesMap: rolesMap,
-			users: usersJson,
-		}
+			users: users,
+		};
 	},
-	staleTime: 0
 });
 
 function handleUnauthorized(status: number) {
@@ -53,12 +52,12 @@ function handleUnauthorized(status: number) {
 		case 401:
 			throw redirect({
 				to: "/login",
-			})
+			});
 		case 403:
 			alert("You don't have the permission to access this page.");
 			throw redirect({
 				to: "/",
-			})
+			});
 	}
 }
 
@@ -70,67 +69,63 @@ function Admin() {
 		const res = await client.api.user[":id"].$post({
 			param: { id: userId.toString() },
 			json: { role: roleId },
-		})
+		});
 		return res.status === 200;
-	}
+	};
 
 	const handleFilter = (query: string) => {
 		query = query.toLowerCase().trim();
 		if (query === "") {
 			setUsers(allUsers);
-			return
+			return;
 		}
 		const filtered = allUsers.filter(
 			(user) =>
 				user.name.toLowerCase().includes(query) ||
 				user.username.toLowerCase().includes(query),
-		)
+		);
 		setUsers(filtered);
-	}
+	};
 
 	return (
-		<div className="flex w-full">
-			<div className="flex flex-col gap-3 lg:w-3/4">
-				<div className="flex flex-wrap items-end gap-4 justify-between">
-					<h1 className="font-bold text-2xl">User Management</h1>
-					<InputGroup className="w-80">
-						<InputGroupAddon>
-							<Search />
-						</InputGroupAddon>
-						<InputGroupInput
-							type="search"
-							placeholder="Search by name or username"
-							className=""
-							onChange={(e) => handleFilter(e.target.value)}
-						/>
-					</InputGroup>
-				</div>
-				<div className="rounded-md border overflow-clip">
-					<Table>
-						<TableHeader className="">
-							<RowItem name="Name" username="Username" roleNode="Role" header />
-						</TableHeader>
-						<TableBody>
-							{users.map((user) => (
-								<RowItem
-									key={user.username}
-									name={user.name}
-									username={user.username}
-									roleNode={
-										<RoleSelect
-											role={user.role.toString()}
-											roles={roles}
-											setRole={(id) => handleRoleChange(user.id, id)}
-										/>
-									}
-								/>
-							))}
-						</TableBody>
-					</Table>
-				</div>
+		<div className="flex flex-col gap-3 lg:w-3/4">
+			<div className="flex flex-wrap items-start gap-4 justify-between">
+				<h1 className="font-bold text-2xl">User Management</h1>
+				<InputGroup className="w-80">
+					<InputGroupAddon>
+						<Search />
+					</InputGroupAddon>
+					<InputGroupInput
+						type="search"
+						placeholder="Search by name or username"
+						className=""
+						onChange={(e) => handleFilter(e.target.value)}
+					/>
+				</InputGroup>
 			</div>
+			<Table>
+				<TableHeader>
+					<RowItem name="Name" username="Username" roleNode="Role" header />
+				</TableHeader>
+				<TableBody>
+					{users.map((user) => (
+						<RowItem
+							key={user.username}
+							name={user.name}
+							username={user.username}
+							roleNode={
+								<RoleSelect
+									role={user.role.toString()}
+									roles={roles}
+									setRole={(id) => handleRoleChange(user.id, id)}
+								/>
+							}
+						/>
+					))}
+				</TableBody>
+			</Table>
 		</div>
-	)
+	);
 }
 
 function RoleSelect({
@@ -152,7 +147,7 @@ function RoleSelect({
 			// change this to some toast thing in the future
 			alert("Failed to update role");
 		}
-	}
+	};
 
 	return (
 		<div className="flex gap-2">
@@ -169,7 +164,7 @@ function RoleSelect({
 				</SelectContent>
 			</Select>
 		</div>
-	)
+	);
 }
 
 function RowItem({
@@ -184,12 +179,12 @@ function RowItem({
 	roleNode: React.ReactNode;
 }) {
 	return (
-		<TableRow className={"flex items-center"}>
-			<TableCell className="whitespace-break-spaces flex-2">{name}</TableCell>
-			<TableCell className={`flex-2 ${header ? "" : "font-mono"}`}>
+		<TableRow>
+			<TableCell className="w-2/5 whitespace-break-spaces">{name}</TableCell>
+			<TableCell className={`w-2/5 ${header ? "" : "font-mono"}`}>
 				{username}
 			</TableCell>
-			<TableCell className="flex-1">{roleNode}</TableCell>
+			<TableCell className="w-1/5">{roleNode}</TableCell>
 		</TableRow>
-	)
+	);
 }
