@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Search } from "lucide-react";
-import { useState } from "react";
+import type React from "react";
+import { useCallback, useState } from "react";
 import {
 	InputGroup,
 	InputGroupAddon,
@@ -21,6 +22,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { client } from "../api/$";
+import { debounce } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/user")({
 	component: Admin,
@@ -64,6 +66,10 @@ function handleUnauthorized(status: number) {
 function Admin() {
 	const { users: allUsers, roles } = Route.useLoaderData();
 	const [users, setUsers] = useState(allUsers);
+	const debounced = useCallback(
+		debounce((query: string) => handleFilter(query), 300),
+		[],
+	);
 
 	const handleRoleChange = async (userId: number, roleId: number) => {
 		const res = await client.api.user[":id"].$post({
@@ -98,14 +104,15 @@ function Admin() {
 					<InputGroupInput
 						type="search"
 						placeholder="Search by name or username"
-						className=""
-						onChange={(e) => handleFilter(e.target.value)}
+						onChange={(e) => debounced(e.target.value)}
 					/>
 				</InputGroup>
 			</div>
 			<Table>
 				<TableHeader>
-					<RowItem name="Name" username="Username" roleNode="Role" header />
+					<RowItem name="Name" username="Username" header>
+						Role
+					</RowItem>
 				</TableHeader>
 				<TableBody>
 					{users.map((user) => (
@@ -113,14 +120,13 @@ function Admin() {
 							key={user.username}
 							name={user.name}
 							username={user.username}
-							roleNode={
-								<RoleSelect
-									role={user.role.toString()}
-									roles={roles}
-									setRole={(id) => handleRoleChange(user.id, id)}
-								/>
-							}
-						/>
+						>
+							<RoleSelect
+								role={user.role.toString()}
+								roles={roles}
+								setRole={(id) => handleRoleChange(user.id, id)}
+							/>
+						</RowItem>
 					))}
 				</TableBody>
 			</Table>
@@ -138,20 +144,23 @@ function RoleSelect({
 	setRole: (roleId: number) => Promise<boolean>;
 }) {
 	const [roleId, setRoleId] = useState(role);
+	const [eagerRoleId, setEagerRoleId] = useState(role);
 
 	const handleSetRole = async (newRoleId: string) => {
+		setEagerRoleId(newRoleId);
 		const success = await setRole(Number(newRoleId));
 		if (success) {
 			setRoleId(newRoleId);
 		} else {
 			// change this to some toast thing in the future
+			setEagerRoleId(roleId);
 			alert("Failed to update role");
 		}
 	};
 
 	return (
 		<div className="flex gap-2">
-			<Select value={roleId} onValueChange={handleSetRole}>
+			<Select value={eagerRoleId} onValueChange={handleSetRole}>
 				<SelectTrigger size="sm" className="w-full focus-visible:ring-0">
 					<SelectValue />
 				</SelectTrigger>
@@ -170,21 +179,20 @@ function RoleSelect({
 function RowItem({
 	name,
 	username,
-	roleNode,
+	children,
 	header = false,
-}: {
+}: React.PropsWithChildren<{
 	header?: boolean;
 	name: string;
 	username: string;
-	roleNode: React.ReactNode;
-}) {
+}>) {
 	return (
 		<TableRow>
 			<TableCell className="w-2/5 whitespace-break-spaces">{name}</TableCell>
 			<TableCell className={`w-2/5 ${header ? "" : "font-mono"}`}>
 				{username}
 			</TableCell>
-			<TableCell className="w-1/5">{roleNode}</TableCell>
+			<TableCell className="w-1/5">{children}</TableCell>
 		</TableRow>
 	);
 }
