@@ -1,13 +1,12 @@
 import "dotenv/config";
 import { Hono, type MiddlewareHandler } from "hono";
 import type { JWTPayload } from "./auth";
-
-type Permissions = "test" | "vitals" | "manage-users" | "doctor";
+import type { Permission } from "./types";
 
 export const rbacCheck: ({
 	permissions,
 }: {
-	permissions: Permissions[];
+	permissions: Permission[];
 }) => MiddlewareHandler =
 	({ permissions }) =>
 	async (c, next) => {
