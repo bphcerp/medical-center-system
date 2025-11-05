@@ -3,7 +3,7 @@ import { arrayContains, eq, inArray, and, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import z from "zod";
-import { casesTable } from "@/db/case";
+import { casesTable, medicinesTable } from "@/db/case";
 import { caseLabReportsTable } from "@/db/lab";
 import {
 	dependentsTable,
@@ -140,6 +140,21 @@ const doctor = new Hono()
 		}
 
 		return c.json({ caseDetail });
+	})
+	.get("/medicines", async (c) => {
+		const medicines = await db
+			.selectDistinct({
+				drug: medicinesTable.drug,
+				brand: medicinesTable.brand,
+				type: medicinesTable.type,
+			})
+			.from(medicinesTable);
+
+		if (!medicines.length === 0) {
+			return c.json({ error: "Medicines data not found" }, 404);
+		}
+
+		return c.json({ medicines });
 	})
 	.post(
 		"updateCaseFinalizedState",
