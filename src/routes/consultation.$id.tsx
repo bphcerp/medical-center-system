@@ -52,8 +52,9 @@ function ConsultationPage() {
 	const { user, caseDetail } = Route.useLoaderData();
 	const { id } = Route.useParams();
 	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
-	const [finalizeButtonValue, setFinalizeButtonValue] =
-		useState<string>("Finalize (OPD)");
+	const [finalizeButtonValue, setFinalizeButtonValue] = useState<
+		"Finalize (OPD)" | "Admit" | "Referral"
+	>("Finalize (OPD)");
 	if (!caseDetail) {
 		return (
 			<div className="container mx-auto p-6">
