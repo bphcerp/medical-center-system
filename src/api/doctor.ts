@@ -150,7 +150,7 @@ const doctor = new Hono()
 			})
 			.from(medicinesTable);
 
-		if (!medicines.length === 0) {
+		if (medicines.length === 0) {
 			return c.json({ error: "Medicines data not found" }, 404);
 		}
 
