@@ -90,7 +90,7 @@ function Admin() {
 
 	return (
 		<div className="flex w-full">
-			<div className="m-10 flex flex-col gap-3 lg:w-3/4">
+			<div className="flex flex-col gap-3 lg:w-3/4">
 				<div className="flex flex-wrap items-end gap-4 justify-between">
 					<h1 className="font-bold text-2xl">User Management</h1>
 					<InputGroup className="w-80">
