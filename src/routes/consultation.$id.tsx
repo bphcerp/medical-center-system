@@ -43,7 +43,17 @@ export const Route = createFileRoute("/consultation/$id")({
 
 		const { caseDetail } = await consultationRes.json();
 
-		return { user, caseDetail };
+		const medicinesRes = await client.api.doctor.medicines.$get();
+
+		if (medicinesRes.status !== 200) {
+			throw new Error("Failed to fetch medicines details");
+		}
+
+		const { medicines } = await medicinesRes.json();
+
+		console.log(medicines);
+
+		return { user, caseDetail, medicines };
 	},
 	component: ConsultationPage,
 });
