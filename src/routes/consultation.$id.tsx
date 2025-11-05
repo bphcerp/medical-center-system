@@ -51,20 +51,21 @@ export const Route = createFileRoute("/consultation/$id")({
 
 		const { medicines } = await medicinesRes.json();
 
-		console.log(medicines);
-
 		return { user, caseDetail, medicines };
 	},
 	component: ConsultationPage,
 });
 
 function ConsultationPage() {
-	const { user, caseDetail } = Route.useLoaderData();
+	const { user, caseDetail, medicines } = Route.useLoaderData();
+	const medicinesTypes = [...new Set(medicines.map((m) => m.type))].sort();
 	const { id } = Route.useParams();
 	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
+	const [medicineTypeValue, setMedicineTypeValue] = useState<string>("Type");
 	const [finalizeButtonValue, setFinalizeButtonValue] = useState<
 		"Finalize (OPD)" | "Admit" | "Referral"
 	>("Finalize (OPD)");
+
 	if (!caseDetail) {
 		return (
 			<div className="container mx-auto p-6">
@@ -228,10 +229,28 @@ function ConsultationPage() {
 								onChange={(e) => setPrescriptionQuery(e.target.value)}
 							/>
 						</div>
-						<Button variant="outline" className="flex items-center gap-2">
-							Type
-							<ChevronDown className="h-4 w-4 opacity-70" />
-						</Button>
+						<ButtonGroup>
+							<Button variant="outline" className="flex items-center gap-2">
+								{medicineTypeValue}
+							</Button>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button variant="outline">
+										<ChevronDown />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									{medicinesTypes.map((m) => (
+										<DropdownMenuItem
+											key={m}
+											onClick={() => setMedicineTypeValue(m)}
+										>
+											{m}
+										</DropdownMenuItem>
+									))}
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</ButtonGroup>
 					</div>
 				</Card>
 				<Card className="col-span-4 row-span-1 rounded-tr-none rounded-tl-none py-2 px-2">
@@ -244,7 +263,7 @@ function ConsultationPage() {
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<Button variant="outline">
-										<ChevronDown className="ml-2 h-4 w-4 opacity-70" />
+										<ChevronDown />
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent align="end">
