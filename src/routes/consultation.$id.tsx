@@ -1,16 +1,22 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { client } from "./api/$";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
-import { Search, ChevronDown } from "lucide-react";
+import { Search, ChevronDown, ChevronsUpDown, Trash2 } from "lucide-react";
 import { Label } from "@radix-ui/react-label";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import { ChevronsUpDown } from "lucide-react";
+import {
+	Table,
+	TableHeader,
+	TableBody,
+	TableHead,
+	TableRow,
+	TableCell,
+} from "@/components/ui/table";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -30,6 +36,15 @@ import {
 	PopoverTrigger,
 	PopoverContent,
 } from "@/components/ui/popover";
+
+type PrescriptionItem = {
+	id: number;
+	medicine: string;
+	dosage: string;
+	frequency: string;
+	duration: string;
+	comments: string;
+};
 
 export const Route = createFileRoute("/consultation/$id")({
 	loader: async ({ params }: { params: { id: string } }) => {
@@ -65,6 +80,7 @@ export const Route = createFileRoute("/consultation/$id")({
 		}
 
 		const { medicines } = await medicinesRes.json();
+		// console.log(medicines);
 
 		return { user, caseDetail, medicines };
 	},
@@ -72,7 +88,7 @@ export const Route = createFileRoute("/consultation/$id")({
 });
 
 function ConsultationPage() {
-	const { user, caseDetail, medicines } = Route.useLoaderData();
+	const { caseDetail, medicines } = Route.useLoaderData();
 	const medicinesTypes = [...new Set(medicines.map((m) => m.type))].sort();
 	const { id } = Route.useParams();
 	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
@@ -82,6 +98,9 @@ function ConsultationPage() {
 	>("Finalize (OPD)");
 	const [medicinesSearchOpen, setmedicinesSearchOpen] =
 		useState<boolean>(false);
+	const [prescriptionItems, setPrescriptionItems] = useState<
+		PrescriptionItem[]
+	>([]);
 
 	const filteredMedicines = medicines.filter((m) => {
 		const matchesType =
@@ -94,6 +113,43 @@ function ConsultationPage() {
 
 		return matchesType && matchesQuery;
 	});
+
+	const handleAddMedicine = (medicineName: string, medicineId: number) => {
+		//heck if medicine already exists in the prescription
+		if (prescriptionItems.some((item) => item.medicine === medicineName)) {
+			alert("This medicine is already in the prescription");
+			return;
+		}
+
+		const newItem: PrescriptionItem = {
+			id: medicineId,
+			medicine: medicineName,
+			dosage: "",
+			frequency: "",
+			duration: "",
+			comments: "",
+		};
+
+		setPrescriptionItems([...prescriptionItems, newItem]);
+		setPrescriptionQuery("");
+	};
+
+	const handleUpdatePrescriptionItem = (
+		id: number,
+		field: keyof Omit<PrescriptionItem, "id" | "medicine">,
+		value: string,
+	) => {
+		setPrescriptionItems(
+			prescriptionItems.map((item) =>
+				item.id === id ? { ...item, [field]: value } : item,
+			),
+		);
+		// console.log("set smth");
+	};
+
+	const handleRemovePrescriptionItem = (id: number) => {
+		setPrescriptionItems(prescriptionItems.filter((item) => item.id !== id));
+	};
 
 	if (!caseDetail) {
 		return (
@@ -282,7 +338,7 @@ function ConsultationPage() {
 												<CommandItem
 													key={`${m.drug}-${m.brand}-${m.type}`}
 													onSelect={() => {
-														setPrescriptionQuery(m.drug);
+														handleAddMedicine(m.brand, m.id);//chekc by brand instead of drug name
 														setmedicinesSearchOpen(false);
 													}}
 												>
@@ -317,6 +373,97 @@ function ConsultationPage() {
 							</DropdownMenu>
 						</ButtonGroup>
 					</div>
+					{prescriptionItems.length > 0 && (
+						<div className="mx-3 mt-4">
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Medicine</TableHead>
+										<TableHead>Dosage</TableHead>
+										<TableHead>Frequency</TableHead>
+										<TableHead>Duration</TableHead>
+										<TableHead>Comments</TableHead>
+										<TableHead className="w-[50px]"></TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{prescriptionItems.map((item) => (
+										<TableRow key={item.id}>
+											<TableCell className="font-medium">
+												{item.medicine}
+											</TableCell>
+											<TableCell>
+												<Input
+													value={item.dosage}
+													onChange={(e) =>
+														handleUpdatePrescriptionItem(
+															item.id,
+															"dosage",
+															e.target.value,
+														)
+													}
+													placeholder="e.g., 500mg"
+													className="h-8"
+												/>
+											</TableCell>
+											<TableCell>
+												<Input
+													value={item.frequency}
+													onChange={(e) =>
+														handleUpdatePrescriptionItem(
+															item.id,
+															"frequency",
+															e.target.value,
+														)
+													}
+													placeholder="e.g., 2x daily"
+													className="h-8"
+												/>
+											</TableCell>
+											<TableCell>
+												<Input
+													value={item.duration}
+													onChange={(e) =>
+														handleUpdatePrescriptionItem(
+															item.id,
+															"duration",
+															e.target.value,
+														)
+													}
+													placeholder="e.g., 7 days"
+													className="h-8"
+												/>
+											</TableCell>
+											<TableCell>
+												<Input
+													value={item.comments}
+													onChange={(e) =>
+														handleUpdatePrescriptionItem(
+															item.id,
+															"comments",
+															e.target.value,
+														)
+													}
+													placeholder="Optional notes"
+													className="h-8"
+												/>
+											</TableCell>
+											<TableCell>
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={() => handleRemovePrescriptionItem(item.id)}
+													className="h-8 w-8 p-0"
+												>
+													<Trash2 className="h-4 w-4" />
+												</Button>
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</div>
+					)}
 				</Card>
 				<Card className="col-span-4 row-span-1 rounded-tr-none rounded-tl-none py-2 px-2">
 					<div className="flex justify-end">
