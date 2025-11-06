@@ -180,6 +180,32 @@ function ConsultationPage() {
 				return;
 		}
 		try {
+			// doc may or may not give meds
+			if (prescriptionItems.length > 0) {
+				const prescriptionsRes = await client.api.doctor.prescriptions.$post({
+					json: {
+						caseId: Number(id),
+						prescriptions: prescriptionItems.map((item) => ({
+							medicineId: item.id,
+							dosage: item.dosage,
+							frequency: item.frequency,
+							comment: item.comments,
+						})),
+					},
+				});
+
+				if (prescriptionsRes.status !== 200) {
+					const error = await prescriptionsRes.json();
+					alert(
+						"error" in error
+							? error.error
+							: "Failed to save prescriptions",
+					);
+					return;
+				}
+			}
+
+			// Update finalized state
 			const res = await (
 				await client.api.doctor.updateCaseFinalizedState.$post({
 					json: {
@@ -471,6 +497,7 @@ function ConsultationPage() {
 							<Button variant="outline">Request Lab Tests</Button>
 							<Button variant="outline" onClick={handleFinalize}>
 								{finalizeButtonValue}
+								{/* TODO: close the case after button is clicked */}
 							</Button>
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
