@@ -3,7 +3,7 @@ import { arrayContains, eq, inArray, and, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import z from "zod";
-import { casesTable, medicinesTable } from "@/db/case";
+import { casesTable, medicinesTable, casePrescriptionsTable } from "@/db/case";
 import { caseLabReportsTable } from "@/db/lab";
 import {
 	dependentsTable,
@@ -189,6 +189,45 @@ const doctor = new Hono()
 				success: true,
 				message: "Finalized state updated successfully",
 				case: updated[0],
+			});
+		},
+	)
+	.post(
+		"/prescriptions",
+		zValidator(
+			"json",
+			z.object({
+				caseId: z.number().int(),
+				prescriptions: z.array(
+					z.object({
+						medicineId: z.number().int(),
+						dosage: z.string(),
+						frequency: z.string(),
+						comment: z.string().optional(),
+					}),
+				),
+			}),
+		),
+		async (c) => {
+			const { caseId, prescriptions } = c.req.valid("json");
+
+			const inserted = await db
+				.insert(casePrescriptionsTable)
+				.values(
+					prescriptions.map((p) => ({
+						caseId,
+						medicineId: p.medicineId,
+						dosage: p.dosage,
+						frequency: p.frequency,
+						comment: p.comment || null,
+					})),
+				)
+				.returning();
+
+			return c.json({
+				success: true,
+				message: "Prescriptions added successfully",
+				prescriptions: inserted,
 			});
 		},
 	);
