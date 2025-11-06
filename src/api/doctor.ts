@@ -143,12 +143,18 @@ const doctor = new Hono()
 	})
 	.get("/medicines", async (c) => {
 		const medicines = await db
-			.selectDistinct({
+			.select({
+				id: sql<number>`MIN(${medicinesTable.id})`.as("id"),
 				drug: medicinesTable.drug,
 				brand: medicinesTable.brand,
 				type: medicinesTable.type,
 			})
-			.from(medicinesTable);
+			.from(medicinesTable)
+			.groupBy(
+				medicinesTable.drug,
+				medicinesTable.brand,
+				medicinesTable.type
+			);
 
 		if (medicines.length === 0) {
 			return c.json({ error: "Medicines data not found" }, 404);
