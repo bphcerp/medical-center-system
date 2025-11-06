@@ -1,7 +1,8 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { Search } from "lucide-react";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { ArrowLeftRight, Search } from "lucide-react";
 import type React from "react";
 import { useCallback, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
 	InputGroup,
 	InputGroupAddon,
@@ -96,19 +97,26 @@ function Admin() {
 	};
 
 	return (
-		<div className="flex flex-col gap-3 lg:w-3/4">
-			<div className="flex flex-wrap items-start gap-4 justify-between">
+		<div className="flex flex-col p-4 lg:p-10 lg:w-3/4">
+			<div className="flex flex-wrap items-center gap-4 justify-between mb-3">
 				<h1 className="font-bold text-2xl">User Management</h1>
-				<InputGroup className="w-80">
-					<InputGroupAddon>
-						<Search />
-					</InputGroupAddon>
-					<InputGroupInput
-						type="search"
-						placeholder="Search by name or username"
-						onChange={(e) => debounced(e.target.value)}
-					/>
-				</InputGroup>
+				<div className="flex gap-4 items-center">
+					<Link to="/admin/role">
+						<Button variant="link" className="p-0">
+							<ArrowLeftRight /> Manage roles
+						</Button>
+					</Link>
+					<InputGroup className="w-80">
+						<InputGroupAddon>
+							<Search />
+						</InputGroupAddon>
+						<InputGroupInput
+							type="search"
+							placeholder="Search by name or username"
+							onChange={(e) => debounced(e.target.value)}
+						/>
+					</InputGroup>
+				</div>
 			</div>
 			<Table>
 				<TableHeader>

@@ -1,9 +1,13 @@
 import { SelectTrigger } from "@radix-ui/react-select";
-import { createFileRoute } from "@tanstack/react-router";
-import { Plus, X } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowLeftRight, Plus, X } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { type Permission, Permissions } from "@/api/types";
+import {
+	type Permission,
+	permissionDescriptions,
+	permissions,
+} from "@/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,8 +52,15 @@ function RouteComponent() {
 	};
 
 	return (
-		<div className="flex flex-col gap-3 lg:w-3/4">
-			<h1 className="text-2xl font-bold">Role Management</h1>
+		<div className="flex flex-col p-4 lg:p-10 lg:w-3/4 itms-start gap-3">
+			<div className="flex items-center justify-between">
+				<h1 className="text-2xl font-bold">Role Management</h1>
+				<Link to="/admin/user">
+					<Button variant="link" className="p-0">
+						<ArrowLeftRight /> Manage users
+					</Button>
+				</Link>
+			</div>
 			<Table>
 				<TableHeader>
 					<TableRow>
@@ -83,7 +94,7 @@ function RowItem({
 }) {
 	const [perms, setPerms] = useState(originalPerms);
 	const [unusedPerms, setUnusedPerms] = useState(
-		Permissions.filter((p) => !originalPerms.includes(p)),
+		permissions.filter((p) => !originalPerms.includes(p)),
 	);
 
 	const [editMode, setEditMode] = useState(false);
@@ -100,17 +111,20 @@ function RowItem({
 		setUnusedPerms((prev) => prev.filter((p) => p !== perm));
 	};
 
+	const resetPerms = () => {
+		setPerms(originalPerms);
+		setUnusedPerms(permissions.filter((p) => !originalPerms.includes(p)));
+	}
+
 	const handleCancelEdit = () => {
 		setEditMode(false);
-		setPerms(originalPerms);
-		setUnusedPerms(Permissions.filter((p) => !originalPerms.includes(p)));
+		resetPerms();
 	};
 
 	const handleSaveEdit = async () => {
 		const success = await onSave?.(perms);
 		if (!success) {
-			setPerms(originalPerms);
-			setUnusedPerms(Permissions.filter((p) => !originalPerms.includes(p)));
+			resetPerms();
 			alert("Failed to update permissions");
 		}
 		setEditMode(false);
@@ -121,11 +135,9 @@ function RowItem({
 			<TableCell>{name}</TableCell>
 
 			<TableCell
-				className={`flex transition-(--p) gap-6 pr-2 ${editMode ? "py-4" : ""}`}
+				className={`flex transition-all gap-6 pr-2 ${editMode ? "py-4" : ""}`}
 			>
-				<div
-					className="flex flex-1 flex-wrap transition-all gap-2 items-center"
-				>
+				<div className="flex flex-1 flex-wrap transition-all gap-2 items-center">
 					<Select
 						onValueChange={(e) => handleAddPerm(e as Permission)}
 						disabled={unusedPerms.length === 0}
@@ -148,7 +160,10 @@ function RowItem({
 
 								{unusedPerms.map((p) => (
 									<SelectItem value={p} key={p}>
-										{p}
+										<div className="flex flex-col">
+											<span className="font-medium">{p}</span>
+											<span className="text-muted-foreground text-xs">{permissionDescriptions[p]}</span>
+										</div>
 									</SelectItem>
 								))}
 							</SelectGroup>
