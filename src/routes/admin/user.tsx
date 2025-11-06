@@ -10,7 +10,9 @@ import {
 import {
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
+	SelectLabel,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
@@ -165,11 +167,14 @@ function RoleSelect({
 					<SelectValue />
 				</SelectTrigger>
 				<SelectContent>
-					{roles.map((r) => (
-						<SelectItem key={r.id} value={r.id.toString()}>
-							{r.name}
-						</SelectItem>
-					))}
+					<SelectGroup>
+						<SelectLabel>Roles</SelectLabel>
+						{roles.map((r) => (
+							<SelectItem key={r.id} value={r.id.toString()}>
+								{r.name}
+							</SelectItem>
+						))}
+					</SelectGroup>
 				</SelectContent>
 			</Select>
 		</div>
