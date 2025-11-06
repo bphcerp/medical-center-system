@@ -3,11 +3,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeftRight, Plus, X } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import {
-	type Permission,
-	permissionDescriptions,
-	permissions,
-} from "@/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +19,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import {
+	type Permission,
+	permissionDescriptions,
+	permissions,
+} from "@/lib/types/permissions";
 import { cn, handleUnauthorized } from "@/lib/utils";
 import { client } from "../api/$";
 
