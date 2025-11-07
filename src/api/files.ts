@@ -28,12 +28,12 @@ const app = new Hono()
 				type: file.type,
 			});
 
-			const { fid } = await seaweedfs.uploadFile(file);
+			const { fid, url } = await seaweedfs.uploadFile(file);
 
 			const [fileRecord] = await db
 				.insert(filesTable)
 				.values({
-					url: `http://seaweedfs-volume:8080/${fid}`,
+					url: url,
 					// setup allowed array here
 				})
 				.returning();
