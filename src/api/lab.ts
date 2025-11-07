@@ -20,7 +20,7 @@ const resultSubmissionSchema = z.object({
 
 const lab = new Hono()
 	.basePath("/lab")
-	//.use(rbacCheck({ permissions: ["lab-entry"] }))
+	.use(rbacCheck({ permissions: ["lab-entry"] }))
 
 	.get("/pending", async (c) => {
 		const pendingReports = await db
