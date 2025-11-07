@@ -6,56 +6,15 @@ import env from "@/config/env";
 import { db } from "./index";
 import { filesTable } from "@/db/files";
 import { SeaweedFSClient } from "@/lib/seaweedfs";
+import { rbacCheck } from "./rbac";
 
-const seaweedfs = new SeaweedFSClient(env.SEAWEEDFS_MASTER);
+export const seaweedfs = new SeaweedFSClient(env.SEAWEEDFS_MASTER);
 
 const app = new Hono()
 	.basePath("/files")
-	.post(
-		"/upload",
-		zValidator(
-			"form",
-			z.object({
-				file: z.instanceof(File),
-			}),
-		),
-		async (c) => {
-			const { file } = c.req.valid("form");
 
-			console.log("Uploading file:", {
-				name: file.name,
-				size: file.size,
-				type: file.type,
-			});
-
-			const { fid, url } = await seaweedfs.uploadFile(file);
-
-			const [fileRecord] = await db
-				.insert(filesTable)
-				.values({
-					url: url,
-					// setup allowed array here
-				})
-				.returning();
-
-			const publicUrl = `/api/files/get/${fileRecord.id}`;
-
-			return c.json({
-				success: true,
-				file: {
-					id: fileRecord.id,
-					fid: fid,
-					url: publicUrl,
-					filename: file.name,
-					size: file.size,
-					type: file.type,
-				},
-			});
-		},
-	)
-	.get("/list", async (c) => {
+	.get("/list", rbacCheck({ permissions: ["manage-users"] }), async (c) => {
 		const files = await db.select().from(filesTable);
-
 		return c.json({
 			success: true,
 			files: files.map((file) => ({
@@ -66,15 +25,10 @@ const app = new Hono()
 	})
 	.get(
 		"/info/:id",
-		zValidator(
-			"param",
-			z.object({
-				id: z.coerce.number(),
-			}),
-		),
+		rbacCheck({ permissions: ["manage-users"] }),
+		zValidator("param", z.object({ id: z.coerce.number() })),
 		async (c) => {
 			const { id } = c.req.valid("param");
-
 			const [file] = await db
 				.select()
 				.from(filesTable)
@@ -82,21 +36,11 @@ const app = new Hono()
 				.limit(1);
 
 			if (!file) {
-				return c.json(
-					{
-						success: false,
-						error: "File not found",
-					},
-					404,
-				);
+				return c.json({ success: false, error: "File not found" }, 404);
 			}
-
 			return c.json({
 				success: true,
-				file: {
-					id: file.id,
-					url: `/api/files/get/${file.id}`,
-				},
+				file: { id: file.id, url: `/api/files/get/${file.id}` },
 			});
 		},
 	)
@@ -110,6 +54,11 @@ const app = new Hono()
 		),
 		async (c) => {
 			const { id } = c.req.valid("param");
+			const payload = c.var.jwtPayload as {
+				id: number;
+				[key: string]: unknown;
+			};
+			const userId = payload.id;
 
 			const [file] = await db
 				.select()
@@ -121,7 +70,9 @@ const app = new Hono()
 				return c.json({ success: false, error: "File not found" }, 404);
 			}
 
-			// allowed check here
+			if (!file.allowed.includes(userId)) {
+				return c.json({ success: false, error: "Access forbidden" }, 403);
+			}
 
 			const fileResponse = await fetch(file.url);
 
@@ -143,43 +94,6 @@ const app = new Hono()
 			);
 
 			if (fileResponse.body) return c.body(fileResponse.body);
-		},
-	)
-	.delete(
-		"/:id",
-		zValidator(
-			"param",
-			z.object({
-				id: z.coerce.number(),
-			}),
-		),
-		async (c) => {
-			const { id } = c.req.valid("param");
-
-			const [file] = await db
-				.select()
-				.from(filesTable)
-				.where(eq(filesTable.id, id))
-				.limit(1);
-
-			if (!file) {
-				return c.json(
-					{
-						success: false,
-						error: "File not found",
-					},
-					404,
-				);
-			}
-
-			await seaweedfs.deleteFile(file.url);
-
-			await db.delete(filesTable).where(eq(filesTable.id, id));
-
-			return c.json({
-				success: true,
-				message: "File deleted successfully",
-			});
 		},
 	);
 
