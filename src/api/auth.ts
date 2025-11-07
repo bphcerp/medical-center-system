@@ -21,6 +21,8 @@ import user from "./user";
 import vitals from "./vitals";
 import doctor from "./doctor";
 import role from "./role";
+import lab from "./lab";
+import files from "./files";
 
 export type JWTPayload = {
 	passwordHash: null;
@@ -295,4 +297,6 @@ export const authenticated = new Hono()
 	.route("/user", user)
 	.route("/rbac", rbac)
 	.route("/vitals", vitals)
-	.route("/doctor", doctor);
+	.route("/doctor", doctor)
+	.route("/", lab)
+	.route("/", files);
