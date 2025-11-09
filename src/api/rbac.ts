@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { Hono, type MiddlewareHandler } from "hono";
-import type { JWTPayload } from "./auth";
 import type { Permission } from "@/lib/types/permissions";
+import type { JWTPayload } from "./auth";
 
 export const rbacCheck: ({
 	permissions,
