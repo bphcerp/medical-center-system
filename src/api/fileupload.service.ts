@@ -1,6 +1,6 @@
-import { db } from "./index";
 import { filesTable } from "@/db/files";
 import { seaweedfs } from "./files";
+import { db } from "./index";
 
 export async function uploadFileService(file: File, allowed: number[] = []) {
 	const { fid, url } = await seaweedfs.uploadFile(file);

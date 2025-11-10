@@ -1,8 +1,8 @@
 import {
 	createFileRoute,
 	Link,
-	useRouter,
 	redirect,
+	useRouter,
 } from "@tanstack/react-router";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -78,24 +78,22 @@ function LabDashboard() {
 					</TableHeader>
 					<TableBody>
 						{reports.length > 0 ? (
-							<>
-								{reports.map((req) => (
-									<TableRow key={req.reportId}>
-										<TableCell>{req.caseId}</TableCell>
-										<TableCell>{req.patientName}</TableCell>
-										<TableCell>{req.doctorName}</TableCell>
-										<TableCell>{req.testsRequested}</TableCell>
-										<TableCell>
-											<Link
-												to="/result-entry/$reportId"
-												params={{ reportId: String(req.reportId) }}
-											>
-												<Button variant="outline">Enter Results</Button>
-											</Link>
-										</TableCell>
-									</TableRow>
-								))}
-							</>
+							reports.map((req) => (
+								<TableRow key={req.reportId}>
+									<TableCell>{req.caseId}</TableCell>
+									<TableCell>{req.patientName}</TableCell>
+									<TableCell>{req.doctorName}</TableCell>
+									<TableCell>{req.testsRequested}</TableCell>
+									<TableCell>
+										<Link
+											to="/result-entry/$reportId"
+											params={{ reportId: String(req.reportId) }}
+										>
+											<Button variant="outline">Enter Results</Button>
+										</Link>
+									</TableCell>
+								</TableRow>
+							))
 						) : (
 							<TableRow>
 								<TableCell

@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { useId, useMemo, useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,7 +69,15 @@ function ResultEntry() {
 	const [uploading, setUploading] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const [labResults, setLabResults] = (useState as any)({
+	const rbcCountId = useId();
+	const plateletCountId = useId();
+	const wbcCountId = useId();
+	const glucoseId = useId();
+	const haemoglobinId = useId();
+	const creatinineId = useId();
+	const fileInputId = useId();
+
+	const [labResults, setLabResults] = useState<typeof INITIAL_RESULTS>({
 		...INITIAL_RESULTS,
 		...initialResults,
 	});
@@ -96,13 +104,17 @@ function ResultEntry() {
 			});
 
 			if (!res.ok) {
-				const errorData: any = await res
+				const errorData = await res
 					.json()
 					.catch(() => ({ error: "Unknown network error" }));
-				alert(
-					"Upload failed: " +
-						(errorData.error || res.statusText || "Unknown error"),
-				);
+				if ("error" in errorData) {
+					alert(
+						"Upload failed: " +
+							(errorData.error || res.statusText || "Unknown error"),
+					);
+				} else {
+					alert(`Upload failed: ${res.statusText || "Unknown error"}`);
+				}
 				return;
 			}
 
@@ -119,7 +131,7 @@ function ResultEntry() {
 			}
 		} catch (error) {
 			console.error("Upload error:", error);
-			alert("Upload failed: " + String(error));
+			alert(`Upload failed: ${String(error)}`);
 		} finally {
 			setUploading(false);
 		}
@@ -154,7 +166,7 @@ function ResultEntry() {
 			}
 		} catch (error) {
 			console.error("Submission error:", error);
-			alert("Submission failed: " + String(error));
+			alert(`Submission failed: ${String(error)}`);
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -216,9 +228,9 @@ function ResultEntry() {
 					<CardContent className="space-y-4">
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<div>
-								<Label htmlFor="rbc_count">RBC Count</Label>
+								<Label htmlFor={rbcCountId}>RBC Count</Label>
 								<Input
-									id="rbc_count"
+									id={rbcCountId}
 									type="text"
 									value={labResults.rbc_count || ""}
 									onChange={(e) =>
@@ -228,9 +240,9 @@ function ResultEntry() {
 								/>
 							</div>
 							<div>
-								<Label htmlFor="platelet_count">Platelet Count</Label>
+								<Label htmlFor={plateletCountId}>Platelet Count</Label>
 								<Input
-									id="platelet_count"
+									id={plateletCountId}
 									type="text"
 									value={labResults.platelet_count || ""}
 									onChange={(e) =>
@@ -240,9 +252,9 @@ function ResultEntry() {
 								/>
 							</div>
 							<div>
-								<Label htmlFor="wbc_count">WBC Count</Label>
+								<Label htmlFor={wbcCountId}>WBC Count</Label>
 								<Input
-									id="wbc_count"
+									id={wbcCountId}
 									type="text"
 									value={labResults.wbc_count || ""}
 									onChange={(e) =>
@@ -252,9 +264,9 @@ function ResultEntry() {
 								/>
 							</div>
 							<div>
-								<Label htmlFor="glucose">Glucose</Label>
+								<Label htmlFor={glucoseId}>Glucose</Label>
 								<Input
-									id="glucose"
+									id={glucoseId}
 									type="text"
 									value={labResults.glucose || ""}
 									onChange={(e) =>
@@ -264,9 +276,9 @@ function ResultEntry() {
 								/>
 							</div>
 							<div>
-								<Label htmlFor="haemoglobin">Haemoglobin</Label>
+								<Label htmlFor={haemoglobinId}>Haemoglobin</Label>
 								<Input
-									id="haemoglobin"
+									id={haemoglobinId}
 									type="text"
 									value={labResults.haemoglobin || ""}
 									onChange={(e) =>
@@ -276,9 +288,9 @@ function ResultEntry() {
 								/>
 							</div>
 							<div>
-								<Label htmlFor="creatinine">Creatinine</Label>
+								<Label htmlFor={creatinineId}>Creatinine</Label>
 								<Input
-									id="creatinine"
+									id={creatinineId}
 									type="text"
 									value={labResults.creatinine || ""}
 									onChange={(e) =>
@@ -297,9 +309,9 @@ function ResultEntry() {
 					</CardHeader>
 					<CardContent className="space-y-4">
 						<div>
-							<Label htmlFor="file">Select File</Label>
+							<Label htmlFor={fileInputId}>Select File</Label>
 							<Input
-								id="file"
+								id={fileInputId}
 								type="file"
 								onChange={handleFileChange}
 								accept=".pdf,.jpg,.jpeg,.png"
