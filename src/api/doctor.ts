@@ -1,9 +1,9 @@
 import "dotenv/config";
-import { arrayContains, eq, inArray, and, sql } from "drizzle-orm";
-import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
+import { and, arrayContains, eq, inArray, isNull, sql } from "drizzle-orm";
+import { Hono } from "hono";
 import z from "zod";
-import { casesTable } from "@/db/case";
+import { casePrescriptionsTable, casesTable, medicinesTable } from "@/db/case";
 import { caseLabReportsTable } from "@/db/lab";
 import {
 	dependentsTable,
@@ -13,8 +13,8 @@ import {
 	visitorsTable,
 } from "@/db/patient";
 import { db } from ".";
-import { rbacCheck } from "./rbac";
 import type { JWTPayload } from "./auth";
+import { rbacCheck } from "./rbac";
 
 const doctor = new Hono()
 	.use(rbacCheck({ permissions: ["doctor"] }))
@@ -141,33 +141,73 @@ const doctor = new Hono()
 
 		return c.json({ caseDetail });
 	})
+	.get("/medicines", async (c) => {
+		const medicines = await db.select().from(medicinesTable);
+
+		if (medicines.length === 0) {
+			return c.json({ error: "Medicines data not found" }, 404);
+		}
+
+		return c.json({ medicines });
+	})
 	.post(
-		"updateCaseFinalizedState",
+		"finalizeCase",
 		zValidator(
 			"json",
 			z.object({
 				caseId: z.number().int(),
 				finalizedState: z.enum(["opd", "admitted", "referred"]),
+				prescriptions: z.array(
+					z.object({
+						medicineId: z.number().int(),
+						dosage: z.string(),
+						frequency: z.string(),
+						comment: z.string().optional(),
+					}),
+				),
 			}),
 		),
 		async (c) => {
-			const { caseId, finalizedState } = c.req.valid("json");
-			const updated = await db
-				.update(casesTable)
-				.set({
-					finalizedState,
-				})
-				.where(eq(casesTable.id, caseId))
-				.returning();
+			const payload = c.get("jwtPayload") as JWTPayload;
+			const userId = payload.id;
+			const { caseId, finalizedState, prescriptions } = c.req.valid("json");
 
-			if (updated.length === 0) {
-				return c.json({ success: false, message: "Case not found" }, 404);
-			}
+			await db.transaction(async (tx) => {
+				const updated = await tx
+					.update(casesTable)
+					.set({
+						finalizedState,
+					})
+					.where(
+						and(
+							eq(casesTable.id, caseId),
+							arrayContains(casesTable.associatedUsers, [userId]),
+							isNull(casesTable.finalizedState),
+						),
+					)
+					.returning();
+
+				if (updated.length === 0) {
+					throw new Error("Case not found");
+				}
+
+				if (prescriptions.length === 0) {
+					return;
+				}
+				await tx.insert(casePrescriptionsTable).values(
+					prescriptions.map((p) => ({
+						caseId,
+						medicineId: p.medicineId,
+						dosage: p.dosage,
+						frequency: p.frequency,
+						comment: p.comment || null,
+					})),
+				);
+			});
 
 			return c.json({
 				success: true,
 				message: "Finalized state updated successfully",
-				case: updated[0],
 			});
 		},
 	);
