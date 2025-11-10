@@ -1,28 +1,10 @@
+import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { ChevronDown, ChevronsUpDown, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { Label } from "@radix-ui/react-label";
-import { client } from "./api/$";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import { Input } from "@/components/ui/input";
-import { Field, FieldLabel } from "@/components/ui/field";
-import { Textarea } from "@/components/ui/textarea";
-import {
-	Table,
-	TableHeader,
-	TableBody,
-	TableHead,
-	TableRow,
-	TableCell,
-} from "@/components/ui/table";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Card } from "@/components/ui/card";
 import {
 	Command,
 	CommandEmpty,
@@ -32,14 +14,28 @@ import {
 	CommandList,
 } from "@/components/ui/command";
 import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
+import { client } from "./api/$";
 
 type PrescriptionItem = {
 	id: number;
-	medicine: string;
+	drug: string;
+	brand: string;
+	company: string;
+	strength: string;
+	type: string;
 	dosage: string;
 	frequency: string;
 	duration: string;
@@ -95,36 +91,72 @@ function ConsultationPage() {
 	const [finalizeButtonValue, setFinalizeButtonValue] = useState<
 		"Finalize (OPD)" | "Admit" | "Referral"
 	>("Finalize (OPD)");
+
 	const [medicineFilter, setMedicineFilter] = useState<string | null>(null);
 
 	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
-	const [medicinesSearchOpen, setmedicinesSearchOpen] =
+
+	const [medicinesSearchOpen, setMedicinesSearchOpen] =
 		useState<boolean>(false);
+
 	const [prescriptionItems, setPrescriptionItems] = useState<
 		PrescriptionItem[]
 	>([]);
 
-	const filteredMedicines = medicines.filter((m) => {
-		const matchesType = !medicineFilter || medicineFilter === "Type" || m.type === medicineFilter;
+	const filteredMedicines = medicines
+		.reduce(
+			(acc, medicine) => {
+				const matchesType = !medicineFilter || medicine.type === medicineFilter;
+				if (prescriptionQuery === "" && matchesType) {
+					acc.push({
+						medicine,
+						count: 0,
+					});
+					return acc;
+				}
 
-		const matchesQuery =
-			prescriptionQuery === "" ||
-			m.drug.toLowerCase().includes(prescriptionQuery.toLowerCase()) ||
-			m.brand.toLowerCase().includes(prescriptionQuery.toLowerCase());
+				const count = prescriptionQuery
+					.trim()
+					.split(/\s+/)
+					.reduce((count, term) => {
+						return (
+							count +
+							(medicine.drug.toLowerCase().includes(term.toLowerCase()) ||
+							medicine.brand.toLowerCase().includes(term.toLowerCase()) ||
+							medicine.company.toLowerCase().includes(term.toLowerCase()) ||
+							medicine.type.toLowerCase().includes(term.toLowerCase())
+								? 1
+								: 0)
+						);
+					}, 0);
 
-		return matchesType && matchesQuery;
-	});
+				if (count > 0 && matchesType) {
+					acc.push({
+						medicine,
+						count,
+					});
+				}
+				return acc;
+			},
+			[] as { medicine: (typeof medicines)[0]; count: number }[],
+		)
+		.sort((a, b) => b.count - a.count);
 
-	const handleAddMedicine = (medicineName: string, medicineId: number) => {
+	const handleAddMedicine = (medicine: (typeof medicines)[0]) => {
 		//heck if medicine already exists in the prescription
-		if (prescriptionItems.some((item) => item.medicine === medicineName)) {
+		if (prescriptionItems.some((item) => item.id === medicine.id)) {
 			alert("This medicine is already in the prescription");
 			return;
 		}
 
 		const newItem: PrescriptionItem = {
-			id: medicineId,
-			medicine: medicineName,
+			id: medicine.id,
+			drug: medicine.drug,
+			brand: medicine.brand,
+			company: medicine.company,
+			strength: medicine.strength,
+			type: medicine.type,
+
 			dosage: "",
 			frequency: "",
 			duration: "",
@@ -145,7 +177,6 @@ function ConsultationPage() {
 				item.id === id ? { ...item, [field]: value } : item,
 			),
 		);
-		// console.log("set smth");
 	};
 
 	const handleRemovePrescriptionItem = (id: number) => {
@@ -198,9 +229,7 @@ function ConsultationPage() {
 				if (prescriptionsRes.status !== 200) {
 					const error = await prescriptionsRes.json();
 					alert(
-						"error" in error
-							? error.error
-							: "Failed to save prescriptions",
+						"error" in error ? error.error : "Failed to save prescriptions",
 					);
 					return;
 				}
@@ -215,6 +244,7 @@ function ConsultationPage() {
 					},
 				})
 			).json();
+
 			if ("error" in res) {
 				alert(res.error);
 			}
@@ -224,7 +254,7 @@ function ConsultationPage() {
 	}
 
 	return (
-		<div className="container p-6">
+		<div className="p-6">
 			<h1 className="text-3xl font-bold">
 				Consultation for {caseDetail.patientName}
 			</h1>
@@ -311,9 +341,16 @@ function ConsultationPage() {
 					</Field>
 				</div>
 			</Card>
-			<div className="grid grid-cols-4 mb-2">
-				<Card className="col-span-3 row-span-1 rounded-tr-none rounded-br-none rounded-bl-none min-h-[200px]">
-					<div className="flex items-center max-w-xl">
+			<div className="grid grid-cols-3 mb-2">
+				<Card className="col-span-1 row-span-2 rounded-r-none rounded-bl-none px-2 pt-4 pb-2">
+					<Label className="font-semibold text-lg">Consultation Notes</Label>
+					<Textarea
+						className="h-full -mt-3.5 resize-none"
+						placeholder="Write notes here..."
+					/>
+				</Card>
+				<Card className="col-span-2 row-span-1 rounded-l-none rounded-br-none min-h-52">
+					<div className="flex items-center">
 						<Label className="font-semibold mx-3">Diagnosis: </Label>
 						<div className="relative w-full">
 							<Search className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground" />
@@ -322,30 +359,28 @@ function ConsultationPage() {
 						<Button className="mx-3">Search</Button>
 					</div>
 				</Card>
-				<Card className="col-span-1 row-span-2 rounded-tl-none rounded-bl-none rounded-br-none px-2 pt-4 pb-2">
-					<Label className="font-semibold text-lg">Consultation Notes</Label>
-					<Textarea
-						className="h-full -mt-3.5 resize-none"
-						placeholder="Write notes here..."
-					/>
-				</Card>
-				<Card className="col-span-3 row-span-1 rounded-none min-h-[200px]">
-					<div className="flex items-center max-w-xl">
-						<Label className="font-semibold mx-3">Prescription: </Label>
+				<Card className="col-span-2 gap-4 row-span-1 rounded-none min-h-52">
+					<div className="flex items-center w-full gap-2 px-2">
+						<Label className="font-semibold">Prescription: </Label>
 						<Popover
 							open={medicinesSearchOpen}
-							onOpenChange={setmedicinesSearchOpen}
+							onOpenChange={setMedicinesSearchOpen}
 						>
-						<PopoverTrigger asChild>
-							<Button
-								variant="outline"
-								role="combobox"
-								className="w-[300px] justify-between"
+							<PopoverTrigger asChild>
+								<Button
+									variant="outline"
+									role="combobox"
+									className="justify-between min-w-[40rem]"
+								>
+									Select a medicine...
+									<ChevronsUpDown className="ml-2 h-4 w-4" />
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent
+								className="p-0 min-w-[40rem]"
+								align="start"
+								side="top"
 							>
-								Select a medicine...
-								<ChevronsUpDown className="ml-2 h-4 w-4" />
-							</Button>
-						</PopoverTrigger>							<PopoverContent className="w-[300px] p-0">
 								<Command shouldFilter={false}>
 									<CommandInput
 										placeholder="Type a medicine to search..."
@@ -355,15 +390,22 @@ function ConsultationPage() {
 									<CommandList>
 										<CommandEmpty>No medicines found.</CommandEmpty>
 										<CommandGroup heading="Medicines">
-											{filteredMedicines.map((m) => (
+											{filteredMedicines.map(({ medicine }) => (
 												<CommandItem
-													key={`${m.drug}-${m.brand}-${m.type}`}
+													key={medicine.id}
 													onSelect={() => {
-														handleAddMedicine(m.brand, m.id);//chekc by brand instead of drug name
-														setmedicinesSearchOpen(false);
+														handleAddMedicine(medicine); //chekc by brand instead of drug name
+														setMedicinesSearchOpen(false);
 													}}
+													className="flex justify-between"
 												>
-													{m.brand}
+													<span>
+														{medicine.company} {medicine.brand}
+													</span>
+													<span className="mx-1 text-muted-foreground text-right">
+														({medicine.drug}) - {medicine.strength} -{" "}
+														{medicine.type}
+													</span>
 												</CommandItem>
 											))}
 										</CommandGroup>
@@ -394,97 +436,79 @@ function ConsultationPage() {
 							</DropdownMenu>
 						</ButtonGroup>
 					</div>
-					{prescriptionItems.length > 0 && (
-						<div className="mx-3 mt-4">
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Medicine</TableHead>
-										<TableHead>Dosage</TableHead>
-										<TableHead>Frequency</TableHead>
-										<TableHead>Duration</TableHead>
-										<TableHead>Comments</TableHead>
-										<TableHead className="w-[50px]"></TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{prescriptionItems.map((item) => (
-										<TableRow key={item.id}>
-											<TableCell className="font-medium">
-												{item.medicine}
-											</TableCell>
-											<TableCell>
-												<Input
-													value={item.dosage}
-													onChange={(e) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"dosage",
-															e.target.value,
-														)
-													}
-													placeholder="e.g., 500mg"
-													className="h-8"
-												/>
-											</TableCell>
-											<TableCell>
-												<Input
-													value={item.frequency}
-													onChange={(e) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"frequency",
-															e.target.value,
-														)
-													}
-													placeholder="e.g., 2x daily"
-													className="h-8"
-												/>
-											</TableCell>
-											<TableCell>
-												<Input
-													value={item.duration}
-													onChange={(e) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"duration",
-															e.target.value,
-														)
-													}
-													placeholder="e.g., 7 days"
-													className="h-8"
-												/>
-											</TableCell>
-											<TableCell>
-												<Input
-													value={item.comments}
-													onChange={(e) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"comments",
-															e.target.value,
-														)
-													}
-													placeholder="Optional notes"
-													className="h-8"
-												/>
-											</TableCell>
-											<TableCell>
-												<Button
-													variant="outline"
-													size="sm"
-													onClick={() => handleRemovePrescriptionItem(item.id)}
-													className="h-8 w-8 p-0"
-												>
-													<Trash2 className="h-4 w-4" />
-												</Button>
-											</TableCell>
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-						</div>
-					)}
+					{prescriptionItems.length > 0 &&
+						prescriptionItems.map((item) => (
+							<div key={item.id} className="px-2">
+								<div className="w-full pb-1 flex flex-wrap">
+									<span className="font-semibold">
+										{item.company} {item.brand}
+									</span>
+									<span className="mx-1 text-muted-foreground text-right">
+										({item.drug}) - {item.strength} - {item.type}
+									</span>
+								</div>
+								<div className="gap-2 flex">
+									<div className="grid grid-cols-4 gap-2 w-full">
+										<Input
+											value={item.dosage}
+											onChange={(e) =>
+												handleUpdatePrescriptionItem(
+													item.id,
+													"dosage",
+													e.target.value,
+												)
+											}
+											placeholder="e.g., 500mg"
+											className="h-8"
+										/>
+										<Input
+											value={item.frequency}
+											onChange={(e) =>
+												handleUpdatePrescriptionItem(
+													item.id,
+													"frequency",
+													e.target.value,
+												)
+											}
+											placeholder="e.g., 2x daily"
+											className="h-8"
+										/>
+										<Input
+											value={item.duration}
+											onChange={(e) =>
+												handleUpdatePrescriptionItem(
+													item.id,
+													"duration",
+													e.target.value,
+												)
+											}
+											placeholder="e.g., 7 days"
+											className="h-8"
+										/>
+										<Input
+											value={item.comments}
+											onChange={(e) =>
+												handleUpdatePrescriptionItem(
+													item.id,
+													"comments",
+													e.target.value,
+												)
+											}
+											placeholder="Optional notes"
+											className="h-8"
+										/>
+									</div>
+									<Button
+										variant="destructive"
+										size="sm"
+										onClick={() => handleRemovePrescriptionItem(item.id)}
+										className="h-8 w-8 p-0"
+									>
+										<Trash2 className="h-4 w-4" />
+									</Button>
+								</div>
+							</div>
+						))}
 				</Card>
 				<Card className="col-span-4 row-span-1 rounded-tr-none rounded-tl-none py-2 px-2">
 					<div className="flex justify-end gap-2">
@@ -492,7 +516,6 @@ function ConsultationPage() {
 						<ButtonGroup>
 							<Button variant="outline" onClick={handleFinalize}>
 								{finalizeButtonValue}
-								{/* TODO: close the case after button is clicked */}
 							</Button>
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
