@@ -16,11 +16,11 @@ import {
 	visitorsTable,
 } from "@/db/patient";
 import { db } from ".";
+import doctor from "./doctor";
 import rbac from "./rbac";
+import role from "./role";
 import user from "./user";
 import vitals from "./vitals";
-import doctor from "./doctor";
-import role from "./role";
 
 export type JWTPayload = {
 	passwordHash: null;
