@@ -1,9 +1,9 @@
 import "dotenv/config";
-import { arrayContains, eq, inArray, and, sql } from "drizzle-orm";
-import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
+import { and, arrayContains, eq, inArray, sql } from "drizzle-orm";
+import { Hono } from "hono";
 import z from "zod";
-import { casesTable, medicinesTable, casePrescriptionsTable } from "@/db/case";
+import { casePrescriptionsTable, casesTable, medicinesTable } from "@/db/case";
 import { caseLabReportsTable } from "@/db/lab";
 import {
 	dependentsTable,
@@ -13,8 +13,8 @@ import {
 	visitorsTable,
 } from "@/db/patient";
 import { db } from ".";
-import { rbacCheck } from "./rbac";
 import type { JWTPayload } from "./auth";
+import { rbacCheck } from "./rbac";
 
 const doctor = new Hono()
 	.use(rbacCheck({ permissions: ["doctor"] }))
@@ -142,19 +142,7 @@ const doctor = new Hono()
 		return c.json({ caseDetail });
 	})
 	.get("/medicines", async (c) => {
-		const medicines = await db
-			.select({
-				id: sql<number>`MIN(${medicinesTable.id})`.as("id"),
-				drug: medicinesTable.drug,
-				brand: medicinesTable.brand,
-				type: medicinesTable.type,
-			})
-			.from(medicinesTable)
-			.groupBy(
-				medicinesTable.drug,
-				medicinesTable.brand,
-				medicinesTable.type
-			);
+		const medicines = await db.select().from(medicinesTable);
 
 		if (medicines.length === 0) {
 			return c.json({ error: "Medicines data not found" }, 404);
