@@ -9,7 +9,7 @@ import { rbacCheck } from "./rbac";
 
 const roleType = z.object({
 	name: z.string().min(1),
-	allowed: z.enum(permissions).array()
+	allowed: z.enum(permissions).array(),
 });
 
 const role = new Hono()
