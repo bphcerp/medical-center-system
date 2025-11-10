@@ -202,7 +202,7 @@ function RowItem({
 	onDeleteRole: () => Promise<void>;
 }) {
 	const [perms, setPerms] = useState(originalPerms);
-	const [unusedPerms, setUnusedPerms] = useState(
+	const [unusedPerms, setUnusedPerms] = useState(() =>
 		permissions.filter((p) => !originalPerms.includes(p)),
 	);
 
