@@ -70,20 +70,22 @@ export const Route = createFileRoute("/consultation/$id")({
 });
 
 function ConsultationPage() {
-	const { caseDetail, medicines } = Route.useLoaderData();
-	const medicinesTypes = [...new Set(medicines.map((m) => m.type))].sort();
 	const { id } = Route.useParams();
-	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
-	const [medicineTypeValue, setMedicineTypeValue] = useState<string>("Type");
+	const { caseDetail, medicines } = Route.useLoaderData();
+
+	const medicinesTypes = [...new Set(medicines.map((m) => m.type))].sort();
+
 	const [finalizeButtonValue, setFinalizeButtonValue] = useState<
 		"Finalize (OPD)" | "Admit" | "Referral"
 	>("Finalize (OPD)");
+	const [medicineFilter, setMedicineFilter] = useState<string | null>(null);
+
+	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
 	const [medicinesSearchOpen, setmedicinesSearchOpen] =
 		useState<boolean>(false);
 
 	const filteredMedicines = medicines.filter((m) => {
-		const matchesType =
-			medicineTypeValue === "Type" || m.type === medicineTypeValue;
+		const matchesType = medicineFilter === "Type" || m.type === medicineFilter;
 
 		const matchesQuery =
 			prescriptionQuery === "" ||
@@ -294,7 +296,7 @@ function ConsultationPage() {
 						</Popover>
 						<ButtonGroup>
 							<Button variant="outline" className="flex items-center gap-2">
-								{medicineTypeValue}
+								{medicineFilter || "Type"}
 							</Button>
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
@@ -306,7 +308,7 @@ function ConsultationPage() {
 									{medicinesTypes.map((m) => (
 										<DropdownMenuItem
 											key={m}
-											onClick={() => setMedicineTypeValue(m)}
+											onClick={() => setMedicineFilter(m)}
 										>
 											{m}
 										</DropdownMenuItem>
