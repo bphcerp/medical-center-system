@@ -1,4 +1,6 @@
+import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { ChevronDown, ChevronsUpDown, Search } from "lucide-react";
 import { useState } from "react";
 import { client } from "./api/$";
 import { Card } from "@/components/ui/card";
@@ -32,9 +34,17 @@ import {
 	CommandList,
 } from "@/components/ui/command";
 import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
 	Popover,
-	PopoverTrigger,
 	PopoverContent,
+	PopoverTrigger,
 } from "@/components/ui/popover";
 
 type PrescriptionItem = {
@@ -90,12 +100,13 @@ export const Route = createFileRoute("/consultation/$id")({
 function ConsultationPage() {
 	const { caseDetail, medicines } = Route.useLoaderData();
 	const medicinesTypes = [...new Set(medicines.map((m) => m.type))].sort();
-	const { id } = Route.useParams();
-	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
-	const [medicineTypeValue, setMedicineTypeValue] = useState<string>("Type");
+
 	const [finalizeButtonValue, setFinalizeButtonValue] = useState<
 		"Finalize (OPD)" | "Admit" | "Referral"
 	>("Finalize (OPD)");
+	const [medicineFilter, setMedicineFilter] = useState<string | null>(null);
+
+	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
 	const [medicinesSearchOpen, setmedicinesSearchOpen] =
 		useState<boolean>(false);
 	const [prescriptionItems, setPrescriptionItems] = useState<
@@ -103,8 +114,7 @@ function ConsultationPage() {
 	>([]);
 
 	const filteredMedicines = medicines.filter((m) => {
-		const matchesType =
-			medicineTypeValue === "Type" || m.type === medicineTypeValue;
+		const matchesType = medicineFilter === "Type" || m.type === medicineFilter;
 
 		const matchesQuery =
 			prescriptionQuery === "" ||
@@ -378,7 +388,7 @@ function ConsultationPage() {
 						</Popover>
 						<ButtonGroup>
 							<Button variant="outline" className="flex items-center gap-2">
-								{medicineTypeValue}
+								{medicineFilter || "Type"}
 							</Button>
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
@@ -390,7 +400,7 @@ function ConsultationPage() {
 									{medicinesTypes.map((m) => (
 										<DropdownMenuItem
 											key={m}
-											onClick={() => setMedicineTypeValue(m)}
+											onClick={() => setMedicineFilter(m)}
 										>
 											{m}
 										</DropdownMenuItem>
@@ -492,9 +502,9 @@ function ConsultationPage() {
 					)}
 				</Card>
 				<Card className="col-span-4 row-span-1 rounded-tr-none rounded-tl-none py-2 px-2">
-					<div className="flex justify-end">
+					<div className="flex justify-end gap-2">
+						<Button variant="outline">Request Lab Tests</Button>
 						<ButtonGroup>
-							<Button variant="outline">Request Lab Tests</Button>
 							<Button variant="outline" onClick={handleFinalize}>
 								{finalizeButtonValue}
 								{/* TODO: close the case after button is clicked */}
