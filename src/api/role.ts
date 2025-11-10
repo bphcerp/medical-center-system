@@ -13,7 +13,8 @@ const roleType = z.object({
 });
 
 const role = new Hono()
-	.get("/all", rbacCheck({ permissions: ["admin"] }), async (c) => {
+	.use(rbacCheck({ permissions: ["admin"] }))
+	.get("/all", async (c) => {
 		const { id, name, allowed } = getTableColumns(rolesTable);
 
 		const roles = await db
@@ -25,7 +26,6 @@ const role = new Hono()
 	})
 	.post(
 		"/:id",
-		rbacCheck({ permissions: ["admin"] }),
 		zValidator("param", z.object({ id: z.coerce.number().int() })),
 		zValidator("json", roleType),
 		async (c) => {
@@ -46,24 +46,18 @@ const role = new Hono()
 			return c.json({ success: true });
 		},
 	)
-	.post(
-		"/",
-		rbacCheck({ permissions: ["admin"] }),
-		zValidator("json", roleType),
-		async (c) => {
-			const { name, allowed } = c.req.valid("json");
-			const res = await db.insert(rolesTable).values({ name, allowed });
+	.post("/", zValidator("json", roleType), async (c) => {
+		const { name, allowed } = c.req.valid("json");
+		const res = await db.insert(rolesTable).values({ name, allowed });
 
-			if (res.rowCount !== 1) {
-				return c.json({ error: "Could not create role" }, 500);
-			}
+		if (res.rowCount !== 1) {
+			return c.json({ error: "Could not create role" }, 500);
+		}
 
-			return c.json({ success: true });
-		},
-	)
+		return c.json({ success: true });
+	})
 	.delete(
 		"/:id",
-		rbacCheck({ permissions: ["admin"] }),
 		zValidator("param", z.object({ id: z.coerce.number().int() })),
 		async (c) => {
 			const { id } = c.req.valid("param");
