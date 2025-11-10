@@ -1,20 +1,46 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
-import { client } from "./api/$";
-import { Card } from "@/components/ui/card";
+import { Label } from "@radix-ui/react-label";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { ChevronDown, ChevronsUpDown, Search, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import { Input } from "@/components/ui/input";
-import { Field, FieldLabel } from "@/components/ui/field";
-import { Search, ChevronDown } from "lucide-react";
-import { Label } from "@radix-ui/react-label";
-import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
+import {
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
+import { client } from "./api/$";
+
+type PrescriptionItem = {
+	id: number;
+	drug: string;
+	brand: string;
+	company: string;
+	strength: string;
+	type: string;
+	dosage: string;
+	frequency: string;
+	duration: string;
+	comments: string;
+};
 
 export const Route = createFileRoute("/consultation/$id")({
 	loader: async ({ params }: { params: { id: string } }) => {
@@ -43,18 +69,117 @@ export const Route = createFileRoute("/consultation/$id")({
 
 		const { caseDetail } = await consultationRes.json();
 
-		return { user, caseDetail };
+		const medicinesRes = await client.api.doctor.medicines.$get();
+
+		if (medicinesRes.status !== 200) {
+			throw new Error("Failed to fetch medicines details");
+		}
+
+		const { medicines } = await medicinesRes.json();
+		// console.log(medicines);
+
+		return { user, caseDetail, medicines };
 	},
 	component: ConsultationPage,
 });
 
 function ConsultationPage() {
-	const { user, caseDetail } = Route.useLoaderData();
+	const { caseDetail, medicines } = Route.useLoaderData();
+	const navigate = useNavigate();
 	const { id } = Route.useParams();
-	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
+
 	const [finalizeButtonValue, setFinalizeButtonValue] = useState<
 		"Finalize (OPD)" | "Admit" | "Referral"
 	>("Finalize (OPD)");
+
+	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
+
+	const [medicinesSearchOpen, setMedicinesSearchOpen] =
+		useState<boolean>(false);
+
+	const [prescriptionItems, setPrescriptionItems] = useState<
+		PrescriptionItem[]
+	>([]);
+
+	const filteredMedicines = medicines
+		.reduce(
+			(acc, medicine) => {
+				if (prescriptionQuery === "") {
+					acc.push({
+						medicine,
+						count: 0,
+					});
+					return acc;
+				}
+
+				const count = prescriptionQuery
+					.trim()
+					.split(/\s+/)
+					.reduce((count, term) => {
+						return (
+							count +
+							(medicine.drug.toLowerCase().includes(term.toLowerCase()) ||
+							medicine.brand.toLowerCase().includes(term.toLowerCase()) ||
+							medicine.company.toLowerCase().includes(term.toLowerCase()) ||
+							medicine.type.toLowerCase().includes(term.toLowerCase())
+								? 1
+								: 0)
+						);
+					}, 0);
+
+				if (count > 0) {
+					acc.push({
+						medicine,
+						count,
+					});
+				}
+				return acc;
+			},
+			[] as { medicine: (typeof medicines)[0]; count: number }[],
+		)
+		.sort((a, b) => b.count - a.count);
+
+	const handleAddMedicine = (medicine: (typeof medicines)[0]) => {
+		//heck if medicine already exists in the prescription
+		if (prescriptionItems.some((item) => item.id === medicine.id)) {
+			alert("This medicine is already in the prescription");
+			return;
+		}
+
+		const newItem: PrescriptionItem = {
+			id: medicine.id,
+			drug: medicine.drug,
+			brand: medicine.brand,
+			company: medicine.company,
+			strength: medicine.strength,
+			type: medicine.type,
+
+			dosage: "",
+			frequency: "",
+			duration: "",
+			comments: "",
+		};
+
+		setPrescriptionItems([...prescriptionItems, newItem]);
+		setPrescriptionQuery("");
+	};
+
+	const handleUpdatePrescriptionItem = (
+		id: number,
+		field: keyof Omit<PrescriptionItem, "id" | "medicine">,
+		value: string,
+	) => {
+		setPrescriptionItems(
+			prescriptionItems.map((item) =>
+				item.id === id ? { ...item, [field]: value } : item,
+			),
+		);
+	};
+
+	const handleRemovePrescriptionItem = (id: number) => {
+		setPrescriptionItems(prescriptionItems.filter((item) => item.id !== id));
+	};
+
 	if (!caseDetail) {
 		return (
 			<div className="container mx-auto p-6">
@@ -83,25 +208,31 @@ function ConsultationPage() {
 				);
 				return;
 		}
-		try {
-			const res = await (
-				await client.api.doctor.updateCaseFinalizedState.$post({
-					json: {
-						caseId: Number(id),
-						finalizedState: finalizedState,
-					},
-				})
-			).json();
-			if ("error" in res) {
-				alert(res.error);
-			}
-		} catch (err) {
-			console.error(err);
+		const prescriptionsRes = await client.api.doctor.finalizeCase.$post({
+			json: {
+				caseId: Number(id),
+				finalizedState: finalizedState,
+				prescriptions: prescriptionItems.map((item) => ({
+					medicineId: item.id,
+					dosage: item.dosage,
+					frequency: item.frequency,
+					comment: item.comments,
+				})),
+			},
+		});
+
+		if (prescriptionsRes.status !== 200) {
+			const error = await prescriptionsRes.json();
+			alert("error" in error ? error.error : "Failed to save prescriptions");
+			return;
 		}
+		navigate({
+			to: "/doctor",
+		});
 	}
 
 	return (
-		<div className="container p-6">
+		<div className="p-6">
 			<h1 className="text-3xl font-bold">
 				Consultation for {caseDetail.patientName}
 			</h1>
@@ -188,9 +319,16 @@ function ConsultationPage() {
 					</Field>
 				</div>
 			</Card>
-			<div className="grid grid-cols-4 mb-2">
-				<Card className="col-span-3 row-span-1 rounded-tr-none rounded-br-none rounded-bl-none min-h-[200px]">
-					<div className="flex items-center max-w-xl">
+			<div className="grid grid-cols-3 mb-2">
+				<Card className="col-span-1 row-span-2 rounded-r-none rounded-bl-none px-2 pt-4 pb-2">
+					<Label className="font-semibold text-lg">Consultation Notes</Label>
+					<Textarea
+						className="h-full -mt-3.5 resize-none"
+						placeholder="Write notes here..."
+					/>
+				</Card>
+				<Card className="col-span-2 row-span-1 rounded-l-none rounded-br-none min-h-52">
+					<div className="flex items-center">
 						<Label className="font-semibold mx-3">Diagnosis: </Label>
 						<div className="relative w-full">
 							<Search className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground" />
@@ -199,42 +337,146 @@ function ConsultationPage() {
 						<Button className="mx-3">Search</Button>
 					</div>
 				</Card>
-				<Card className="col-span-1 row-span-2 rounded-tl-none rounded-bl-none rounded-br-none px-2 pt-4 pb-2">
-					<Label className="font-semibold text-lg">Consultation Notes</Label>
-					<Textarea
-						className="h-full -mt-3.5 resize-none"
-						placeholder="Write notes here..."
-					/>
-				</Card>
-				<Card className="col-span-3 row-span-1 rounded-none min-h-[200px]">
-					<div className="flex items-center max-w-xl">
-						<Label className="font-semibold mx-3">Prescription: </Label>
-						<div className="relative w-full">
-							<Search className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground" />
-							<Input
-								placeholder="Search..."
-								className="pl-8"
-								value={prescriptionQuery}
-								onChange={(e) => setPrescriptionQuery(e.target.value)}
-							/>
-						</div>
-						<Button variant="outline" className="flex items-center gap-2">
-							Type
-							<ChevronDown className="h-4 w-4 opacity-70" />
-						</Button>
+				<Card className="col-span-2 gap-4 row-span-1 rounded-none min-h-52">
+					<div className="flex items-center w-full gap-2 px-2">
+						<Label className="font-semibold">Prescription: </Label>
+						<Popover
+							open={medicinesSearchOpen}
+							onOpenChange={setMedicinesSearchOpen}
+						>
+							<PopoverTrigger asChild>
+								<Button
+									variant="outline"
+									role="combobox"
+									className="justify-between w-[48rem]"
+								>
+									Select a medicine...
+									<ChevronsUpDown className="ml-2 h-4 w-4" />
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent
+								className="p-0 w-[48rem]"
+								align="start"
+								side="top"
+							>
+								<Command shouldFilter={false}>
+									<CommandInput
+										placeholder="Type a medicine to search..."
+										value={prescriptionQuery}
+										onValueChange={setPrescriptionQuery}
+									/>
+									<CommandList>
+										<CommandEmpty>No medicines found.</CommandEmpty>
+										<CommandGroup heading="Medicines">
+											{filteredMedicines.map(({ medicine }) => (
+												<CommandItem
+													key={medicine.id}
+													onSelect={() => {
+														handleAddMedicine(medicine); //chekc by brand instead of drug name
+														setMedicinesSearchOpen(false);
+													}}
+													className="flex justify-between"
+												>
+													<span>
+														{medicine.company} {medicine.brand}
+													</span>
+													<span className="mx-1 text-muted-foreground text-right">
+														({medicine.drug}) - {medicine.strength} -{" "}
+														{medicine.type}
+													</span>
+												</CommandItem>
+											))}
+										</CommandGroup>
+									</CommandList>
+								</Command>
+							</PopoverContent>
+						</Popover>
 					</div>
+					{prescriptionItems.length > 0 &&
+						prescriptionItems.map((item) => (
+							<div key={item.id} className="px-2">
+								<div className="w-full pb-1 flex flex-wrap">
+									<span className="font-semibold">
+										{item.company} {item.brand}
+									</span>
+									<span className="mx-1 text-muted-foreground text-right">
+										({item.drug}) - {item.strength} - {item.type}
+									</span>
+								</div>
+								<div className="gap-2 flex">
+									<div className="grid grid-cols-4 gap-2 w-full">
+										<Input
+											value={item.dosage}
+											onChange={(e) =>
+												handleUpdatePrescriptionItem(
+													item.id,
+													"dosage",
+													e.target.value,
+												)
+											}
+											placeholder="e.g., 500mg"
+											className="h-8"
+										/>
+										<Input
+											value={item.frequency}
+											onChange={(e) =>
+												handleUpdatePrescriptionItem(
+													item.id,
+													"frequency",
+													e.target.value,
+												)
+											}
+											placeholder="e.g., 2x daily"
+											className="h-8"
+										/>
+										<Input
+											value={item.duration}
+											onChange={(e) =>
+												handleUpdatePrescriptionItem(
+													item.id,
+													"duration",
+													e.target.value,
+												)
+											}
+											placeholder="e.g., 7 days"
+											className="h-8"
+										/>
+										<Input
+											value={item.comments}
+											onChange={(e) =>
+												handleUpdatePrescriptionItem(
+													item.id,
+													"comments",
+													e.target.value,
+												)
+											}
+											placeholder="Optional notes"
+											className="h-8"
+										/>
+									</div>
+									<Button
+										variant="destructive"
+										size="sm"
+										onClick={() => handleRemovePrescriptionItem(item.id)}
+										className="h-8 w-8 p-0"
+									>
+										<Trash2 className="h-4 w-4" />
+									</Button>
+								</div>
+							</div>
+						))}
 				</Card>
 				<Card className="col-span-4 row-span-1 rounded-tr-none rounded-tl-none py-2 px-2">
-					<div className="flex justify-end">
+					<div className="flex justify-end gap-2">
+						<Button variant="outline">Request Lab Tests</Button>
 						<ButtonGroup>
-							<Button variant="outline">Request Lab Tests</Button>
 							<Button variant="outline" onClick={handleFinalize}>
 								{finalizeButtonValue}
 							</Button>
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<Button variant="outline">
-										<ChevronDown className="ml-2 h-4 w-4 opacity-70" />
+										<ChevronDown />
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent align="end">

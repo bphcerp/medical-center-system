@@ -1,7 +1,8 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { Search } from "lucide-react";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { ArrowLeftRight, Search } from "lucide-react";
 import type React from "react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
 	InputGroup,
 	InputGroupAddon,
@@ -10,7 +11,9 @@ import {
 import {
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
+	SelectLabel,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
@@ -21,10 +24,9 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { client } from "./api/$";
-import { debounce } from "@/lib/hooks";
+import { client } from "../api/$";
 
-export const Route = createFileRoute("/admin")({
+export const Route = createFileRoute("/admin/user")({
 	component: Admin,
 	loader: async () => {
 		const usersRes = await client.api.user.all.$get();
@@ -32,19 +34,19 @@ export const Route = createFileRoute("/admin")({
 		const rolesRes = await client.api.role.all.$get();
 		handleUnauthorized(rolesRes.status);
 
-		const rolesJson = (await rolesRes.json()).roles;
-		const usersJson = (await usersRes.json()).users;
+		const roles = (await rolesRes.json()).roles;
+		const users = (await usersRes.json()).users;
 
 		const rolesMap: { [key: number]: string } = {};
 
-		for (const role of rolesJson) {
+		for (const role of roles) {
 			rolesMap[role.id] = role.name;
 		}
 
 		return {
-			roles: rolesJson,
+			roles: roles,
 			rolesMap: rolesMap,
-			users: usersJson,
+			users: users,
 		};
 	},
 });
@@ -66,10 +68,6 @@ function handleUnauthorized(status: number) {
 function Admin() {
 	const { users: allUsers, roles } = Route.useLoaderData();
 	const [users, setUsers] = useState(allUsers);
-	const debounced = useCallback(
-		debounce((query: string) => handleFilter(query), 300),
-		[],
-	);
 
 	const handleRoleChange = async (userId: number, roleId: number) => {
 		const res = await client.api.user[":id"].$post({
@@ -94,10 +92,15 @@ function Admin() {
 	};
 
 	return (
-		<div className="flex justify-center w-full">
-			<div className="w-2/3 m-10 flex flex-col gap-6">
-				<div className="flex flex-wrap items-end gap-4 justify-between">
-					<h1 className="font-bold text-4xl">Role Management</h1>
+		<div className="flex flex-col p-4 lg:p-10 lg:w-3/4">
+			<div className="flex flex-wrap items-center gap-4 justify-between mb-3">
+				<h1 className="font-bold text-2xl">User Management</h1>
+				<div className="flex gap-4 items-center">
+					<Link to="/admin/role">
+						<Button variant="link" className="p-0">
+							<ArrowLeftRight /> Manage roles
+						</Button>
+					</Link>
 					<InputGroup className="w-80">
 						<InputGroupAddon>
 							<Search />
@@ -105,36 +108,33 @@ function Admin() {
 						<InputGroupInput
 							type="search"
 							placeholder="Search by name or username"
-							className=""
-							onChange={(e) => debounced(e.target.value)}
+							onChange={(e) => handleFilter(e.target.value)}
 						/>
 					</InputGroup>
 				</div>
-				<div className="rounded-md border overflow-clip">
-					<Table>
-						<TableHeader className="">
-							<RowItem name="Name" username="Username" header>
-								Role
-							</RowItem>
-						</TableHeader>
-						<TableBody>
-							{users.map((user) => (
-								<RowItem
-									key={user.username}
-									name={user.name}
-									username={user.username}
-								>
-									<RoleSelect
-										role={user.role.toString()}
-										roles={roles}
-										setRole={(id) => handleRoleChange(user.id, id)}
-									/>
-								</RowItem>
-							))}
-						</TableBody>
-					</Table>
-				</div>
 			</div>
+			<Table>
+				<TableHeader>
+					<RowItem name="Name" username="Username" header>
+						Role
+					</RowItem>
+				</TableHeader>
+				<TableBody>
+					{users.map((user) => (
+						<RowItem
+							key={user.username}
+							name={user.name}
+							username={user.username}
+						>
+							<RoleSelect
+								role={user.role.toString()}
+								roles={roles}
+								setRole={(id) => handleRoleChange(user.id, id)}
+							/>
+						</RowItem>
+					))}
+				</TableBody>
+			</Table>
 		</div>
 	);
 }
@@ -170,11 +170,14 @@ function RoleSelect({
 					<SelectValue />
 				</SelectTrigger>
 				<SelectContent>
-					{roles.map((r) => (
-						<SelectItem key={r.id} value={r.id.toString()}>
-							{r.name}
-						</SelectItem>
-					))}
+					<SelectGroup>
+						<SelectLabel>Roles</SelectLabel>
+						{roles.map((r) => (
+							<SelectItem key={r.id} value={r.id.toString()}>
+								{r.name}
+							</SelectItem>
+						))}
+					</SelectGroup>
 				</SelectContent>
 			</Select>
 		</div>
@@ -192,12 +195,12 @@ function RowItem({
 	username: string;
 }>) {
 	return (
-		<TableRow className={"flex items-center"}>
-			<TableCell className="whitespace-break-spaces flex-2">{name}</TableCell>
-			<TableCell className={`flex-2 ${header ? "" : "font-mono"}`}>
+		<TableRow>
+			<TableCell className="w-2/5 whitespace-break-spaces">{name}</TableCell>
+			<TableCell className={`w-2/5 ${header ? "" : "font-mono"}`}>
 				{username}
 			</TableCell>
-			<TableCell className="flex-1">{children}</TableCell>
+			<TableCell className="w-1/5">{children}</TableCell>
 		</TableRow>
 	);
 }

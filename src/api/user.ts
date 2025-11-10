@@ -27,7 +27,7 @@ const user = new Hono()
 		}
 		return c.json(users[0]);
 	})
-	.get("/all", rbacCheck({ permissions: ["manage-users"] }), async (c) => {
+	.get("/all", rbacCheck({ permissions: ["admin"] }), async (c) => {
 		const { id, name, username, role } = getTableColumns(usersTable);
 
 		const users = await db
@@ -40,7 +40,7 @@ const user = new Hono()
 	// probably will have more to edit than just roles in the future
 	.post(
 		"/:id",
-		rbacCheck({ permissions: ["manage-users"] }),
+		rbacCheck({ permissions: ["admin"] }),
 		zValidator(
 			"param",
 			z.object({

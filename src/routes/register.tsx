@@ -1,3 +1,6 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { ArrowLeft, ArrowRight, CheckIcon } from "lucide-react";
+import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -16,9 +19,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import type { identifierTypes } from "@/db/case";
-import { createFileRoute } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, CheckIcon } from "lucide-react";
-import { useEffect, useId, useState } from "react";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/register")({
