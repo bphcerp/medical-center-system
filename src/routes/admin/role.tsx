@@ -102,7 +102,7 @@ function RolePage() {
 	};
 
 	return (
-		<div className="flex flex-col p-4 lg:p-10 lg:w-3/4 itms-start gap-3">
+		<div className="flex flex-col p-4 lg:p-10 lg:w-3/4 gap-3">
 			<div className="flex items-center justify-between">
 				<span className="flex gap-4 items-center">
 					<h1 className="text-2xl font-bold inline">Role Management</h1>
