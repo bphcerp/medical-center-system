@@ -17,6 +17,8 @@ import {
 } from "@/db/patient";
 import { db } from ".";
 import doctor from "./doctor";
+import files from "./files";
+import lab from "./lab";
 import rbac from "./rbac";
 import role from "./role";
 import user from "./user";
@@ -295,4 +297,6 @@ export const authenticated = new Hono()
 	.route("/user", user)
 	.route("/rbac", rbac)
 	.route("/vitals", vitals)
-	.route("/doctor", doctor);
+	.route("/doctor", doctor)
+	.route("/lab", lab)
+	.route("/files", files);

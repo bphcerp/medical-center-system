@@ -12,9 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VitalsRouteImport } from './routes/vitals'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LabDashboardRouteImport } from './routes/lab-dashboard'
 import { Route as DoctorRouteImport } from './routes/doctor'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as ResultEntryReportIdRouteImport } from './routes/result-entry.$reportId'
 import { Route as ConsultationIdRouteImport } from './routes/consultation.$id'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
 import { Route as AdminUserRouteImport } from './routes/admin/user'
@@ -35,6 +37,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LabDashboardRoute = LabDashboardRouteImport.update({
+  id: '/lab-dashboard',
+  path: '/lab-dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DoctorRoute = DoctorRouteImport.update({
   id: '/doctor',
   path: '/doctor',
@@ -48,6 +55,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResultEntryReportIdRoute = ResultEntryReportIdRouteImport.update({
+  id: '/result-entry/$reportId',
+  path: '/result-entry/$reportId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConsultationIdRoute = ConsultationIdRouteImport.update({
@@ -74,6 +86,7 @@ const AdminRoleRoute = AdminRoleRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/doctor': typeof DoctorRoute
+  '/lab-dashboard': typeof LabDashboardRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/vitals': typeof VitalsRoute
@@ -81,11 +94,13 @@ export interface FileRoutesByFullPath {
   '/admin/user': typeof AdminUserRoute
   '/api/$': typeof ApiSplatRoute
   '/consultation/$id': typeof ConsultationIdRoute
+  '/result-entry/$reportId': typeof ResultEntryReportIdRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/doctor': typeof DoctorRoute
+  '/lab-dashboard': typeof LabDashboardRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/vitals': typeof VitalsRoute
@@ -93,12 +108,14 @@ export interface FileRoutesByTo {
   '/admin/user': typeof AdminUserRoute
   '/api/$': typeof ApiSplatRoute
   '/consultation/$id': typeof ConsultationIdRoute
+  '/result-entry/$reportId': typeof ResultEntryReportIdRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/doctor': typeof DoctorRoute
+  '/lab-dashboard': typeof LabDashboardRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/vitals': typeof VitalsRoute
@@ -106,6 +123,7 @@ export interface FileRoutesById {
   '/admin/user': typeof AdminUserRoute
   '/api/$': typeof ApiSplatRoute
   '/consultation/$id': typeof ConsultationIdRoute
+  '/result-entry/$reportId': typeof ResultEntryReportIdRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -113,6 +131,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/doctor'
+    | '/lab-dashboard'
     | '/login'
     | '/register'
     | '/vitals'
@@ -120,11 +139,13 @@ export interface FileRouteTypes {
     | '/admin/user'
     | '/api/$'
     | '/consultation/$id'
+    | '/result-entry/$reportId'
     | '/admin'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/doctor'
+    | '/lab-dashboard'
     | '/login'
     | '/register'
     | '/vitals'
@@ -132,11 +153,13 @@ export interface FileRouteTypes {
     | '/admin/user'
     | '/api/$'
     | '/consultation/$id'
+    | '/result-entry/$reportId'
     | '/admin'
   id:
     | '__root__'
     | '/'
     | '/doctor'
+    | '/lab-dashboard'
     | '/login'
     | '/register'
     | '/vitals'
@@ -144,12 +167,14 @@ export interface FileRouteTypes {
     | '/admin/user'
     | '/api/$'
     | '/consultation/$id'
+    | '/result-entry/$reportId'
     | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DoctorRoute: typeof DoctorRoute
+  LabDashboardRoute: typeof LabDashboardRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   VitalsRoute: typeof VitalsRoute
@@ -157,6 +182,7 @@ export interface RootRouteChildren {
   AdminUserRoute: typeof AdminUserRoute
   ApiSplatRoute: typeof ApiSplatRoute
   ConsultationIdRoute: typeof ConsultationIdRoute
+  ResultEntryReportIdRoute: typeof ResultEntryReportIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -183,6 +209,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lab-dashboard': {
+      id: '/lab-dashboard'
+      path: '/lab-dashboard'
+      fullPath: '/lab-dashboard'
+      preLoaderRoute: typeof LabDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/doctor': {
       id: '/doctor'
       path: '/doctor'
@@ -202,6 +235,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/result-entry/$reportId': {
+      id: '/result-entry/$reportId'
+      path: '/result-entry/$reportId'
+      fullPath: '/result-entry/$reportId'
+      preLoaderRoute: typeof ResultEntryReportIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/consultation/$id': {
@@ -238,6 +278,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DoctorRoute: DoctorRoute,
+  LabDashboardRoute: LabDashboardRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   VitalsRoute: VitalsRoute,
@@ -245,6 +286,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminUserRoute: AdminUserRoute,
   ApiSplatRoute: ApiSplatRoute,
   ConsultationIdRoute: ConsultationIdRoute,
+  ResultEntryReportIdRoute: ResultEntryReportIdRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
