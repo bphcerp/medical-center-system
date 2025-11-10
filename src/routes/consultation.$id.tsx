@@ -87,13 +87,10 @@ function ConsultationPage() {
 	const { caseDetail, medicines } = Route.useLoaderData();
 	const navigate = useNavigate();
 	const { id } = Route.useParams();
-	const medicinesTypes = [...new Set(medicines.map((m) => m.type))].sort();
 
 	const [finalizeButtonValue, setFinalizeButtonValue] = useState<
 		"Finalize (OPD)" | "Admit" | "Referral"
 	>("Finalize (OPD)");
-
-	const [medicineFilter, setMedicineFilter] = useState<string | null>(null);
 
 	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
 
@@ -107,8 +104,7 @@ function ConsultationPage() {
 	const filteredMedicines = medicines
 		.reduce(
 			(acc, medicine) => {
-				const matchesType = !medicineFilter || medicine.type === medicineFilter;
-				if (prescriptionQuery === "" && matchesType) {
+				if (prescriptionQuery === "") {
 					acc.push({
 						medicine,
 						count: 0,
@@ -131,7 +127,7 @@ function ConsultationPage() {
 						);
 					}, 0);
 
-				if (count > 0 && matchesType) {
+				if (count > 0) {
 					acc.push({
 						medicine,
 						count,
@@ -352,14 +348,14 @@ function ConsultationPage() {
 								<Button
 									variant="outline"
 									role="combobox"
-									className="justify-between min-w-[40rem]"
+									className="justify-between w-[48rem]"
 								>
 									Select a medicine...
 									<ChevronsUpDown className="ml-2 h-4 w-4" />
 								</Button>
 							</PopoverTrigger>
 							<PopoverContent
-								className="p-0 min-w-[40rem]"
+								className="p-0 w-[48rem]"
 								align="start"
 								side="top"
 							>
@@ -395,28 +391,6 @@ function ConsultationPage() {
 								</Command>
 							</PopoverContent>
 						</Popover>
-						<ButtonGroup>
-							<Button variant="outline" className="flex items-center gap-2">
-								{medicineFilter || "Type"}
-							</Button>
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button variant="outline">
-										<ChevronDown />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									{medicinesTypes.map((m) => (
-										<DropdownMenuItem
-											key={m}
-											onClick={() => setMedicineFilter(m)}
-										>
-											{m}
-										</DropdownMenuItem>
-									))}
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</ButtonGroup>
 					</div>
 					{prescriptionItems.length > 0 &&
 						prescriptionItems.map((item) => (
