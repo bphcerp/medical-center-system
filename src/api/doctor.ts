@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { zValidator } from "@hono/zod-validator";
-import { and, arrayContains, eq, inArray, sql } from "drizzle-orm";
+import { and, arrayContains, eq, inArray, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
 import { casePrescriptionsTable, casesTable, medicinesTable } from "@/db/case";
@@ -151,41 +151,12 @@ const doctor = new Hono()
 		return c.json({ medicines });
 	})
 	.post(
-		"updateCaseFinalizedState",
+		"finalizeCase",
 		zValidator(
 			"json",
 			z.object({
 				caseId: z.number().int(),
 				finalizedState: z.enum(["opd", "admitted", "referred"]),
-			}),
-		),
-		async (c) => {
-			const { caseId, finalizedState } = c.req.valid("json");
-			const updated = await db
-				.update(casesTable)
-				.set({
-					finalizedState,
-				})
-				.where(eq(casesTable.id, caseId))
-				.returning();
-
-			if (updated.length === 0) {
-				return c.json({ success: false, message: "Case not found" }, 404);
-			}
-
-			return c.json({
-				success: true,
-				message: "Finalized state updated successfully",
-				case: updated[0],
-			});
-		},
-	)
-	.post(
-		"/prescriptions",
-		zValidator(
-			"json",
-			z.object({
-				caseId: z.number().int(),
 				prescriptions: z.array(
 					z.object({
 						medicineId: z.number().int(),
@@ -197,11 +168,33 @@ const doctor = new Hono()
 			}),
 		),
 		async (c) => {
-			const { caseId, prescriptions } = c.req.valid("json");
+			const payload = c.get("jwtPayload") as JWTPayload;
+			const userId = payload.id;
+			const { caseId, finalizedState, prescriptions } = c.req.valid("json");
 
-			const inserted = await db
-				.insert(casePrescriptionsTable)
-				.values(
+			await db.transaction(async (tx) => {
+				const updated = await tx
+					.update(casesTable)
+					.set({
+						finalizedState,
+					})
+					.where(
+						and(
+							eq(casesTable.id, caseId),
+							arrayContains(casesTable.associatedUsers, [userId]),
+							isNull(casesTable.finalizedState),
+						),
+					)
+					.returning();
+
+				if (updated.length === 0) {
+					throw new Error("Case not found");
+				}
+
+				if (prescriptions.length === 0) {
+					return;
+				}
+				await tx.insert(casePrescriptionsTable).values(
 					prescriptions.map((p) => ({
 						caseId,
 						medicineId: p.medicineId,
@@ -209,13 +202,12 @@ const doctor = new Hono()
 						frequency: p.frequency,
 						comment: p.comment || null,
 					})),
-				)
-				.returning();
+				);
+			});
 
 			return c.json({
 				success: true,
-				message: "Prescriptions added successfully",
-				prescriptions: inserted,
+				message: "Finalized state updated successfully",
 			});
 		},
 	);

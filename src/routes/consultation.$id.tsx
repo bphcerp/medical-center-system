@@ -1,5 +1,5 @@
 import { Label } from "@radix-ui/react-label";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { ChevronDown, ChevronsUpDown, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -85,6 +85,7 @@ export const Route = createFileRoute("/consultation/$id")({
 
 function ConsultationPage() {
 	const { caseDetail, medicines } = Route.useLoaderData();
+	const navigate = useNavigate();
 	const { id } = Route.useParams();
 	const medicinesTypes = [...new Set(medicines.map((m) => m.type))].sort();
 
@@ -211,46 +212,27 @@ function ConsultationPage() {
 				);
 				return;
 		}
-		try {
-			// doc may or may not give meds
-			if (prescriptionItems.length > 0) {
-				const prescriptionsRes = await client.api.doctor.prescriptions.$post({
-					json: {
-						caseId: Number(id),
-						prescriptions: prescriptionItems.map((item) => ({
-							medicineId: item.id,
-							dosage: item.dosage,
-							frequency: item.frequency,
-							comment: item.comments,
-						})),
-					},
-				});
+		const prescriptionsRes = await client.api.doctor.finalizeCase.$post({
+			json: {
+				caseId: Number(id),
+				finalizedState: finalizedState,
+				prescriptions: prescriptionItems.map((item) => ({
+					medicineId: item.id,
+					dosage: item.dosage,
+					frequency: item.frequency,
+					comment: item.comments,
+				})),
+			},
+		});
 
-				if (prescriptionsRes.status !== 200) {
-					const error = await prescriptionsRes.json();
-					alert(
-						"error" in error ? error.error : "Failed to save prescriptions",
-					);
-					return;
-				}
-			}
-
-			// Update finalized state
-			const res = await (
-				await client.api.doctor.updateCaseFinalizedState.$post({
-					json: {
-						caseId: Number(id),
-						finalizedState: finalizedState,
-					},
-				})
-			).json();
-
-			if ("error" in res) {
-				alert(res.error);
-			}
-		} catch (err) {
-			console.error(err);
+		if (prescriptionsRes.status !== 200) {
+			const error = await prescriptionsRes.json();
+			alert("error" in error ? error.error : "Failed to save prescriptions");
+			return;
 		}
+		navigate({
+			to: "/doctor",
+		});
 	}
 
 	return (
