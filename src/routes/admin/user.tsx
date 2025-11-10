@@ -1,7 +1,7 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { ArrowLeftRight, Search } from "lucide-react";
 import type React from "react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	InputGroup,
@@ -24,7 +24,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { debounce } from "@/lib/utils";
 import { client } from "../api/$";
 
 export const Route = createFileRoute("/admin/user")({
@@ -69,10 +68,6 @@ function handleUnauthorized(status: number) {
 function Admin() {
 	const { users: allUsers, roles } = Route.useLoaderData();
 	const [users, setUsers] = useState(allUsers);
-	const debounced = useCallback(
-		debounce((query: string) => handleFilter(query), 300),
-		[],
-	);
 
 	const handleRoleChange = async (userId: number, roleId: number) => {
 		const res = await client.api.user[":id"].$post({
@@ -113,7 +108,7 @@ function Admin() {
 						<InputGroupInput
 							type="search"
 							placeholder="Search by name or username"
-							onChange={(e) => debounced(e.target.value)}
+							onChange={(e) => handleFilter(e.target.value)}
 						/>
 					</InputGroup>
 				</div>
