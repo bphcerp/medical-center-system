@@ -3,19 +3,23 @@ import { eq, getTableColumns } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
 import { rolesTable } from "@/db/auth";
+import { permissions } from "@/lib/types/permissions";
 import { db } from ".";
 import { rbacCheck } from "./rbac";
 
 const roleType = z.object({
 	name: z.string().min(1),
-	allowed: z.array(z.string().min(1)),
+	allowed: z.enum(permissions).array()
 });
 
 const role = new Hono()
 	.get("/all", rbacCheck({ permissions: ["admin"] }), async (c) => {
 		const { id, name, allowed } = getTableColumns(rolesTable);
 
-		const roles = await db.select({ id, name, allowed }).from(rolesTable);
+		const roles = await db
+			.select({ id, name, allowed })
+			.from(rolesTable)
+			.orderBy(name);
 
 		return c.json({ roles: roles });
 	})
@@ -26,13 +30,13 @@ const role = new Hono()
 		zValidator("json", roleType),
 		async (c) => {
 			const { id } = c.req.valid("param");
-			const { allowed } = c.req.valid("json");
+			const { name, allowed } = c.req.valid("json");
 
 			allowed.sort();
 
 			const res = await db
 				.update(rolesTable)
-				.set({ allowed: allowed })
+				.set({ name, allowed })
 				.where(eq(rolesTable.id, id));
 
 			if (res.rowCount !== 1) {
@@ -63,10 +67,8 @@ const role = new Hono()
 		zValidator("param", z.object({ id: z.coerce.number().int() })),
 		async (c) => {
 			const { id } = c.req.valid("param");
-			
-			const res = await db
-				.delete(rolesTable)
-				.where(eq(rolesTable.id, id));
+
+			const res = await db.delete(rolesTable).where(eq(rolesTable.id, id));
 
 			if (res.rowCount !== 1) {
 				return c.json({ error: "Role Not Found" }, 404);
