@@ -23,7 +23,6 @@ export const diseasesTable = pgTable(
 	{
 		id: integer().primaryKey().generatedAlwaysAsIdentity(),
 		name: varchar({ length: 1023 }).notNull(),
-		description: text().notNull(),
 		icd: varchar({ length: 255 }).notNull().unique(),
 	},
 	(table) => [uniqueIndex("icd_idx").on(table.icd)],
