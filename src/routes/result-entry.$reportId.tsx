@@ -305,23 +305,30 @@ function ResultEntry() {
 
 				<Card className="mb-6">
 					<CardHeader>
-						<CardTitle>Upload Lab Report</CardTitle>
+						<CardTitle>Upload Files</CardTitle>
 					</CardHeader>
 					<CardContent className="space-y-4">
-						<div>
-							<Label htmlFor={fileInputId}>Select File</Label>
+						<div className="flex items-center gap-2">
+							<Label
+								htmlFor={fileInputId}
+								className="hover:bg-primary w-fit transition p-3 rounded-md font-semibold border duration-300 ease-in-out cursor-pointer hover:text-primary-foreground"
+							>
+								Select File
+							</Label>
+							{selectedFile ? `${selectedFile.name}` : ""}
 							<Input
 								id={fileInputId}
 								type="file"
 								onChange={handleFileChange}
 								accept=".pdf,.jpg,.jpeg,.png"
-							/>
+								className="hidden"
+							></Input>
 						</div>
 						<Button
 							onClick={handleUpload}
 							disabled={!selectedFile || uploading}
 						>
-							{uploading ? "Uploading..." : "Upload File"}
+							{uploading ? "Uploading..." : "Upload"}
 						</Button>
 						{fileId && (
 							<p className="text-sm text-green-600">
