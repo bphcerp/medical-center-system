@@ -1,15 +1,13 @@
-import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { ChevronDown, ChevronsUpDown, Search } from "lucide-react";
+import { ChevronDown, ChevronsUpDown, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { Label } from "@radix-ui/react-label";
 import { client } from "./api/$";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
-import { Search, ChevronDown, ChevronsUpDown, Trash2 } from "lucide-react";
-import { Label } from "@radix-ui/react-label";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	Table,
@@ -33,14 +31,6 @@ import {
 	CommandItem,
 	CommandList,
 } from "@/components/ui/command";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Field, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import {
 	Popover,
 	PopoverContent,
@@ -99,6 +89,7 @@ export const Route = createFileRoute("/consultation/$id")({
 
 function ConsultationPage() {
 	const { caseDetail, medicines } = Route.useLoaderData();
+	const { id } = Route.useParams();
 	const medicinesTypes = [...new Set(medicines.map((m) => m.type))].sort();
 
 	const [finalizeButtonValue, setFinalizeButtonValue] = useState<
@@ -114,7 +105,7 @@ function ConsultationPage() {
 	>([]);
 
 	const filteredMedicines = medicines.filter((m) => {
-		const matchesType = medicineFilter === "Type" || m.type === medicineFilter;
+		const matchesType = !medicineFilter || medicineFilter === "Type" || m.type === medicineFilter;
 
 		const matchesQuery =
 			prescriptionQuery === "" ||
@@ -345,22 +336,16 @@ function ConsultationPage() {
 							open={medicinesSearchOpen}
 							onOpenChange={setmedicinesSearchOpen}
 						>
-							<PopoverTrigger asChild>
-								<Button
-									variant="outline"
-									role="combobox"
-									className="w-[300px] justify-between"
-								>
-									{prescriptionQuery
-										? filteredMedicines.find(
-												(m) => m.drug === prescriptionQuery,
-											)?.brand
-										: "Select a medicine..."}
-									<ChevronsUpDown className="ml-2 h-4 w-4" />
-								</Button>
-							</PopoverTrigger>
-
-							<PopoverContent className="w-[300px] p-0">
+						<PopoverTrigger asChild>
+							<Button
+								variant="outline"
+								role="combobox"
+								className="w-[300px] justify-between"
+							>
+								Select a medicine...
+								<ChevronsUpDown className="ml-2 h-4 w-4" />
+							</Button>
+						</PopoverTrigger>							<PopoverContent className="w-[300px] p-0">
 								<Command shouldFilter={false}>
 									<CommandInput
 										placeholder="Type a medicine to search..."
