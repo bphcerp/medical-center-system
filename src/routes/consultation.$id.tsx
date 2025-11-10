@@ -317,7 +317,7 @@ function ConsultationPage() {
 					</div>
 				</Card>
 				<Card className="col-span-4 row-span-1 rounded-tr-none rounded-tl-none py-2 px-2">
-					<div className="flex justify-end">
+					<div className="flex justify-end gap-2">
 						<Button variant="outline">Request Lab Tests</Button>
 						<ButtonGroup>
 							<Button variant="outline" onClick={handleFinalize}>
