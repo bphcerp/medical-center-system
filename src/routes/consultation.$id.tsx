@@ -1,22 +1,10 @@
+import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
-import { client } from "./api/$";
-import { Card } from "@/components/ui/card";
+import { ChevronDown, ChevronsUpDown, Search } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import { Input } from "@/components/ui/input";
-import { Field, FieldLabel } from "@/components/ui/field";
-import { Search, ChevronDown } from "lucide-react";
-import { Label } from "@radix-ui/react-label";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import { ChevronsUpDown } from "lucide-react";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Card } from "@/components/ui/card";
 import {
 	Command,
 	CommandEmpty,
@@ -26,10 +14,20 @@ import {
 	CommandList,
 } from "@/components/ui/command";
 import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
 	Popover,
-	PopoverTrigger,
 	PopoverContent,
+	PopoverTrigger,
 } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
+import { client } from "./api/$";
 
 export const Route = createFileRoute("/consultation/$id")({
 	loader: async ({ params }: { params: { id: string } }) => {
@@ -72,7 +70,7 @@ export const Route = createFileRoute("/consultation/$id")({
 });
 
 function ConsultationPage() {
-	const { user, caseDetail, medicines } = Route.useLoaderData();
+	const { caseDetail, medicines } = Route.useLoaderData();
 	const medicinesTypes = [...new Set(medicines.map((m) => m.type))].sort();
 	const { id } = Route.useParams();
 	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
@@ -320,8 +318,8 @@ function ConsultationPage() {
 				</Card>
 				<Card className="col-span-4 row-span-1 rounded-tr-none rounded-tl-none py-2 px-2">
 					<div className="flex justify-end">
+						<Button variant="outline">Request Lab Tests</Button>
 						<ButtonGroup>
-							<Button variant="outline">Request Lab Tests</Button>
 							<Button variant="outline" onClick={handleFinalize}>
 								{finalizeButtonValue}
 							</Button>
