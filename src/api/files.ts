@@ -11,9 +11,7 @@ import { rbacCheck } from "./rbac";
 export const seaweedfs = new SeaweedFSClient(env.SEAWEEDFS_MASTER);
 
 const app = new Hono()
-	.basePath("/files")
-
-	.get("/list", rbacCheck({ permissions: ["manage-users"] }), async (c) => {
+	.get("/list", rbacCheck({ permissions: ["admin"] }), async (c) => {
 		const files = await db.select().from(filesTable);
 		return c.json({
 			success: true,
@@ -25,7 +23,7 @@ const app = new Hono()
 	})
 	.get(
 		"/info/:id",
-		rbacCheck({ permissions: ["manage-users"] }),
+		rbacCheck({ permissions: ["admin"] }),
 		zValidator("param", z.object({ id: z.coerce.number() })),
 		async (c) => {
 			const { id } = c.req.valid("param");

@@ -298,5 +298,5 @@ export const authenticated = new Hono()
 	.route("/rbac", rbac)
 	.route("/vitals", vitals)
 	.route("/doctor", doctor)
-	.route("/", lab)
-	.route("/", files);
+	.route("/lab", lab)
+	.route("/files", files);
