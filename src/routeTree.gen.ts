@@ -15,11 +15,8 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as LabDashboardRouteImport } from './routes/lab-dashboard'
 import { Route as DoctorRouteImport } from './routes/doctor'
 import { Route as IndexRouteImport } from './routes/index'
-<<<<<<< HEAD
-import { Route as ResultEntryReportIdRouteImport } from './routes/result-entry.$reportId'
-=======
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
->>>>>>> main
+import { Route as ResultEntryReportIdRouteImport } from './routes/result-entry.$reportId'
 import { Route as ConsultationIdRouteImport } from './routes/consultation.$id'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
 import { Route as AdminUserRouteImport } from './routes/admin/user'
@@ -55,15 +52,14 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-<<<<<<< HEAD
-const ResultEntryReportIdRoute = ResultEntryReportIdRouteImport.update({
-  id: '/result-entry/$reportId',
-  path: '/result-entry/$reportId',
-=======
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
->>>>>>> main
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResultEntryReportIdRoute = ResultEntryReportIdRouteImport.update({
+  id: '/result-entry/$reportId',
+  path: '/result-entry/$reportId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConsultationIdRoute = ConsultationIdRouteImport.update({
@@ -98,11 +94,8 @@ export interface FileRoutesByFullPath {
   '/admin/user': typeof AdminUserRoute
   '/api/$': typeof ApiSplatRoute
   '/consultation/$id': typeof ConsultationIdRoute
-<<<<<<< HEAD
   '/result-entry/$reportId': typeof ResultEntryReportIdRoute
-=======
   '/admin': typeof AdminIndexRoute
->>>>>>> main
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -115,11 +108,8 @@ export interface FileRoutesByTo {
   '/admin/user': typeof AdminUserRoute
   '/api/$': typeof ApiSplatRoute
   '/consultation/$id': typeof ConsultationIdRoute
-<<<<<<< HEAD
   '/result-entry/$reportId': typeof ResultEntryReportIdRoute
-=======
   '/admin': typeof AdminIndexRoute
->>>>>>> main
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -133,11 +123,8 @@ export interface FileRoutesById {
   '/admin/user': typeof AdminUserRoute
   '/api/$': typeof ApiSplatRoute
   '/consultation/$id': typeof ConsultationIdRoute
-<<<<<<< HEAD
   '/result-entry/$reportId': typeof ResultEntryReportIdRoute
-=======
   '/admin/': typeof AdminIndexRoute
->>>>>>> main
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -152,11 +139,8 @@ export interface FileRouteTypes {
     | '/admin/user'
     | '/api/$'
     | '/consultation/$id'
-<<<<<<< HEAD
     | '/result-entry/$reportId'
-=======
     | '/admin'
->>>>>>> main
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -169,11 +153,8 @@ export interface FileRouteTypes {
     | '/admin/user'
     | '/api/$'
     | '/consultation/$id'
-<<<<<<< HEAD
     | '/result-entry/$reportId'
-=======
     | '/admin'
->>>>>>> main
   id:
     | '__root__'
     | '/'
@@ -186,11 +167,8 @@ export interface FileRouteTypes {
     | '/admin/user'
     | '/api/$'
     | '/consultation/$id'
-<<<<<<< HEAD
     | '/result-entry/$reportId'
-=======
     | '/admin/'
->>>>>>> main
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -204,11 +182,8 @@ export interface RootRouteChildren {
   AdminUserRoute: typeof AdminUserRoute
   ApiSplatRoute: typeof ApiSplatRoute
   ConsultationIdRoute: typeof ConsultationIdRoute
-<<<<<<< HEAD
   ResultEntryReportIdRoute: typeof ResultEntryReportIdRoute
-=======
   AdminIndexRoute: typeof AdminIndexRoute
->>>>>>> main
 }
 
 declare module '@tanstack/react-router' {
@@ -255,19 +230,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-<<<<<<< HEAD
-    '/result-entry/$reportId': {
-      id: '/result-entry/$reportId'
-      path: '/result-entry/$reportId'
-      fullPath: '/result-entry/$reportId'
-      preLoaderRoute: typeof ResultEntryReportIdRouteImport
-=======
     '/admin/': {
       id: '/admin/'
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminIndexRouteImport
->>>>>>> main
+      parentRoute: typeof rootRouteImport
+    }
+    '/result-entry/$reportId': {
+      id: '/result-entry/$reportId'
+      path: '/result-entry/$reportId'
+      fullPath: '/result-entry/$reportId'
+      preLoaderRoute: typeof ResultEntryReportIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/consultation/$id': {
@@ -312,11 +286,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminUserRoute: AdminUserRoute,
   ApiSplatRoute: ApiSplatRoute,
   ConsultationIdRoute: ConsultationIdRoute,
-<<<<<<< HEAD
   ResultEntryReportIdRoute: ResultEntryReportIdRoute,
-=======
   AdminIndexRoute: AdminIndexRoute,
->>>>>>> main
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
