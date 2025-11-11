@@ -10,10 +10,7 @@ export const statusEnum = pgEnum("status", [
 
 //exportable type as more tests can be added in the future
 //and  changing code everywhere else wont be a headache
-export const labReportTypes = [
-	"Blood Test",
-	"Urinalysis",
-] as const;
+export const labReportTypes = ["Blood Test", "Urinalysis"] as const;
 
 export type LabReportType = (typeof labReportTypes)[number];
 

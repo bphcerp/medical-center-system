@@ -3,7 +3,12 @@ import { zValidator } from "@hono/zod-validator";
 import { and, arrayContains, eq, inArray, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
-import { casePrescriptionsTable, casesTable, diseasesTable, medicinesTable } from "@/db/case";
+import {
+	casePrescriptionsTable,
+	casesTable,
+	diseasesTable,
+	medicinesTable,
+} from "@/db/case";
 import { caseLabReportsTable, labReportTypes } from "@/db/lab";
 import {
 	dependentsTable,
@@ -180,7 +185,8 @@ const doctor = new Hono()
 		async (c) => {
 			const payload = c.get("jwtPayload") as JWTPayload;
 			const userId = payload.id;
-			const { caseId, finalizedState, prescriptions, diagnosis } = c.req.valid("json");
+			const { caseId, finalizedState, prescriptions, diagnosis } =
+				c.req.valid("json");
 
 			await db.transaction(async (tx) => {
 				const updated = await tx

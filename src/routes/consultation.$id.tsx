@@ -34,7 +34,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { labReportTypes, type LabReportType } from "@/db/lab";
+import { type LabReportType, labReportTypes } from "@/db/lab";
 import { client } from "./api/$";
 
 type PrescriptionItem = {
@@ -118,8 +118,7 @@ function ConsultationPage() {
 
 	const [diagnosisItems, setDiagnosisItems] = useState<DiagnosisItem[]>([]);
 
-	const [diseasesSearchOpen, setDiseasesSearchOpen] =
-		useState<boolean>(false);
+	const [diseasesSearchOpen, setDiseasesSearchOpen] = useState<boolean>(false);
 
 	const filteredDiseases = diseases
 		.reduce(
@@ -364,7 +363,9 @@ function ConsultationPage() {
 			<h1 className="text-3xl font-bold">
 				Consultation for {caseDetail.patientName}
 			</h1>
-			<p className="text-muted-foreground my-2">Token Number: {caseDetail.token}</p>
+			<p className="text-muted-foreground my-2">
+				Token Number: {caseDetail.token}
+			</p>
 
 			<Dialog open={labTestModalOpen} onOpenChange={setLabTestModalOpen}>
 				<DialogContent>
@@ -376,6 +377,8 @@ function ConsultationPage() {
 							Select the lab tests to request:
 						</p>
 						{availableLabTests.map((test) => (
+							// biome-ignore lint/a11y/noStaticElementInteractions: TODO: replace this with a checkbox-like element to improve accessibility
+							// biome-ignore lint/a11y/useKeyWithClickEvents: see above TODO
 							<div
 								key={test}
 								className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-accent"
@@ -407,7 +410,7 @@ function ConsultationPage() {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
-			
+
 			<Card className="mb-2">
 				<div className="flex gap-4 mx-3">
 					<Field>
@@ -553,9 +556,7 @@ function ConsultationPage() {
 						diagnosisItems.map((item) => (
 							<div key={item.id} className="px-2">
 								<div className="w-full flex flex-wrap gap-2">
-									<span className="font-medium">
-										{item.name}
-									</span>
+									<span className="font-medium">{item.name}</span>
 									<span className="font-medium text-muted-foreground">
 										(ICD: {item.icd})
 									</span>
@@ -564,8 +565,8 @@ function ConsultationPage() {
 										onClick={() => handleRemoveDiagnosisItem(item.id)}
 										className="h-6 w-6"
 									>
-										<Trash2/>
-								</Button>
+										<Trash2 />
+									</Button>
 								</div>
 							</div>
 						))}
@@ -587,11 +588,7 @@ function ConsultationPage() {
 									<ChevronsUpDown className="ml-2 h-4 w-4" />
 								</Button>
 							</PopoverTrigger>
-							<PopoverContent
-								className="p-0 w-3xl"
-								align="start"
-								side="top"
-							>
+							<PopoverContent className="p-0 w-3xl" align="start" side="top">
 								<Command shouldFilter={false}>
 									<CommandInput
 										placeholder="Type a medicine to search..."
@@ -701,10 +698,7 @@ function ConsultationPage() {
 				</Card>
 				<Card className="col-span-4 row-span-1 rounded-tr-none rounded-tl-none py-2 px-2">
 					<div className="flex justify-end gap-2">
-						<Button
-							variant="outline"
-							onClick={() => setLabTestModalOpen(true)}
-						>
+						<Button variant="outline" onClick={() => setLabTestModalOpen(true)}>
 							Request Lab Tests
 						</Button>
 						<ButtonGroup>
