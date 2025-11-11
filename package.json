@@ -6,7 +6,8 @@
 		"dev": "vite dev",
 		"start": "bun --bun .output/server/index.mjs",
 		"build": "vite build",
-		"serve": "vite preview"
+		"serve": "vite preview",
+		"lint": "biome ci src/"
 	},
 	"dependencies": {
 		"@hono/zod-validator": "^0.7.4",
