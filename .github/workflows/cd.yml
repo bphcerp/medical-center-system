@@ -1,0 +1,20 @@
+name: Redeploy Staging
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  medc-staging:
+    runs-on: medc
+    steps:
+      - name: Pull repo and update
+        run: |
+          cd /home/ubuntu
+          cd medc/staging
+          git checkout main
+          git reset --hard HEAD
+          git pull origin main
+          docker compose --profile prod up --build -d

@@ -8,10 +8,13 @@ export const statusEnum = pgEnum("status", [
 	"Done",
 ]);
 
-export const labReportTypeEnum = pgEnum("lab_report_type", [
-	"Blood Test",
-	"Urinalysis",
-]);
+//exportable type as more tests can be added in the future
+//and  changing code everywhere else wont be a headache
+export const labReportTypes = ["Blood Test", "Urinalysis"] as const;
+
+export type LabReportType = (typeof labReportTypes)[number];
+
+export const labReportTypeEnum = pgEnum("lab_report_type", labReportTypes);
 
 export const caseLabReportsTable = pgTable("case_lab_reports", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),

@@ -18,13 +18,13 @@ services:
 
   seaweedfs-master:
     image: chrislusf/seaweedfs:latest
-    command: "master -ip=seaweedfs-master -ip.bind=0.0.0.0 -port=9333 -mdir=/data"
+    command: "master -ip=seaweedfs-master -ip.bind=0.0.0.0 -port=${SEAWEEDFS_MASTER_PORT} -mdir=/data"
     ports:
-      - "9333:9333"
+      - "${SEAWEEDFS_MASTER_PORT}:${SEAWEEDFS_MASTER_PORT}"
     volumes:
       - seaweedfs-master-data:/data
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9333/cluster/status"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${SEAWEEDFS_MASTER_PORT}/cluster/status"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -35,9 +35,9 @@ services:
 
   seaweedfs-volume:
     image: chrislusf/seaweedfs:latest
-    command: "volume -mserver=seaweedfs-master:9333 -ip=seaweedfs-volume -ip.bind=0.0.0.0 -port=8080 -max=100 -dir=/data"
+    command: "volume -mserver=seaweedfs-master:${SEAWEEDFS_MASTER_PORT} -ip=seaweedfs-volume -ip.bind=0.0.0.0 -port=${SEAWEEDFS_VOLUME_PORT} -max=100 -dir=/data"
     ports:
-      - "8080:8080"
+      - "${SEAWEEDFS_VOLUME_PORT}:${SEAWEEDFS_VOLUME_PORT}"
     volumes:
       - seaweedfs-volume-data:/data
     depends_on:
@@ -63,9 +63,25 @@ services:
         source: ./src
         target: /usr/local/app/src
     ports:
-      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+      - "${FRONTEND_PORT}:3000"
     profiles:
       - "dev"
+
+  app-prod:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile.prod
+    depends_on:
+      db:
+        condition: service_healthy
+      seaweedfs-master:
+        condition: service_healthy
+    env_file:
+      - .env
+    ports:
+      - "${FRONTEND_PORT}:3000"
+    profiles:
+      - "prod"
 
 volumes:
   seaweedfs-master-data:
