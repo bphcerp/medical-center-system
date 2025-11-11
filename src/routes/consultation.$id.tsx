@@ -314,7 +314,7 @@ function ConsultationPage() {
 			<h1 className="text-3xl font-bold">
 				Consultation for {caseDetail.patientName}
 			</h1>
-			<p className="text-muted-foreground my-2">Case ID: {id}</p>
+			<p className="text-muted-foreground my-2">Token Number: {caseDetail.token}</p>
 			<Card className="mb-2">
 				<div className="flex gap-4 mx-3">
 					<Field>
