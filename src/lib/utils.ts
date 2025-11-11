@@ -16,6 +16,10 @@ export const debounce = <I, O>(callback: (input: I) => O, wait: number) => {
 	};
 };
 
+export function titleCase(str: string) {
+	return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
 export function handleUnauthorized(status: number) {
 	switch (status) {
 		case 401:

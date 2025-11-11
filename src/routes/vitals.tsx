@@ -1,4 +1,6 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import { Check } from "lucide-react";
+import type React from "react";
 import { useEffect, useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,7 +18,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+import { cn, titleCase } from "@/lib/utils";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/vitals")({
@@ -143,11 +145,13 @@ function Vitals() {
 			<h1 className="text-3xl font-bold border-b p-4">Patient Queue</h1>
 			<div className="flex items-stretch divide-x divide-border grow min-h-0">
 				<div className="flex flex-col flex-2 p-4 gap-4 overflow-y-scroll bottom-0 min-h-0">
+					{unprocessed.length === 0 && (
+						<p className="text-center my-auto">No patients in queue</p>
+					)}
 					{unprocessed.map((patient) => {
 						const isSelected =
 							focusedPatient?.unprocessed.id === patient.unprocessed.id;
-						const s = patient.patients.sex;
-						const sex = `${s[0].toUpperCase()}${s.slice(1).toLowerCase()}`;
+						const sex = titleCase(patient.patients.sex);
 						return (
 							<Button
 								variant="ghost"
@@ -162,13 +166,17 @@ function Vitals() {
 									className={cn(
 										"h-full content-center min-w-13 px-2 text-center",
 										"font-semibold tabular-nums tracking-tight text-lg transition-colors",
-										isSelected ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground",
+										isSelected
+											? "bg-primary text-primary-foreground"
+											: "bg-accent text-accent-foreground",
 									)}
 								>
 									{patient.unprocessed.id}
 								</span>
 								<div className="flex grow flex-col items-start text-base py-2 pr-2">
-									<span className="whitespace-normal text-left">{patient.patients.name}</span>
+									<span className="whitespace-normal text-left">
+										{patient.patients.name}
+									</span>
 									<div className="flex justify-between w-full items-end">
 										<span className="text-muted-foreground font-medium text-left text-sm">
 											{sex}, {patient.patients.age} y.o.
@@ -180,174 +188,220 @@ function Vitals() {
 						);
 					})}
 				</div>
-				<div className="h-full flex-5 px-36">
+				<div className="h-full flex-5 px-12 flex">
 					{focusedPatient ? (
-						<form className="pt-48" action={handleCreateCase}>
+						<form className="mt-12 w-full" action={handleCreateCase}>
 							<FieldSet>
 								<FieldGroup>
-									<h2 className="text-2xl font-bold mb-4">
-										Entering Vitals for {focusedPatient.patients.name} (Token:{" "}
-										{focusedPatient.unprocessed.id})
-									</h2>
-									<div className="grid grid-cols-4 gap-4">
-										<Field>
-											<FieldLabel htmlFor={bodyTemperatureId}>
-												Body Temperature (optional)
-											</FieldLabel>
-											<InputGroup>
-												<InputGroupInput
-													id={bodyTemperatureId}
-													type="number"
-													placeholder="Body Temperature"
-													name="bodyTemperature"
-												/>
-												<InputGroupAddon align="inline-end">
-													° F
-												</InputGroupAddon>
-											</InputGroup>
-										</Field>
-										<Field>
-											<FieldLabel htmlFor={heartRateId}>
-												Heart Rate (optional)
-											</FieldLabel>
-											<InputGroup>
-												<InputGroupInput
-													id={heartRateId}
-													type="number"
-													placeholder="Heart Rate"
-													name="heartRate"
-												/>
-												<InputGroupAddon align="inline-end">
-													bpm
-												</InputGroupAddon>
-											</InputGroup>
-										</Field>
-										<Field>
-											<FieldLabel htmlFor={respiratoryRateId}>
-												Respiratory Rate (optional)
-											</FieldLabel>
-											<InputGroup>
-												<InputGroupInput
-													id={respiratoryRateId}
-													type="number"
-													placeholder="Respiratory Rate"
-													name="respiratoryRate"
-												/>
-												<InputGroupAddon align="inline-end">
-													per minute
-												</InputGroupAddon>
-											</InputGroup>
-										</Field>
-										<Field>
-											<FieldLabel htmlFor={weightId}>
-												Weight (optional)
-											</FieldLabel>
-											<InputGroup>
-												<InputGroupInput
-													id={weightId}
-													type="number"
-													placeholder="Weight"
-													name="weight"
-												/>
-												<InputGroupAddon align="inline-end">kg</InputGroupAddon>
-											</InputGroup>
-										</Field>
-										<Field>
-											<FieldLabel htmlFor={bloodPressureSystolicId}>
-												Blood Pressure Systolic (optional)
-											</FieldLabel>
-											<InputGroup>
-												<InputGroupInput
-													id={bloodPressureSystolicId}
-													type="number"
-													placeholder="Blood Pressure (Systolic)"
-													name="bloodPressureSystolic"
-												/>
-												<InputGroupAddon align="inline-end">
-													mm Hg
-												</InputGroupAddon>
-											</InputGroup>
-										</Field>
-										<Field>
-											<FieldLabel htmlFor={bloodPressureDiastolicId}>
-												Blood Pressure Diastolic (optional)
-											</FieldLabel>
-											<InputGroup>
-												<InputGroupInput
-													id={bloodPressureDiastolicId}
-													type="number"
-													placeholder="Blood Pressure (Diastolic)"
-													name="bloodPressureDiastolic"
-												/>
-												<InputGroupAddon align="inline-end">
-													mm Hg
-												</InputGroupAddon>
-											</InputGroup>
-										</Field>
-										<Field>
-											<FieldLabel htmlFor={spo2Id}>SpO2 (optional)</FieldLabel>
-											<InputGroup>
-												<InputGroupInput
-													id={spo2Id}
-													type="number"
-													placeholder="SpO2"
-													name="spo2"
-												/>
-												<InputGroupAddon align="inline-end">%</InputGroupAddon>
-											</InputGroup>
-										</Field>
-										<Field>
-											<FieldLabel htmlFor={bloodSugarId}>
-												Blood Sugar (optional)
-											</FieldLabel>
-											<InputGroup>
-												<InputGroupInput
-													id={bloodSugarId}
-													type="number"
-													placeholder="Blood Sugar"
-													name="bloodSugar"
-												/>
-												<InputGroupAddon align="inline-end">
-													mg/dL
-												</InputGroupAddon>
-											</InputGroup>
-										</Field>
+									<div className="flex flex-col gap-2">
+										<p className="italic text-muted-foreground">
+											Entering vitals for
+										</p>
+										<div className="flex items-stretch gap-3">
+											<PatientTypeBadge
+												key={focusedPatient.patients.id}
+												type={focusedPatient.patients.type}
+												className="text-2xl border px-3 tabular-nums tracking-tight font-medium flex items-center"
+											>
+												{focusedPatient.unprocessed.id}
+											</PatientTypeBadge>
+											<div className="flex flex-col gap-0.5">
+												<span className="text-3xl font-bold">
+													{focusedPatient.patients.name}
+												</span>
+												<span className="flex items-center gap-2">
+													<span className="text-muted-foreground font-medium text-lg">
+														{titleCase(focusedPatient.patients.sex)},{" "}
+														{focusedPatient.patients.age} year
+														{focusedPatient.patients.age !== 1 ? "s" : ""} old
+													</span>
+													<PatientTypeBadge
+														type={focusedPatient.patients.type}
+													/>
+												</span>
+											</div>
+										</div>
+									</div>
+									<div className="flex items-start gap-4">
+										<div className="flex-2 flex flex-col gap-4 p-4 rounded-lg bg-pink-700/5">
+											<div className="grid grid-cols-2 gap-4 flex-2">
+												<Field>
+													<FieldLabel htmlFor={bodyTemperatureId}>
+														Body Temperature (optional)
+													</FieldLabel>
+													<InputGroup>
+														<InputGroupInput
+															id={bodyTemperatureId}
+															type="number"
+															placeholder="Body Temperature"
+															name="bodyTemperature"
+														/>
+														<InputGroupAddon align="inline-end">
+															° F
+														</InputGroupAddon>
+													</InputGroup>
+												</Field>
+												<Field>
+													<FieldLabel htmlFor={heartRateId}>
+														Heart Rate (optional)
+													</FieldLabel>
+													<InputGroup>
+														<InputGroupInput
+															id={heartRateId}
+															type="number"
+															placeholder="Heart Rate"
+															name="heartRate"
+														/>
+														<InputGroupAddon align="inline-end">
+															bpm
+														</InputGroupAddon>
+													</InputGroup>
+												</Field>
+												<Field>
+													<FieldLabel htmlFor={respiratoryRateId}>
+														Respiratory Rate (optional)
+													</FieldLabel>
+													<InputGroup>
+														<InputGroupInput
+															id={respiratoryRateId}
+															type="number"
+															placeholder="Respiratory Rate"
+															name="respiratoryRate"
+														/>
+														<InputGroupAddon align="inline-end">
+															per minute
+														</InputGroupAddon>
+													</InputGroup>
+												</Field>
+												<Field>
+													<FieldLabel htmlFor={spo2Id}>
+														SpO2 (optional)
+													</FieldLabel>
+													<InputGroup>
+														<InputGroupInput
+															id={spo2Id}
+															type="number"
+															placeholder="SpO2"
+															name="spo2"
+														/>
+														<InputGroupAddon align="inline-end">
+															%
+														</InputGroupAddon>
+													</InputGroup>
+												</Field>
+											</div>
+											<div className="grid grid-cols-2 gap-4 pt-4 border-t border-pink-700/40">
+												<Field>
+													<FieldLabel htmlFor={bloodPressureSystolicId}>
+														Blood Pressure Systolic (optional)
+													</FieldLabel>
+													<InputGroup>
+														<InputGroupInput
+															id={bloodPressureSystolicId}
+															type="number"
+															placeholder="Blood Pressure (Systolic)"
+															name="bloodPressureSystolic"
+														/>
+														<InputGroupAddon align="inline-end">
+															mm Hg
+														</InputGroupAddon>
+													</InputGroup>
+												</Field>
+												<Field>
+													<FieldLabel htmlFor={bloodPressureDiastolicId}>
+														Blood Pressure Diastolic (optional)
+													</FieldLabel>
+													<InputGroup>
+														<InputGroupInput
+															id={bloodPressureDiastolicId}
+															type="number"
+															placeholder="Blood Pressure (Diastolic)"
+															name="bloodPressureDiastolic"
+														/>
+														<InputGroupAddon align="inline-end">
+															mm Hg
+														</InputGroupAddon>
+													</InputGroup>
+												</Field>
+											</div>
+										</div>
+										<div className="flex-1 grid grid-cols-1 gap-4 p-4 rounded-lg bg-purple-700/5">
+											<Field>
+												<FieldLabel htmlFor={weightId}>
+													Weight (optional)
+												</FieldLabel>
+												<InputGroup>
+													<InputGroupInput
+														id={weightId}
+														type="number"
+														placeholder="Weight"
+														name="weight"
+													/>
+													<InputGroupAddon align="inline-end">
+														kg
+													</InputGroupAddon>
+												</InputGroup>
+											</Field>
+											<Field>
+												<FieldLabel htmlFor={bloodSugarId}>
+													Blood Sugar (optional)
+												</FieldLabel>
+												<InputGroup>
+													<InputGroupInput
+														id={bloodSugarId}
+														type="number"
+														placeholder="Blood Sugar"
+														name="bloodSugar"
+													/>
+													<InputGroupAddon align="inline-end">
+														mg/dL
+													</InputGroupAddon>
+												</InputGroup>
+											</Field>
+										</div>
 									</div>
 									<Separator className="my-2" />
-									<Field>
-										<FieldLabel htmlFor={doctorAssignedId}>
-											Doctor Assigned
-										</FieldLabel>
-										<Select
-											required
-											name="doctorAssigned"
-											onValueChange={(v) => {
-												setAssignedDoctor(parseInt(v, 10));
-											}}
-										>
-											<SelectTrigger>
-												<SelectValue placeholder="Select Doctor" />
-											</SelectTrigger>
-											<SelectContent>
-												{availableDoctors.map((option) => (
-													<SelectItem
-														key={option.name}
-														value={option.id.toString()}
-													>
-														{option.name}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</Field>
-									<Field>
-										<Button type="submit">Submit</Button>
-									</Field>
+									<div className="flex items-end gap-4">
+										<Field>
+											<FieldLabel htmlFor={doctorAssignedId}>
+												Doctor Assigned
+											</FieldLabel>
+											<Select
+												required
+												name="doctorAssigned"
+												onValueChange={(v) => {
+													setAssignedDoctor(parseInt(v, 10));
+												}}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder="Select Doctor" />
+												</SelectTrigger>
+												<SelectContent>
+													{availableDoctors.map((option) => (
+														<SelectItem
+															key={option.name}
+															value={option.id.toString()}
+														>
+															{option.name}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										</Field>
+										<Field className="col-span-2">
+											<Button type="submit" size="lg">
+												<Check />
+												Submit
+											</Button>
+										</Field>
+									</div>
 								</FieldGroup>
 							</FieldSet>
 						</form>
 					) : (
-						<p>No Patient Selected</p>
+						<p className="self-center text-center w-full">
+							No Patient Selected
+						</p>
 					)}
 				</div>
 			</div>
@@ -357,9 +411,13 @@ function Vitals() {
 
 function PatientTypeBadge({
 	type,
-}: {
+	className,
+	children,
+	...props
+}: React.PropsWithChildren<{
 	type: (typeof Route.types.loaderData.unprocessed)[number]["patients"]["type"];
-}) {
+}> &
+	React.ComponentProps<typeof Badge>) {
 	let color: string;
 	switch (type) {
 		case "professor":
@@ -373,5 +431,12 @@ function PatientTypeBadge({
 			color = "text-teal-700 border-teal-700";
 			break;
 	}
-	return <Badge className={cn("border bg-transparent rounded-sm ", color)}>{type}</Badge>;
+	return (
+		<Badge
+			className={cn("border bg-transparent rounded-sm", color, className)}
+			{...props}
+		>
+			{children ?? type}
+		</Badge>
+	);
 }
