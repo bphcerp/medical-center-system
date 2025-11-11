@@ -285,10 +285,11 @@ function ConsultationPage() {
 				);
 				return;
 		}
-		const prescriptionsRes = await client.api.doctor.finalizeCase.$post({
+		const caseRes = await client.api.doctor.finalizeCase.$post({
 			json: {
 				caseId: Number(id),
 				finalizedState: finalizedState,
+				diagnosis: diagnosisItems.map((d) => d.id),
 				prescriptions: prescriptionItems.map((item) => ({
 					medicineId: item.id,
 					dosage: item.dosage,
@@ -298,9 +299,9 @@ function ConsultationPage() {
 			},
 		});
 
-		if (prescriptionsRes.status !== 200) {
-			const error = await prescriptionsRes.json();
-			alert("error" in error ? error.error : "Failed to save prescriptions");
+		if (caseRes.status !== 200) {
+			const error = await caseRes.json();
+			alert("error" in error ? error.error : "Failed to save case data");
 			return;
 		}
 		navigate({

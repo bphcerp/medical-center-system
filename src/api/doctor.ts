@@ -166,6 +166,7 @@ const doctor = new Hono()
 			z.object({
 				caseId: z.number().int(),
 				finalizedState: z.enum(["opd", "admitted", "referred"]),
+				diagnosis: z.array(z.number().int()).optional(),
 				prescriptions: z.array(
 					z.object({
 						medicineId: z.number().int(),
@@ -179,13 +180,14 @@ const doctor = new Hono()
 		async (c) => {
 			const payload = c.get("jwtPayload") as JWTPayload;
 			const userId = payload.id;
-			const { caseId, finalizedState, prescriptions } = c.req.valid("json");
+			const { caseId, finalizedState, prescriptions, diagnosis } = c.req.valid("json");
 
 			await db.transaction(async (tx) => {
 				const updated = await tx
 					.update(casesTable)
 					.set({
 						finalizedState,
+						...(diagnosis ? { diagnosis } : {}),
 					})
 					.where(
 						and(
