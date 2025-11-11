@@ -1,6 +1,6 @@
 import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { ChevronDown, ChevronsUpDown, Search, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronsUpDown, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
