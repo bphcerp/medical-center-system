@@ -7,7 +7,6 @@ on:
 jobs:
   lint-and-compile:
     name: Lint and Run Build
-    runs-on: timetable-scheduler
 
     steps:
       - name: Checkout code

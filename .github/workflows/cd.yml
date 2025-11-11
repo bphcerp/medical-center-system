@@ -8,7 +8,7 @@ on:
 
 jobs:
   medc-staging:
-    runs-on: timetable-scheduler
+    runs-on: medc
     steps:
       - name: Pull repo and update
         run: |
