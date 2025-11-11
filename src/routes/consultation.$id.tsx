@@ -42,6 +42,12 @@ type PrescriptionItem = {
 	comments: string;
 };
 
+type DiagnosisItem = {
+	id: number;
+	name: string;
+	icd: string;
+};
+
 export const Route = createFileRoute("/consultation/$id")({
 	loader: async ({ params }: { params: { id: string } }) => {
 		// Check if user is authenticated
@@ -78,19 +84,90 @@ export const Route = createFileRoute("/consultation/$id")({
 		const { medicines } = await medicinesRes.json();
 		// console.log(medicines);
 
-		return { user, caseDetail, medicines };
+		const diseasesRes = await client.api.doctor.diseases.$get();
+
+		if (diseasesRes.status !== 200) {
+			throw new Error("Failed to fetch diseases details");
+		}
+
+		const { diseases } = await diseasesRes.json();
+
+		return { user, caseDetail, medicines, diseases };
 	},
 	component: ConsultationPage,
 });
 
 function ConsultationPage() {
-	const { caseDetail, medicines } = Route.useLoaderData();
+	const { caseDetail, medicines, diseases } = Route.useLoaderData();
 	const navigate = useNavigate();
 	const { id } = Route.useParams();
 
 	const [finalizeButtonValue, setFinalizeButtonValue] = useState<
 		"Finalize (OPD)" | "Admit" | "Referral"
 	>("Finalize (OPD)");
+
+	const [diagnosisQuery, setDiagnosisQuery] = useState<string>("");
+
+	const [diagnosisItems, setDiagnosisItems] = useState<DiagnosisItem[]>([]);
+
+	const [diseasesSearchOpen, setDiseasesSearchOpen] =
+		useState<boolean>(false);
+
+	const filteredDiseases = diseases
+		.reduce(
+			(acc, disease) => {
+				if (diagnosisQuery === "") {
+					acc.push({
+						disease,
+						count: 0,
+					});
+					return acc;
+				}
+
+				const count = diagnosisQuery
+					.trim()
+					.split(/\s+/)
+					.reduce((count, term) => {
+						return (
+							count +
+							(disease.icd.toLowerCase().includes(term.toLowerCase()) ||
+							disease.name.toLowerCase().includes(term.toLowerCase())
+								? 1
+								: 0)
+						);
+					}, 0);
+
+				if (count > 0) {
+					acc.push({
+						disease,
+						count,
+					});
+				}
+				return acc;
+			},
+			[] as { disease: (typeof diseases)[0]; count: number }[],
+		)
+		.sort((a, b) => b.count - a.count);
+
+	const handleAddDisease = (disease: (typeof diseases)[0]) => {
+		if (diagnosisItems.some((item) => item.id === disease.id)) {
+			alert("This disease is already in the diagnosis");
+			return;
+		}
+
+		const newItem: DiagnosisItem = {
+			id: disease.id,
+			name: disease.name,
+			icd: disease.icd,
+		};
+
+		setDiagnosisItems([...diagnosisItems, newItem]);
+		setDiagnosisQuery("");
+	};
+
+	const handleRemoveDiagnosisItem = (id: number) => {
+		setDiagnosisItems(diagnosisItems.filter((item) => item.id !== id));
+	};
 
 	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
 
@@ -327,15 +404,77 @@ function ConsultationPage() {
 						placeholder="Write notes here..."
 					/>
 				</Card>
-				<Card className="col-span-2 row-span-1 rounded-l-none rounded-br-none min-h-52">
-					<div className="flex items-center">
-						<Label className="font-semibold mx-3">Diagnosis: </Label>
-						<div className="relative w-full">
-							<Search className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground" />
-							<Input placeholder="Search..." className="pl-8" />
-						</div>
-						<Button className="mx-3">Search</Button>
+				<Card className="col-span-2 row-span-1 rounded-l-none rounded-br-none min-h-52 gap-2">
+					<div className="flex items-center w-full gap-2 px-2">
+						<Label className="font-semibold">Diagnosis: </Label>
+						<Popover
+							open={diseasesSearchOpen}
+							onOpenChange={setDiseasesSearchOpen}
+						>
+							<PopoverTrigger asChild>
+								<Button
+									variant="outline"
+									role="combobox"
+									className="justify-between w-[48rem]"
+								>
+									Select a disease...
+									<ChevronsUpDown className="ml-2 h-4 w-4" />
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent
+								className="p-0 w-[48rem]"
+								align="start"
+								side="top"
+							>
+								<Command shouldFilter={false}>
+									<CommandInput
+										placeholder="Type a disease to search..."
+										value={diagnosisQuery}
+										onValueChange={setDiagnosisQuery}
+									/>
+									<CommandList>
+										<CommandEmpty>No diseases found.</CommandEmpty>
+										<CommandGroup heading="Diseases">
+											{filteredDiseases.map(({ disease }) => (
+												<CommandItem
+													key={disease.id}
+													onSelect={() => {
+														handleAddDisease(disease);
+														setDiseasesSearchOpen(false);
+													}}
+													className="flex justify-between"
+												>
+													<span>
+														{disease.name} (ICD: {disease.icd})
+													</span>
+												</CommandItem>
+											))}
+										</CommandGroup>
+									</CommandList>
+								</Command>
+							</PopoverContent>
+						</Popover>
 					</div>
+					{diagnosisItems.length > 0 &&
+						diagnosisItems.map((item) => (
+							<div key={item.id} className="px-2">
+								<div className="w-full flex flex-wrap gap-2">
+									<span className="font-medium">
+										{item.name}
+									</span>
+									<span className="font-medium text-muted-foreground">
+										(ICD: {item.icd})
+									</span>
+									<Button
+										variant="destructive"
+										onClick={() => handleRemoveDiagnosisItem(item.id)}
+										className="h-6 w-6"
+									>
+										<Trash2/>
+								</Button>
+								</div>
+							</div>
+						))}
 				</Card>
 				<Card className="col-span-2 gap-4 row-span-1 rounded-none min-h-52">
 					<div className="flex items-center w-full gap-2 px-2">
