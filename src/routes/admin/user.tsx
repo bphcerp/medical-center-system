@@ -1,6 +1,5 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { ArrowLeftRight, Search } from "lucide-react";
-import type React from "react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +20,7 @@ import {
 	Table,
 	TableBody,
 	TableCell,
+	TableHead,
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
@@ -115,23 +115,29 @@ function Admin() {
 			</div>
 			<Table>
 				<TableHeader>
-					<RowItem name="Name" username="Username" header>
-						Role
-					</RowItem>
+					<TableRow>
+						<TableHead className="w-2/5 whitespace-break-spaces">
+							Name
+						</TableHead>
+						<TableHead className="w-2/5">Username</TableHead>
+						<TableHead className="w-1/5">Role</TableHead>
+					</TableRow>
 				</TableHeader>
 				<TableBody>
 					{users.map((user) => (
-						<RowItem
-							key={user.username}
-							name={user.name}
-							username={user.username}
-						>
-							<RoleSelect
-								role={user.role.toString()}
-								roles={roles}
-								setRole={(id) => handleRoleChange(user.id, id)}
-							/>
-						</RowItem>
+						<TableRow key={user.username}>
+							<TableCell className="whitespace-break-spaces">
+								{user.name}
+							</TableCell>
+							<TableCell className="font-mono">{user.username}</TableCell>
+							<TableCell>
+								<RoleSelect
+									role={user.role.toString()}
+									roles={roles}
+									setRole={(id) => handleRoleChange(user.id, id)}
+								/>
+							</TableCell>
+						</TableRow>
 					))}
 				</TableBody>
 			</Table>
@@ -181,26 +187,5 @@ function RoleSelect({
 				</SelectContent>
 			</Select>
 		</div>
-	);
-}
-
-function RowItem({
-	name,
-	username,
-	children,
-	header = false,
-}: React.PropsWithChildren<{
-	header?: boolean;
-	name: string;
-	username: string;
-}>) {
-	return (
-		<TableRow>
-			<TableCell className="w-2/5 whitespace-break-spaces">{name}</TableCell>
-			<TableCell className={`w-2/5 ${header ? "" : "font-mono"}`}>
-				{username}
-			</TableCell>
-			<TableCell className="w-1/5">{children}</TableCell>
-		</TableRow>
 	);
 }
