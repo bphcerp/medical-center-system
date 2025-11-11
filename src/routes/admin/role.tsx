@@ -27,6 +27,7 @@ import {
 	Table,
 	TableBody,
 	TableCell,
+	TableHead,
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
@@ -117,11 +118,11 @@ function RolePage() {
 			<Table>
 				<TableHeader>
 					<TableRow>
-						<TableCell className="w-0 p-0" />
-						<TableCell className="w-1/4">Role</TableCell>
-						<TableCell className="w-0 p-0" />
-						<TableCell className="pl-2">Permissions</TableCell>
-						<TableCell className="w-0 p-0" />
+						<TableHead className="w-0 p-0" />
+						<TableHead className="w-1/4">Role</TableHead>
+						<TableHead className="w-0 p-0" />
+						<TableHead className="pl-2">Permissions</TableHead>
+						<TableHead className="w-0 p-0" />
 					</TableRow>
 				</TableHeader>
 				<TableBody>
