@@ -512,17 +512,13 @@ function ConsultationPage() {
 								<Button
 									variant="outline"
 									role="combobox"
-									className="justify-between w-[48rem]"
+									className="justify-between w-3xl"
 								>
 									Select a disease...
 									<ChevronsUpDown className="ml-2 h-4 w-4" />
 								</Button>
 							</PopoverTrigger>
-							<PopoverContent
-								className="p-0 w-[48rem]"
-								align="start"
-								side="top"
-							>
+							<PopoverContent className="p-0 w-3xl" align="start" side="top">
 								<Command shouldFilter={false}>
 									<CommandInput
 										placeholder="Type a disease to search..."
