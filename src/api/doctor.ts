@@ -4,7 +4,7 @@ import { and, arrayContains, eq, inArray, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
 import { casePrescriptionsTable, casesTable, diseasesTable, medicinesTable } from "@/db/case";
-import { caseLabReportsTable } from "@/db/lab";
+import { caseLabReportsTable, labReportTypes } from "@/db/lab";
 import {
 	dependentsTable,
 	patientsTable,
@@ -219,6 +219,50 @@ const doctor = new Hono()
 			return c.json({
 				success: true,
 				message: "Finalized state updated successfully",
+			});
+		},
+	)
+	.post(
+		"/requestLabTests",
+		zValidator(
+			"json",
+			z.object({
+				caseId: z.number().int(),
+				tests: z.array(z.enum(labReportTypes)),
+			}),
+		),
+		async (c) => {
+			const payload = c.get("jwtPayload") as JWTPayload;
+			const userId = payload.id;
+			const { caseId, tests } = c.req.valid("json");
+
+			//is it the docs caase????
+			const [caseExists] = await db
+				.select({ id: casesTable.id })
+				.from(casesTable)
+				.where(
+					and(
+						eq(casesTable.id, caseId),
+						arrayContains(casesTable.associatedUsers, [userId]),
+					),
+				)
+				.limit(1);
+
+			if (!caseExists) {
+				return c.json({ error: "Case not found" }, 404);
+			}
+
+			await db.insert(caseLabReportsTable).values(
+				tests.map((test) => ({
+					caseId,
+					type: test,
+					status: "Requested" as const,
+				})),
+			);
+
+			return c.json({
+				success: true,
+				message: "Lab tests requested successfully",
 			});
 		},
 	);
