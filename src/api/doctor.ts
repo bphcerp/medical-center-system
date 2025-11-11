@@ -3,7 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { and, arrayContains, eq, inArray, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
-import { casePrescriptionsTable, casesTable, medicinesTable } from "@/db/case";
+import { casePrescriptionsTable, casesTable, diseasesTable, medicinesTable } from "@/db/case";
 import { caseLabReportsTable, labReportTypes } from "@/db/lab";
 import {
 	dependentsTable,
@@ -150,6 +150,15 @@ const doctor = new Hono()
 
 		return c.json({ medicines });
 	})
+	.get("/diseases", async (c) => {
+		const diseases = await db.select().from(diseasesTable);
+
+		if (diseases.length === 0) {
+			return c.json({ error: "Diseases data not found" }, 404);
+		}
+
+		return c.json({ diseases });
+	})
 	.post(
 		"finalizeCase",
 		zValidator(
@@ -157,6 +166,7 @@ const doctor = new Hono()
 			z.object({
 				caseId: z.number().int(),
 				finalizedState: z.enum(["opd", "admitted", "referred"]),
+				diagnosis: z.array(z.number().int()).optional(),
 				prescriptions: z.array(
 					z.object({
 						medicineId: z.number().int(),
@@ -170,13 +180,14 @@ const doctor = new Hono()
 		async (c) => {
 			const payload = c.get("jwtPayload") as JWTPayload;
 			const userId = payload.id;
-			const { caseId, finalizedState, prescriptions } = c.req.valid("json");
+			const { caseId, finalizedState, prescriptions, diagnosis } = c.req.valid("json");
 
 			await db.transaction(async (tx) => {
 				const updated = await tx
 					.update(casesTable)
 					.set({
 						finalizedState,
+						...(diagnosis ? { diagnosis } : {}),
 					})
 					.where(
 						and(
