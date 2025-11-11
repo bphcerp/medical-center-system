@@ -14,6 +14,13 @@ import {
 	CommandList,
 } from "@/components/ui/command";
 import {
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -27,6 +34,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { labReportTypes, type LabReportType } from "@/db/lab";
 import { client } from "./api/$";
 
 type PrescriptionItem = {
@@ -100,6 +108,13 @@ function ConsultationPage() {
 	const [prescriptionItems, setPrescriptionItems] = useState<
 		PrescriptionItem[]
 	>([]);
+
+	const [labTestModalOpen, setLabTestModalOpen] = useState<boolean>(false);
+	const [selectedLabTests, setSelectedLabTests] = useState<Set<LabReportType>>(
+		new Set(),
+	);
+
+	const availableLabTests = labReportTypes;
 
 	const filteredMedicines = medicines
 		.reduce(
@@ -180,6 +195,41 @@ function ConsultationPage() {
 		setPrescriptionItems(prescriptionItems.filter((item) => item.id !== id));
 	};
 
+	const handleToggleLabTest = (test: LabReportType) => {
+		const newSelected = new Set(selectedLabTests);
+		if (newSelected.has(test)) {
+			newSelected.delete(test);
+		} else {
+			newSelected.add(test);
+		}
+		setSelectedLabTests(newSelected);
+	};
+
+	const handleRequestLabTests = async () => {
+		if (selectedLabTests.size === 0) {
+			alert("Please select at least one lab test");
+			return;
+		}
+
+		const tests = Array.from(selectedLabTests);
+		const res = await client.api.doctor.requestLabTests.$post({
+			json: {
+				caseId: Number(id),
+				tests,
+			},
+		});
+
+		if (res.status !== 200) {
+			const error = await res.json();
+			alert("error" in error ? error.error : "Failed to request lab tests");
+			return;
+		}
+
+		alert("Lab tests requested successfully");
+		setLabTestModalOpen(false);
+		setSelectedLabTests(new Set());
+	};
+
 	if (!caseDetail) {
 		return (
 			<div className="container mx-auto p-6">
@@ -237,6 +287,49 @@ function ConsultationPage() {
 				Consultation for {caseDetail.patientName}
 			</h1>
 			<p className="text-muted-foreground my-2">Case ID: {id}</p>
+
+			<Dialog open={labTestModalOpen} onOpenChange={setLabTestModalOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Request Lab Tests</DialogTitle>
+					</DialogHeader>
+					<div className="space-y-2">
+						<p className="text-sm text-muted-foreground">
+							Select the lab tests to request:
+						</p>
+						{availableLabTests.map((test) => (
+							<div
+								key={test}
+								className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-accent"
+								onClick={() => handleToggleLabTest(test)}
+							>
+								<div
+									className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+										selectedLabTests.has(test)
+											? "bg-primary border-primary"
+											: "border-muted-foreground"
+									}`}
+								>
+									{selectedLabTests.has(test) && (
+										<div className="w-2.5 h-2.5 rounded-full bg-primary-foreground" />
+									)}
+								</div>
+								<span>{test}</span>
+							</div>
+						))}
+					</div>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setLabTestModalOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button onClick={handleRequestLabTests}>Submit</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
 			<Card className="mb-2">
 				<div className="flex gap-4 mx-3">
 					<Field>
@@ -348,14 +441,14 @@ function ConsultationPage() {
 								<Button
 									variant="outline"
 									role="combobox"
-									className="justify-between w-[48rem]"
+									className="justify-between w-3xl"
 								>
 									Select a medicine...
 									<ChevronsUpDown className="ml-2 h-4 w-4" />
 								</Button>
 							</PopoverTrigger>
 							<PopoverContent
-								className="p-0 w-[48rem]"
+								className="p-0 w-3xl"
 								align="start"
 								side="top"
 							>
@@ -468,7 +561,12 @@ function ConsultationPage() {
 				</Card>
 				<Card className="col-span-4 row-span-1 rounded-tr-none rounded-tl-none py-2 px-2">
 					<div className="flex justify-end gap-2">
-						<Button variant="outline">Request Lab Tests</Button>
+						<Button
+							variant="outline"
+							onClick={() => setLabTestModalOpen(true)}
+						>
+							Request Lab Tests
+						</Button>
 						<ButtonGroup>
 							<Button variant="outline" onClick={handleFinalize}>
 								{finalizeButtonValue}
