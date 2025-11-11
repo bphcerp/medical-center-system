@@ -91,7 +91,6 @@ export const unauthenticated = new Hono()
 
 			setCookie(c, "token", jwt, {
 				path: "/",
-				secure: true,
 				httpOnly: true,
 				domain: env.FRONTEND_URL.replace("https://", "")
 					.replace("http://", "")
