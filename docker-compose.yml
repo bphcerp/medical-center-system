@@ -67,6 +67,22 @@ services:
     profiles:
       - "dev"
 
+  app-prod:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile.prod
+    depends_on:
+      db:
+        condition: service_healthy
+      seaweedfs-master:
+        condition: service_healthy
+    env_file:
+      - .env
+    ports:
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+    profiles:
+      - "prod"
+
 volumes:
   seaweedfs-master-data:
   seaweedfs-volume-data:
