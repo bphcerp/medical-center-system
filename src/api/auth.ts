@@ -2,7 +2,7 @@ import "dotenv/config";
 import { zValidator } from "@hono/zod-validator";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
-import { setCookie } from "hono/cookie";
+import { deleteCookie, setCookie } from "hono/cookie";
 import { jwt, sign } from "hono/jwt";
 import z from "zod";
 import env from "@/config/env";
@@ -15,6 +15,7 @@ import {
 	studentsTable,
 	visitorsTable,
 } from "@/db/patient";
+import type { Permission } from "@/lib/types/permissions";
 import { db } from ".";
 import doctor from "./doctor";
 import files from "./files";
@@ -29,7 +30,7 @@ export type JWTPayload = {
 	role: {
 		id: number;
 		name: string;
-		allowed: string[];
+		allowed: Permission[];
 	};
 	id: number;
 	username: string;
@@ -85,7 +86,11 @@ export const unauthenticated = new Hono()
 			const payload: JWTPayload = {
 				...user,
 				passwordHash: null,
-				role: users[0].roles,
+				role: users[0].roles as {
+					id: number;
+					name: string;
+					allowed: Permission[];
+				},
 			};
 			const jwt = await sign(payload, env.JWT_SECRET);
 
@@ -101,6 +106,18 @@ export const unauthenticated = new Hono()
 			});
 		},
 	)
+	.get("/logout", async (c) => {
+		deleteCookie(c, "token", {
+			path: "/",
+			httpOnly: true,
+			domain: env.FRONTEND_URL.replace("https://", "")
+				.replace("http://", "")
+				.split(":")[0],
+		});
+		return c.json({
+			success: true,
+		});
+	})
 	.post(
 		"/signup",
 		zValidator(
