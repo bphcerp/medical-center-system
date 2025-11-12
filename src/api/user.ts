@@ -25,7 +25,7 @@ const user = new Hono()
 				404,
 			);
 		}
-		return c.json(users[0]);
+		return c.json({ user: users[0], role: jwtPayload.role });
 	})
 	.get("/all", rbacCheck({ permissions: ["admin"] }), async (c) => {
 		const { id, name, username, role } = getTableColumns(usersTable);
