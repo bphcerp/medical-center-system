@@ -4,6 +4,7 @@ import {
 	redirect,
 	useRouter,
 } from "@tanstack/react-router";
+import { Beaker } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,11 +33,16 @@ const pendingRequestsSchema = z.object({
 export const Route = createFileRoute("/lab-dashboard")({
 	loader: async () => {
 		const res = await client.api.lab.pending.$get();
-
-		if (res.status === 401) {
-			throw redirect({
-				to: "/login",
-			});
+		switch (res.status) {
+			case 401:
+				throw redirect({
+					to: "/login",
+				});
+			case 403:
+				alert("You don't have the permission to access Doctor Dashboard.");
+				throw redirect({
+					to: "/",
+				});
 		}
 
 		const json = await res.json();
@@ -44,6 +50,11 @@ export const Route = createFileRoute("/lab-dashboard")({
 		return data;
 	},
 	component: LabDashboard,
+	staticData: {
+		requiredPermissions: ["lab"],
+		icon: Beaker,
+		name: "Lab Dashboard",
+	},
 });
 
 function LabDashboard() {
