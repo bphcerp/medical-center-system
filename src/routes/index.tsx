@@ -39,7 +39,7 @@ function App() {
 	);
 
 	if (allowedRoutes.length === 1) {
-		navigate({ to: allowedRoutes[0].path });
+		navigate({ to: allowedRoutes[0].fullPath });
 		return null;
 	}
 
@@ -76,7 +76,7 @@ function App() {
 							key={route.path}
 							variant="outline"
 							onClick={() => {
-								navigate({ to: route.path });
+								navigate({ to: route.fullPath });
 							}}
 							className="h-72 flex flex-col justify-center items-center gap-8"
 						>
