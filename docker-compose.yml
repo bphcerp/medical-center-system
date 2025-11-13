@@ -11,7 +11,7 @@ services:
       timeout: 3s
       retries: 3
     volumes:
-      - ./data:/var/lib/postgresql/18/docker
+      - postgres-data:/var/lib/postgresql/18/docker
     profiles:
       - "dev"
       - "prod"
@@ -84,5 +84,6 @@ services:
       - "prod"
 
 volumes:
+  postgres-data:
   seaweedfs-master-data:
   seaweedfs-volume-data:
