@@ -146,26 +146,27 @@ export function RegistrationForm({
 				identifierType,
 			},
 		});
-		if (res.status === 400) {
-			alert(
-				"No existing record found. Please register as a visitor temporarily.",
-			);
-			setVisitor();
-			return;
-		}
-		if (res.status !== 200 && res.status !== 404) {
-			alert("Error registering. Please report this to the front desk.");
-			resetState();
-			return;
+		switch (res.status) {
+			case 400:
+				alert(
+					"No existing record found. Please register as a visitor temporarily.",
+				);
+				setVisitor();
+				return;
+			case 200:
+				setShowDetails(true);
+				return;
+			case 302:
+				break;
+			default:
+				alert("Error registering. Please report this to the front desk.");
+				resetState();
+				return;
 		}
 
 		setShowDetails(true);
-		const data = await res.json();
-		if (!data.exists) {
-			return;
-		}
-
 		setDisableForm(true);
+		const data = await res.json();
 		if ("dependents" in data) {
 			setOptions(
 				[

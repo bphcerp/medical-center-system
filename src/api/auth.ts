@@ -168,11 +168,14 @@ export const unauthenticated = new Hono()
 					if (student.length < 1) {
 						return c.json({ exists: false }, 400);
 					}
-					return c.json({
+					return c.json(
+						{
 						...student[0].patients,
 						email: student[0].students.email,
 						exists: true,
-					});
+						},
+						302,
+					);
 				}
 				case "phone": {
 					const visitor = await db
@@ -185,13 +188,16 @@ export const unauthenticated = new Hono()
 						)
 						.limit(1);
 					if (visitor.length < 1) {
-						return c.json({ exists: false }, 404);
+						return c.json({ exists: false }, 200);
 					}
-					return c.json({
+					return c.json(
+						{
 						...visitor[0].patients,
 						email: visitor[0].visitors.email,
 						exists: true,
-					});
+						},
+						302,
+					);
 				}
 				case "psrn": {
 					const professor = await db
@@ -214,7 +220,8 @@ export const unauthenticated = new Hono()
 							patientsTable,
 							eq(dependentsTable.patientId, patientsTable.id),
 						);
-					return c.json({
+					return c.json(
+						{
 						professor: {
 							...professor[0].patients,
 						},
@@ -225,7 +232,9 @@ export const unauthenticated = new Hono()
 							};
 						}),
 						exists: true,
-					});
+						},
+						302,
+					);
 				}
 			}
 		},
