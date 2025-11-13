@@ -1,9 +1,11 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
-import { Activity, Check } from "lucide-react";
+import { Activity, Check, Plus } from "lucide-react";
 import type React from "react";
 import { useEffect, useId, useState } from "react";
+import { RegistrationForm } from "@/components/registration-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import {
 	InputGroup,
@@ -147,7 +149,10 @@ function Vitals() {
 
 	return (
 		<div className="flex flex-col items-stretch h-screen">
-			<h1 className="text-3xl font-bold border-b p-4">Patient Queue</h1>
+			<div className="flex border-b p-4 justify-between">
+				<h1 className="text-3xl font-bold ">Patient Queue</h1>
+				<NewPatientDialog />
+			</div>
 			<div className="flex items-stretch divide-x divide-border grow min-h-0">
 				<div className="flex flex-col flex-2 p-4 gap-4 overflow-y-scroll bottom-0 min-h-0">
 					{unprocessed.length === 0 && (
@@ -206,7 +211,7 @@ function Vitals() {
 											<PatientTypeBadge
 												key={focusedPatient.patients.id}
 												type={focusedPatient.patients.type}
-												className="text-2xl border px-3 tabular-nums tracking-tight font-medium flex items-center"
+												className="text-3xl border px-3 tabular-nums tracking-tight font-medium flex items-center min-w-14"
 											>
 												{focusedPatient.unprocessed.id}
 											</PatientTypeBadge>
@@ -411,6 +416,35 @@ function Vitals() {
 				</div>
 			</div>
 		</div>
+	);
+}
+
+function NewPatientDialog() {
+	const [token, setTokenInternal] = useState<number | null>(null);
+
+	const handleToken = (newToken: number) => {
+		setTokenInternal(newToken);
+	};
+
+	return (
+		<Dialog onOpenChange={(open) => !open && setTokenInternal(null)}>
+			<DialogTrigger asChild>
+				<Button variant="secondary">
+					<Plus /> New Patient
+				</Button>
+			</DialogTrigger>
+
+			<DialogContent className="w-1/3">
+				{token === null ? (
+					<RegistrationForm setToken={handleToken} />
+				) : (
+					<div className="flex flex-col items-center gap-4">
+						<span>Patient's token number</span>
+						<span className="text-7xl">{token}</span>
+					</div>
+				)}
+			</DialogContent>
+		</Dialog>
 	);
 }
 
