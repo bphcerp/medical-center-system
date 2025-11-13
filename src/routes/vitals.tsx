@@ -424,9 +424,11 @@ function Vitals() {
 }
 
 function NewPatientDialog() {
+	const router = useRouter();
 	const [token, setTokenInternal] = useState<number | null>(null);
 
 	const handleToken = (newToken: number) => {
+		router.invalidate();
 		setTokenInternal(newToken);
 	};
 
@@ -440,7 +442,10 @@ function NewPatientDialog() {
 
 			<DialogContent className="w-1/3">
 				{token === null ? (
-					<RegistrationForm setToken={handleToken} />
+					<RegistrationForm
+						setToken={handleToken}
+						isPatientRegistering={false}
+					/>
 				) : (
 					<div className="flex flex-col items-center gap-4">
 						<span>Patient's token number</span>
