@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, CheckIcon } from "lucide-react";
+import { ArrowRight, CheckIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,27 +27,39 @@ export const Route = createFileRoute("/register")({
 
 const TOKEN_DISPLAY_DURATION_MS = 30_000;
 
-type RegistrationType = "student" | "prof" | "visitor";
+type RegistrationType = "student" | "professor" | "visitor";
 
-type RegistrationCardProps = {
-	identifierType: (typeof identifierTypes)[number];
-	registrationType: RegistrationType;
-	title: string;
-	labelText: string;
-	inputHint: string;
-	setSelectedTab: React.Dispatch<React.SetStateAction<RegistrationType | null>>;
-	setToken: (token: number) => void;
+type RegistrationTypeDetails = {
+	[key in RegistrationType]: {
+		title: string;
+		labelText: string;
+		inputHint: string;
+		identifierType: (typeof identifierTypes)[number];
+	};
 };
 
-function RegistrationCard({
-	identifierType,
-	registrationType,
-	title,
-	labelText,
-	inputHint,
-	setSelectedTab,
-	setToken,
-}: RegistrationCardProps) {
+const registrationTypeDetails: RegistrationTypeDetails = {
+	student: {
+		title: "Register as a Student",
+		labelText: "Student ID",
+		inputHint: "e.g. 2024A1PS0001H",
+		identifierType: "student_id",
+	},
+	professor: {
+		title: "Register as a Professor / Dependant",
+		labelText: "PSRN",
+		inputHint: "e.g. H0001",
+		identifierType: "psrn",
+	},
+	visitor: {
+		title: "Register as a Visitor",
+		labelText: "Phone Number",
+		inputHint: "e.g. 1234567890",
+		identifierType: "phone",
+	},
+};
+
+function RegistrationCard({ setToken }: { setToken: (token: number) => void }) {
 	const id = useId();
 	const nameId = useId();
 	const emailId = useId();
@@ -67,7 +79,11 @@ function RegistrationCard({
 	const [age, setAge] = useState(0);
 	const [sex, setSex] = useState<"male" | "female" | undefined>(undefined);
 
+	const [registrationType, setRegistrationType] =
+		useState<RegistrationType | null>(null);
+
 	const resetState = () => {
+		setRegistrationType(null);
 		setShowDetails(false);
 		setDisableForm(false);
 		setOptions([]);
@@ -79,15 +95,25 @@ function RegistrationCard({
 		setSex(undefined);
 	};
 
-	const resetTab = () => setSelectedTab(null);
+	const setVisitor = () => {
+		resetState();
+		setRegistrationType("visitor");
+	};
+	const unsetVisitor = () => {
+		resetState();
+	};
 
 	const handleRegister = async () => {
+		if (registrationType === null) return;
+		const identifierType =
+			registrationTypeDetails[registrationType].identifierType;
+
 		const res = disableForm
 			? await client.api.register.$post({
 					json: {
-						identifier: identifier as string,
-						identifierType: identifierType,
-						patientId: patientId,
+						identifier,
+						identifierType,
+						patientId,
 					},
 				})
 			: await client.api.visitorRegister.$post({
@@ -102,28 +128,39 @@ function RegistrationCard({
 		if (res.status !== 200) {
 			alert("Error registering. Please report this to the front desk.");
 			resetState();
-			resetTab();
 			return;
 		}
 		const data = await res.json();
 		setToken(data.token);
 		resetState();
-		resetTab();
 	};
 
 	const handleCheckExisting = async () => {
-		if (identifier === "") return;
+		let type: RegistrationType;
+		if (registrationType !== "visitor") {
+			if (identifier.startsWith("H")) {
+				type = "professor";
+			} else {
+				type = "student";
+			}
+		} else {
+			type = registrationType;
+		}
+		setRegistrationType(type);
+
+		const identifierType = registrationTypeDetails[type].identifierType;
+
 		const res = await client.api.existing.$get({
 			query: {
 				identifier,
-				identifierType: identifierType,
+				identifierType,
 			},
 		});
 		if (res.status === 400) {
 			alert(
 				"No existing record found. Please register as a visitor temporarily.",
 			);
-			setSelectedTab("visitor");
+			setVisitor();
 			return;
 		}
 		if (res.status !== 200 && res.status !== 404) {
@@ -168,130 +205,158 @@ function RegistrationCard({
 	};
 
 	return (
-		<div className="flex flex-col gap-2">
-			<Button className="self-start" variant="ghost" onClick={resetTab}>
-				<ArrowLeft />
-				Back
-			</Button>
-			<Card>
-				<form action={showDetails ? handleRegister : handleCheckExisting}>
-					<CardHeader>
-						<CardTitle className="text-xl">{title}</CardTitle>
-					</CardHeader>
-					<CardContent className="grid gap-6 mt-2">
-						<div className="grid gap-3">
-							<Label htmlFor={id}>{labelText}</Label>
-							<div className="flex gap-2">
-								<Input
-									id={id}
-									value={identifier}
-									onChange={(e) => setIdentifier(e.target.value)}
-									disabled={showDetails}
-									name={identifierType}
-									placeholder={inputHint}
-									required
-									autoFocus
-								/>
-								{showDetails && (
-									<Button size={"lg"} variant={"outline"} onClick={resetState}>
-										Change
-									</Button>
-								)}
-							</div>
+		<Card>
+			<form
+				action={showDetails ? handleRegister : handleCheckExisting}
+				className="flex flex-col gap-1"
+			>
+				<CardHeader>
+					<CardTitle className="text-xl">
+						{registrationType === null
+							? "Register"
+							: registrationTypeDetails[registrationType].title}
+					</CardTitle>
+				</CardHeader>
+				<CardContent className="grid gap-6 mt-2">
+					<div className="grid gap-3">
+						<Label htmlFor={id}>
+							{registrationType === null
+								? "Student ID / PSRN"
+								: registrationTypeDetails[registrationType].labelText}
+						</Label>
+						<div className="flex gap-2">
+							<Input
+								id={id}
+								value={identifier}
+								onChange={(e) => setIdentifier(e.target.value)}
+								disabled={showDetails}
+								name="identifier"
+								placeholder={
+									registrationType === null
+										? "e.g. 2024A1PS0001H / H0001"
+										: registrationTypeDetails[registrationType].inputHint
+								}
+								required
+								autoFocus
+							/>
 							{showDetails && (
-								<>
-									{registrationType === "prof" && options.length > 0 && (
-										<>
-											<Label htmlFor={nameId}>Select Dependent/Professor</Label>
-											<Select
-												required
-												name="person"
-												onValueChange={(v) => {
-													const option = JSON.parse(v);
-													setPatientId(option.id);
-													setName(option.name);
-													setAge(option.age);
-													setSex(option.sex);
-												}}
-											>
-												<SelectTrigger className="w-full border-ring">
-													<SelectValue placeholder="Select Dependent/Professor" />
-												</SelectTrigger>
-												<SelectContent>
-													{options.map((option) => (
-														<SelectItem
-															key={`${option.id}|${option.name}|${option.age}|${option.sex}`}
-															value={JSON.stringify(option)}
-														>{`${option.name} | ${option.age} | ${option.sex}`}</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</>
-									)}
-									<Label htmlFor={nameId}>Name</Label>
-									<Input
-										disabled={disableForm}
-										id={nameId}
-										name="name"
-										placeholder="Full Name"
-										value={name}
-										onChange={(e) => setName(e.target.value)}
-										required
-									/>
-									{registrationType === "visitor" && (
-										<>
-											<Label htmlFor={emailId}>Email</Label>
-											<Input
-												disabled={disableForm}
-												id={emailId}
-												name="email"
-												placeholder="Email"
-												value={email}
-												onChange={(e) => setEmail(e.target.value)}
-												required
-											/>
-										</>
-									)}
-									<Label htmlFor={ageId}>Age</Label>
-									<Input
-										disabled={disableForm}
-										id={ageId}
-										name="age"
-										placeholder="Age"
-										type="number"
-										value={age}
-										onChange={(e) => setAge(parseInt(e.target.value, 10))}
-										required
-									/>
-									<Label htmlFor={sexId}>Sex</Label>
-									<Select
-										required
-										name="sex"
-										disabled={disableForm}
-										value={sex}
-										onValueChange={(v) => setSex(v as "male" | "female")}
-									>
-										<SelectTrigger id={sexId}>
-											<SelectValue placeholder="Sex" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="male">Male</SelectItem>
-											<SelectItem value="female">Female</SelectItem>
-										</SelectContent>
-									</Select>
-								</>
+								<Button size={"lg"} variant={"outline"} onClick={resetState}>
+									Change
+								</Button>
 							)}
 						</div>
-					</CardContent>
-					<CardFooter className="pt-4 flex w-full justify-end">
-						<Button type="submit" size="lg">
-							{showDetails ? "Register" : "Continue"}
-							{showDetails ? <CheckIcon /> : <ArrowRight />}
+						{showDetails && (
+							<>
+								{registrationType === "professor" && options.length > 0 && (
+									<>
+										<Label htmlFor={nameId}>Select Dependent/Professor</Label>
+										<Select
+											required
+											name="person"
+											onValueChange={(v) => {
+												const option = JSON.parse(v);
+												setPatientId(option.id);
+												setName(option.name);
+												setAge(option.age);
+												setSex(option.sex);
+											}}
+										>
+											<SelectTrigger className="w-full border-ring">
+												<SelectValue placeholder="Select Dependent/Professor" />
+											</SelectTrigger>
+											<SelectContent>
+												{options.map((option) => (
+													<SelectItem
+														key={`${option.id}|${option.name}|${option.age}|${option.sex}`}
+														value={JSON.stringify(option)}
+													>{`${option.name} | ${option.age} | ${option.sex}`}</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</>
+								)}
+								<Label htmlFor={nameId}>Name</Label>
+								<Input
+									disabled={disableForm}
+									id={nameId}
+									name="name"
+									placeholder="Full Name"
+									value={name}
+									onChange={(e) => setName(e.target.value)}
+									required
+								/>
+								{registrationType === "visitor" && (
+									<>
+										<Label htmlFor={emailId}>Email</Label>
+										<Input
+											disabled={disableForm}
+											id={emailId}
+											name="email"
+											placeholder="Email"
+											value={email}
+											onChange={(e) => setEmail(e.target.value)}
+											required
+										/>
+									</>
+								)}
+								<Label htmlFor={ageId}>Age</Label>
+								<Input
+									disabled={disableForm}
+									id={ageId}
+									name="age"
+									placeholder="Age"
+									type="number"
+									value={age}
+									onChange={(e) => setAge(parseInt(e.target.value, 10))}
+									required
+								/>
+								<Label htmlFor={sexId}>Sex</Label>
+								<Select
+									required
+									name="sex"
+									disabled={disableForm}
+									value={sex}
+									onValueChange={(v) => setSex(v as "male" | "female")}
+								>
+									<SelectTrigger id={sexId}>
+										<SelectValue placeholder="Sex" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="male">Male</SelectItem>
+										<SelectItem value="female">Female</SelectItem>
+									</SelectContent>
+								</Select>
+							</>
+						)}
+					</div>
+				</CardContent>
+				<CardFooter className="pt-4 flex w-full">
+					{!showDetails && (
+						<Button
+							variant="link"
+							type="button"
+							onClick={
+								registrationType === "visitor" ? unsetVisitor : setVisitor
+							}
+							className="px-0"
+						>
+							{registrationType === "visitor"
+								? "I am not a visitor"
+								: "I am a visitor"}
 						</Button>
-					</CardFooter>
-				</form>
-			</Card>
-		</div>
+					)}
+					<div className="grow" />
+					<Button type="submit" size="lg" className="text-lg">
+						{showDetails ? "Register" : "Continue"}
+						{showDetails ? (
+							<CheckIcon className="size-5" />
+						) : (
+							<ArrowRight className="size-5" />
+						)}
+					</Button>
+				</CardFooter>
+			</form>
+		</Card>
 	);
 }
 
@@ -327,51 +392,7 @@ function TokenDisplay({
 	);
 }
 
-function RegistrationTypeButton({
-	// icon,
-	title,
-	...props
-}: {
-	// icon: React.ReactNode;
-	title: string;
-} & React.ComponentProps<"button">) {
-	return (
-		<Button
-			variant="card"
-			className="w-1/3 h-90 px-10 text-3xl whitespace-break-spaces rounded-lg"
-			{...props}
-		>
-			{title}
-		</Button>
-	);
-}
-
-function RegistrationTypeSelector({
-	setSelected,
-}: {
-	setSelected: React.Dispatch<React.SetStateAction<RegistrationType | null>>;
-}) {
-	return (
-		<div className="gap-10 flex md:w-3/5 justify-center">
-			<RegistrationTypeButton
-				title="Student"
-				onClick={() => setSelected("student")}
-			/>
-			<RegistrationTypeButton
-				title={"Professor / Dependant"}
-				onClick={() => setSelected("prof")}
-			/>
-			<RegistrationTypeButton
-				title="Visitor"
-				onClick={() => setSelected("visitor")}
-			/>
-		</div>
-	);
-}
-
 function Register() {
-	const [selectedTab, setSelectedTab] = useState<RegistrationType | null>(null);
-
 	const [token, setToken] = useState<number | null>(null);
 
 	const handleToken = (token: number) => {
@@ -379,50 +400,15 @@ function Register() {
 	};
 	const handleResetTab = () => {
 		setToken(null);
-		setSelectedTab(null);
 	};
 
 	return (
 		<div className="flex w-full gap-6 justify-center pt-48">
 			{token !== null ? (
 				<TokenDisplay token={token} resetTab={handleResetTab} />
-			) : selectedTab === null ? (
-				<RegistrationTypeSelector setSelected={setSelectedTab} />
 			) : (
 				<div className="w-1/3 flex flex-col">
-					{selectedTab === "student" && (
-						<RegistrationCard
-							identifierType="student_id"
-							registrationType="student"
-							title="Student"
-							labelText="Student ID"
-							inputHint="e.g. 2024A1PS0001H"
-							setSelectedTab={setSelectedTab}
-							setToken={handleToken}
-						/>
-					)}
-					{selectedTab === "prof" && (
-						<RegistrationCard
-							identifierType="psrn"
-							registrationType="prof"
-							title="Professor/Dependent"
-							labelText="PSRN"
-							inputHint="e.g. H0001"
-							setSelectedTab={setSelectedTab}
-							setToken={handleToken}
-						/>
-					)}
-					{selectedTab === "visitor" && (
-						<RegistrationCard
-							identifierType="phone"
-							registrationType="visitor"
-							title="Visitor"
-							labelText="Phone No."
-							inputHint="e.g. 1234567890"
-							setSelectedTab={setSelectedTab}
-							setToken={handleToken}
-						/>
-					)}
+					<RegistrationCard setToken={handleToken} />
 				</div>
 			)}
 		</div>
