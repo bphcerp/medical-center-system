@@ -1,6 +1,7 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useId, useMemo, useState } from "react";
 import { z } from "zod";
+import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -183,177 +184,180 @@ function ResultEntry() {
 	};
 
 	return (
-		<div className="min-h-screen w-full p-8">
-			<div className="max-w-4xl mx-auto bg-transparent">
-				<div className="flex justify-between items-center mb-6">
-					<h1 className="text-3xl font-bold">Result Entry</h1>
-					<Button
-						onClick={() => alert("Printing not implemented yet")}
-						disabled={isSubmitting || !reportData.results}
-					>
-						Print Report
-					</Button>
-				</div>
-
-				<Card className="mb-6">
-					<CardHeader>
-						<CardTitle>Patient Details</CardTitle>
-					</CardHeader>
-					<CardContent className="flex flex-wrap gap-4">
-						<div className="flex-1 min-w-[200px]">
-							<Label className="font-semibold text-sm">Case ID</Label>
-							<div className="border rounded-md bg-muted text-sm px-3 py-2 mt-1">
-								{caseId}
-							</div>
-						</div>
-						<div className="flex-1 min-w-[200px]">
-							<Label className="font-semibold text-sm">Patient Name</Label>
-							<div className="border rounded-md bg-muted text-sm px-3 py-2 mt-1">
-								{patientName}
-							</div>
-						</div>
-						<div className="flex-1 min-w-[200px]">
-							<Label className="font-semibold text-sm">Doctor Name</Label>
-							<div className="border rounded-md bg-muted text-sm px-3 py-2 mt-1">
-								{doctorName}
-							</div>
-						</div>
-					</CardContent>
-				</Card>
-
-				<Card className="mb-6">
-					<CardHeader>
-						<CardTitle>Lab Results</CardTitle>
-					</CardHeader>
-					<CardContent className="space-y-4">
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-							<div>
-								<Label htmlFor={rbcCountId}>RBC Count</Label>
-								<Input
-									id={rbcCountId}
-									type="text"
-									value={labResults.rbc_count || ""}
-									onChange={(e) =>
-										handleResultChange("rbc_count", e.target.value)
-									}
-									placeholder="Enter RBC count"
-								/>
-							</div>
-							<div>
-								<Label htmlFor={plateletCountId}>Platelet Count</Label>
-								<Input
-									id={plateletCountId}
-									type="text"
-									value={labResults.platelet_count || ""}
-									onChange={(e) =>
-										handleResultChange("platelet_count", e.target.value)
-									}
-									placeholder="Enter platelet count"
-								/>
-							</div>
-							<div>
-								<Label htmlFor={wbcCountId}>WBC Count</Label>
-								<Input
-									id={wbcCountId}
-									type="text"
-									value={labResults.wbc_count || ""}
-									onChange={(e) =>
-										handleResultChange("wbc_count", e.target.value)
-									}
-									placeholder="Enter WBC count"
-								/>
-							</div>
-							<div>
-								<Label htmlFor={glucoseId}>Glucose</Label>
-								<Input
-									id={glucoseId}
-									type="text"
-									value={labResults.glucose || ""}
-									onChange={(e) =>
-										handleResultChange("glucose", e.target.value)
-									}
-									placeholder="Enter glucose level"
-								/>
-							</div>
-							<div>
-								<Label htmlFor={haemoglobinId}>Haemoglobin</Label>
-								<Input
-									id={haemoglobinId}
-									type="text"
-									value={labResults.haemoglobin || ""}
-									onChange={(e) =>
-										handleResultChange("haemoglobin", e.target.value)
-									}
-									placeholder="Enter haemoglobin level"
-								/>
-							</div>
-							<div>
-								<Label htmlFor={creatinineId}>Creatinine</Label>
-								<Input
-									id={creatinineId}
-									type="text"
-									value={labResults.creatinine || ""}
-									onChange={(e) =>
-										handleResultChange("creatinine", e.target.value)
-									}
-									placeholder="Enter creatinine level"
-								/>
-							</div>
-						</div>
-					</CardContent>
-				</Card>
-
-				<Card className="mb-6">
-					<CardHeader>
-						<CardTitle>Upload Files</CardTitle>
-					</CardHeader>
-					<CardContent className="space-y-4">
-						<div className="flex items-center gap-2">
-							<Label
-								htmlFor={fileInputId}
-								className="hover:bg-primary w-fit transition p-3 rounded-md font-semibold border duration-300 ease-in-out cursor-pointer hover:text-primary-foreground"
-							>
-								Select File
-							</Label>
-							{selectedFile ? `${selectedFile.name}` : ""}
-							<Input
-								id={fileInputId}
-								type="file"
-								onChange={handleFileChange}
-								accept=".pdf,.jpg,.jpeg,.png"
-								className="hidden"
-							></Input>
-						</div>
+		<>
+			<TopBar title={`Lab Result Entry: ${patientName}`} />
+			<div className="min-h-screen w-full p-8">
+				<div className="max-w-4xl mx-auto bg-transparent">
+					<div className="flex justify-between items-center mb-6">
+						<h1 className="text-3xl font-bold">Result Entry</h1>
 						<Button
-							onClick={handleUpload}
-							disabled={!selectedFile || uploading}
+							onClick={() => alert("Printing not implemented yet")}
+							disabled={isSubmitting || !reportData.results}
 						>
-							{uploading ? "Uploading..." : "Upload"}
+							Print Report
 						</Button>
-						{fileId && (
-							<p className="text-sm text-green-600">
-								File uploaded successfully (ID: {fileId})
-							</p>
-						)}
-					</CardContent>
-				</Card>
+					</div>
 
-				<div className="flex justify-end gap-4">
-					<Button
-						variant="outline"
-						onClick={() => navigate({ to: "/lab-dashboard" })}
-						disabled={isSubmitting}
-					>
-						Cancel
-					</Button>
-					<Button
-						onClick={handleSubmit}
-						disabled={isSubmitting || (!isDirty && !fileId)}
-					>
-						{isSubmitting ? "Submitting..." : "Submit Results"}
-					</Button>
+					<Card className="mb-6">
+						<CardHeader>
+							<CardTitle>Patient Details</CardTitle>
+						</CardHeader>
+						<CardContent className="flex flex-wrap gap-4">
+							<div className="flex-1 min-w-[200px]">
+								<Label className="font-semibold text-sm">Case ID</Label>
+								<div className="border rounded-md bg-muted text-sm px-3 py-2 mt-1">
+									{caseId}
+								</div>
+							</div>
+							<div className="flex-1 min-w-[200px]">
+								<Label className="font-semibold text-sm">Patient Name</Label>
+								<div className="border rounded-md bg-muted text-sm px-3 py-2 mt-1">
+									{patientName}
+								</div>
+							</div>
+							<div className="flex-1 min-w-[200px]">
+								<Label className="font-semibold text-sm">Doctor Name</Label>
+								<div className="border rounded-md bg-muted text-sm px-3 py-2 mt-1">
+									{doctorName}
+								</div>
+							</div>
+						</CardContent>
+					</Card>
+
+					<Card className="mb-6">
+						<CardHeader>
+							<CardTitle>Lab Results</CardTitle>
+						</CardHeader>
+						<CardContent className="space-y-4">
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+								<div>
+									<Label htmlFor={rbcCountId}>RBC Count</Label>
+									<Input
+										id={rbcCountId}
+										type="text"
+										value={labResults.rbc_count || ""}
+										onChange={(e) =>
+											handleResultChange("rbc_count", e.target.value)
+										}
+										placeholder="Enter RBC count"
+									/>
+								</div>
+								<div>
+									<Label htmlFor={plateletCountId}>Platelet Count</Label>
+									<Input
+										id={plateletCountId}
+										type="text"
+										value={labResults.platelet_count || ""}
+										onChange={(e) =>
+											handleResultChange("platelet_count", e.target.value)
+										}
+										placeholder="Enter platelet count"
+									/>
+								</div>
+								<div>
+									<Label htmlFor={wbcCountId}>WBC Count</Label>
+									<Input
+										id={wbcCountId}
+										type="text"
+										value={labResults.wbc_count || ""}
+										onChange={(e) =>
+											handleResultChange("wbc_count", e.target.value)
+										}
+										placeholder="Enter WBC count"
+									/>
+								</div>
+								<div>
+									<Label htmlFor={glucoseId}>Glucose</Label>
+									<Input
+										id={glucoseId}
+										type="text"
+										value={labResults.glucose || ""}
+										onChange={(e) =>
+											handleResultChange("glucose", e.target.value)
+										}
+										placeholder="Enter glucose level"
+									/>
+								</div>
+								<div>
+									<Label htmlFor={haemoglobinId}>Haemoglobin</Label>
+									<Input
+										id={haemoglobinId}
+										type="text"
+										value={labResults.haemoglobin || ""}
+										onChange={(e) =>
+											handleResultChange("haemoglobin", e.target.value)
+										}
+										placeholder="Enter haemoglobin level"
+									/>
+								</div>
+								<div>
+									<Label htmlFor={creatinineId}>Creatinine</Label>
+									<Input
+										id={creatinineId}
+										type="text"
+										value={labResults.creatinine || ""}
+										onChange={(e) =>
+											handleResultChange("creatinine", e.target.value)
+										}
+										placeholder="Enter creatinine level"
+									/>
+								</div>
+							</div>
+						</CardContent>
+					</Card>
+
+					<Card className="mb-6">
+						<CardHeader>
+							<CardTitle>Upload Files</CardTitle>
+						</CardHeader>
+						<CardContent className="space-y-4">
+							<div className="flex items-center gap-2">
+								<Label
+									htmlFor={fileInputId}
+									className="hover:bg-primary w-fit transition p-3 rounded-md font-semibold border duration-300 ease-in-out cursor-pointer hover:text-primary-foreground"
+								>
+									Select File
+								</Label>
+								{selectedFile ? `${selectedFile.name}` : ""}
+								<Input
+									id={fileInputId}
+									type="file"
+									onChange={handleFileChange}
+									accept=".pdf,.jpg,.jpeg,.png"
+									className="hidden"
+								></Input>
+							</div>
+							<Button
+								onClick={handleUpload}
+								disabled={!selectedFile || uploading}
+							>
+								{uploading ? "Uploading..." : "Upload"}
+							</Button>
+							{fileId && (
+								<p className="text-sm text-green-600">
+									File uploaded successfully (ID: {fileId})
+								</p>
+							)}
+						</CardContent>
+					</Card>
+
+					<div className="flex justify-end gap-4">
+						<Button
+							variant="outline"
+							onClick={() => navigate({ to: "/lab-dashboard" })}
+							disabled={isSubmitting}
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={handleSubmit}
+							disabled={isSubmitting || (!isDirty && !fileId)}
+						>
+							{isSubmitting ? "Submitting..." : "Submit Results"}
+						</Button>
+					</div>
 				</div>
 			</div>
-		</div>
+		</>
 	);
 }

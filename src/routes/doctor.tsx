@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-router";
 import { Stethoscope } from "lucide-react";
 import { useState } from "react";
+import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -71,51 +72,54 @@ function DoctorDashboard() {
 	};
 
 	return (
-		<div className="container mx-auto p-6">
-			<div className="mb-6 flex items-center justify-between">
-				<div>
-					<h1 className="text-3xl font-bold">Doctor Dashboard</h1>
+		<>
+			<TopBar title="Doctor Dashboard" />
+			<div className="container mx-auto p-6">
+				<div className="mb-6 flex items-center justify-between">
+					<div>
+						<h1 className="text-3xl font-bold">Doctor Dashboard</h1>
+					</div>
+					<Button onClick={handleRefresh} disabled={isRefreshing}>
+						{isRefreshing ? "Refreshing..." : "Refresh"}
+					</Button>
 				</div>
-				<Button onClick={handleRefresh} disabled={isRefreshing}>
-					{isRefreshing ? "Refreshing..." : "Refresh"}
-				</Button>
-			</div>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>My Patient Queue</CardTitle>
-				</CardHeader>
-				<CardContent>
-					{!initialQueue || initialQueue.length === 0 ? (
-						<div className="text-center py-8">
-							<p className="text-muted-foreground">No patients in queue</p>
-						</div>
-					) : (
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Case ID</TableHead>
-									<TableHead>Patient Name</TableHead>
-									<TableHead>Status</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{initialQueue.map((item) => (
-									<TableRow
-										key={item.caseId}
-										onClick={() => handleRowClick(item.caseId)}
-										className="cursor-pointer"
-									>
-										<TableCell>{item.caseId}</TableCell>
-										<TableCell>{item.patientName}</TableCell>
-										<TableCell>{item.status}</TableCell>
+				<Card>
+					<CardHeader>
+						<CardTitle>My Patient Queue</CardTitle>
+					</CardHeader>
+					<CardContent>
+						{!initialQueue || initialQueue.length === 0 ? (
+							<div className="text-center py-8">
+								<p className="text-muted-foreground">No patients in queue</p>
+							</div>
+						) : (
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Case ID</TableHead>
+										<TableHead>Patient Name</TableHead>
+										<TableHead>Status</TableHead>
 									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					)}
-				</CardContent>
-			</Card>
-		</div>
+								</TableHeader>
+								<TableBody>
+									{initialQueue.map((item) => (
+										<TableRow
+											key={item.caseId}
+											onClick={() => handleRowClick(item.caseId)}
+											className="cursor-pointer"
+										>
+											<TableCell>{item.caseId}</TableCell>
+											<TableCell>{item.patientName}</TableCell>
+											<TableCell>{item.status}</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						)}
+					</CardContent>
+				</Card>
+			</div>
+		</>
 	);
 }

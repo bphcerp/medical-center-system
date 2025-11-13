@@ -3,6 +3,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { ArrowLeftRight, Pencil, Plus, Trash, X } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
+import TopBar from "@/components/topbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -103,43 +104,46 @@ function RolePage() {
 	};
 
 	return (
-		<div className="flex flex-col p-4 lg:p-10 lg:w-3/4 gap-3">
-			<div className="flex items-center justify-between">
-				<span className="flex gap-4 items-center">
-					<h1 className="text-2xl font-bold inline">Role Management</h1>
-					<CreateRoleButton onCreate={handleCreateRole} />
-				</span>
-				<Link to="/admin/user">
-					<Button variant="link" className="p-0">
-						<ArrowLeftRight /> Manage users
-					</Button>
-				</Link>
+		<>
+			<TopBar title="Admin Dashboard" />
+			<div className="flex flex-col p-4 lg:p-10 lg:w-3/4 gap-3">
+				<div className="flex items-center justify-between">
+					<span className="flex gap-4 items-center">
+						<h1 className="text-2xl font-bold inline">Role Management</h1>
+						<CreateRoleButton onCreate={handleCreateRole} />
+					</span>
+					<Link to="/admin/user">
+						<Button variant="link" className="p-0">
+							<ArrowLeftRight /> Manage users
+						</Button>
+					</Link>
+				</div>
+				<Table>
+					<TableHeader>
+						<TableRow>
+							<TableHead className="w-0 p-0" />
+							<TableHead className="w-1/4">Role</TableHead>
+							<TableHead className="w-0 p-0" />
+							<TableHead className="pl-2">Permissions</TableHead>
+							<TableHead className="w-0 p-0" />
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{roles.map((role) => (
+							<RowItem
+								key={role.id}
+								name={role.name}
+								perms={role.allowed as Permission[]}
+								onUpdateRole={(name, perms) =>
+									handleUpdateRole(role.id, name, perms)
+								}
+								onDeleteRole={() => handleDeleteRole(role.id)}
+							/>
+						))}
+					</TableBody>
+				</Table>
 			</div>
-			<Table>
-				<TableHeader>
-					<TableRow>
-						<TableHead className="w-0 p-0" />
-						<TableHead className="w-1/4">Role</TableHead>
-						<TableHead className="w-0 p-0" />
-						<TableHead className="pl-2">Permissions</TableHead>
-						<TableHead className="w-0 p-0" />
-					</TableRow>
-				</TableHeader>
-				<TableBody>
-					{roles.map((role) => (
-						<RowItem
-							key={role.id}
-							name={role.name}
-							perms={role.allowed as Permission[]}
-							onUpdateRole={(name, perms) =>
-								handleUpdateRole(role.id, name, perms)
-							}
-							onDeleteRole={() => handleDeleteRole(role.id)}
-						/>
-					))}
-				</TableBody>
-			</Table>
-		</div>
+		</>
 	);
 }
 

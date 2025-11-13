@@ -114,9 +114,7 @@ export const unauthenticated = new Hono()
 				.replace("http://", "")
 				.split(":")[0],
 		});
-		return c.json({
-			success: true,
-		});
+		return c.redirect("/login");
 	})
 	.post(
 		"/signup",
@@ -170,9 +168,9 @@ export const unauthenticated = new Hono()
 					}
 					return c.json(
 						{
-						...student[0].patients,
-						email: student[0].students.email,
-						exists: true,
+							...student[0].patients,
+							email: student[0].students.email,
+							exists: true,
 						},
 						302,
 					);
@@ -192,9 +190,9 @@ export const unauthenticated = new Hono()
 					}
 					return c.json(
 						{
-						...visitor[0].patients,
-						email: visitor[0].visitors.email,
-						exists: true,
+							...visitor[0].patients,
+							email: visitor[0].visitors.email,
+							exists: true,
 						},
 						302,
 					);
@@ -222,16 +220,16 @@ export const unauthenticated = new Hono()
 						);
 					return c.json(
 						{
-						professor: {
-							...professor[0].patients,
-						},
-						email: professor[0].professors.email,
-						dependents: dependents.map((d) => {
-							return {
-								...d.patients,
-							};
-						}),
-						exists: true,
+							professor: {
+								...professor[0].patients,
+							},
+							email: professor[0].professors.email,
+							dependents: dependents.map((d) => {
+								return {
+									...d.patients,
+								};
+							}),
+							exists: true,
 						},
 						302,
 					);

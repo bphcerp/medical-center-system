@@ -2,6 +2,7 @@ import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { ChevronDown, ChevronsUpDown, Trash2 } from "lucide-react";
 import { useState } from "react";
+import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Card } from "@/components/ui/card";
@@ -359,376 +360,386 @@ function ConsultationPage() {
 	}
 
 	return (
-		<div className="p-6">
-			<h1 className="text-3xl font-bold">
-				Consultation for {caseDetail.patientName}
-			</h1>
-			<p className="text-muted-foreground my-2">
-				Token Number: {caseDetail.token}
-			</p>
+		<>
+			<TopBar title={`Consultation for ${caseDetail.patientName}`} />
+			<div className="p-6">
+				<h1 className="text-3xl font-bold">
+					Consultation for {caseDetail.patientName}
+				</h1>
+				<p className="text-muted-foreground my-2">
+					Token Number: {caseDetail.token}
+				</p>
 
-			<Dialog open={labTestModalOpen} onOpenChange={setLabTestModalOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Request Lab Tests</DialogTitle>
-					</DialogHeader>
-					<div className="space-y-2">
-						<p className="text-sm text-muted-foreground">
-							Select the lab tests to request:
-						</p>
-						{availableLabTests.map((test) => (
-							// biome-ignore lint/a11y/noStaticElementInteractions: TODO: replace this with a checkbox-like element to improve accessibility
-							// biome-ignore lint/a11y/useKeyWithClickEvents: see above TODO
-							<div
-								key={test}
-								className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-accent"
-								onClick={() => handleToggleLabTest(test)}
-							>
+				<Dialog open={labTestModalOpen} onOpenChange={setLabTestModalOpen}>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>Request Lab Tests</DialogTitle>
+						</DialogHeader>
+						<div className="space-y-2">
+							<p className="text-sm text-muted-foreground">
+								Select the lab tests to request:
+							</p>
+							{availableLabTests.map((test) => (
+								// biome-ignore lint/a11y/noStaticElementInteractions: TODO: replace this with a checkbox-like element to improve accessibility
+								// biome-ignore lint/a11y/useKeyWithClickEvents: see above TODO
 								<div
-									className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-										selectedLabTests.has(test)
-											? "bg-primary border-primary"
-											: "border-muted-foreground"
-									}`}
+									key={test}
+									className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-accent"
+									onClick={() => handleToggleLabTest(test)}
 								>
-									{selectedLabTests.has(test) && (
-										<div className="w-2.5 h-2.5 rounded-full bg-primary-foreground" />
-									)}
-								</div>
-								<span>{test}</span>
-							</div>
-						))}
-					</div>
-					<DialogFooter>
-						<Button
-							variant="outline"
-							onClick={() => setLabTestModalOpen(false)}
-						>
-							Cancel
-						</Button>
-						<Button onClick={handleRequestLabTests}>Submit</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-
-			<Card className="mb-2">
-				<div className="flex gap-4 mx-3">
-					<Field>
-						<FieldLabel className="font-semibold">Patient Name</FieldLabel>
-						<div className="border rounded-md bg-muted text-sm px-2 py-1">
-							{caseDetail?.patientName || "—"}
-						</div>
-					</Field>
-					<Field>
-						<FieldLabel className="font-semibold">Age</FieldLabel>
-						<div className="border rounded-md bg-muted text-sm px-2 py-1">
-							{caseDetail?.patientAge || "—"}
-						</div>
-					</Field>
-					<Field>
-						<FieldLabel className="font-semibold">ID/PSRN</FieldLabel>
-						<div className="border rounded-md bg-muted text-sm px-2 py-1">
-							{caseDetail?.identifier || "—"}
-						</div>
-					</Field>
-				</div>
-			</Card>
-			<Card className="mb-2">
-				<div className="flex gap-4 mx-3">
-					<Field>
-						<FieldLabel className="font-semibold">Body Temperature</FieldLabel>
-						<div className="border rounded-md bg-muted text-sm px-2 py-1 max-width-20px">
-							{caseDetail?.temperature || "—"}
-						</div>
-					</Field>
-					<Field>
-						<FieldLabel className="font-semibold">Heart Rate</FieldLabel>
-						<div className="border rounded-md bg-muted text-sm px-2 py-1">
-							{caseDetail?.heartRate || "—"}
-						</div>
-					</Field>
-					<Field>
-						<FieldLabel className="font-semibold">Respiratory Rate</FieldLabel>
-						<div className="border rounded-md bg-muted text-sm px-2 py-1">
-							{caseDetail?.respiratoryRate || "—"}
-						</div>
-					</Field>
-				</div>
-				<div className="flex gap-4 mx-3">
-					<Field>
-						<FieldLabel className="font-semibold">
-							Blood Pressure Systolic
-						</FieldLabel>
-						<div className="border rounded-md bg-muted text-sm px-2 py-1">
-							{caseDetail?.bloodPressureSystolic || "—"}
-						</div>
-					</Field>
-					<Field>
-						<FieldLabel className="font-semibold">
-							Blood Pressure Diastolic
-						</FieldLabel>
-						<div className="border rounded-md bg-muted text-sm px-2 py-1">
-							{caseDetail?.bloodPressureDiastolic || "—"}
-						</div>
-					</Field>
-				</div>
-				<div className="flex gap-4 mx-3">
-					<Field>
-						<FieldLabel className="font-semibold">Blood Sugar</FieldLabel>
-						<div className="border rounded-md bg-muted text-sm px-2 py-1">
-							{caseDetail?.bloodSugar || "—"}
-						</div>
-					</Field>
-					<Field>
-						<FieldLabel className="font-semibold">SpO2</FieldLabel>
-						<div className="border rounded-md bg-muted text-sm px-2 py-1">
-							{caseDetail?.spo2 || "—"}
-						</div>
-					</Field>
-					<Field>
-						<FieldLabel className="font-semibold">Weight</FieldLabel>
-						<div className="border rounded-md bg-muted text-sm px-2 py-1">
-							{caseDetail?.weight || "—"}
-						</div>
-					</Field>
-				</div>
-			</Card>
-			<div className="grid grid-cols-3 mb-2">
-				<Card className="col-span-1 row-span-2 rounded-r-none rounded-bl-none px-2 pt-4 pb-2">
-					<Label className="font-semibold text-lg">Consultation Notes</Label>
-					<Textarea
-						className="h-full -mt-3.5 resize-none"
-						placeholder="Write notes here..."
-					/>
-				</Card>
-				<Card className="col-span-2 row-span-1 rounded-l-none rounded-br-none min-h-52 gap-2">
-					<div className="flex items-center w-full gap-2 px-2">
-						<Label className="font-semibold">Diagnosis: </Label>
-						<Popover
-							open={diseasesSearchOpen}
-							onOpenChange={setDiseasesSearchOpen}
-						>
-							<PopoverTrigger asChild>
-								<Button
-									variant="outline"
-									role="combobox"
-									className="justify-between w-3xl"
-								>
-									Select a disease...
-									<ChevronsUpDown className="ml-2 h-4 w-4" />
-								</Button>
-							</PopoverTrigger>
-							<PopoverContent className="p-0 w-3xl" align="start" side="top">
-								<Command shouldFilter={false}>
-									<CommandInput
-										placeholder="Type a disease to search..."
-										value={diagnosisQuery}
-										onValueChange={setDiagnosisQuery}
-									/>
-									<CommandList>
-										<CommandEmpty>No diseases found.</CommandEmpty>
-										<CommandGroup heading="Diseases">
-											{filteredDiseases.map(({ disease }) => (
-												<CommandItem
-													key={disease.id}
-													onSelect={() => {
-														handleAddDisease(disease);
-														setDiseasesSearchOpen(false);
-													}}
-													className="flex justify-between"
-												>
-													<span>
-														{disease.name} (ICD: {disease.icd})
-													</span>
-												</CommandItem>
-											))}
-										</CommandGroup>
-									</CommandList>
-								</Command>
-							</PopoverContent>
-						</Popover>
-					</div>
-					{diagnosisItems.length > 0 &&
-						diagnosisItems.map((item) => (
-							<div key={item.id} className="px-2">
-								<div className="w-full flex flex-wrap gap-2">
-									<span className="font-medium">{item.name}</span>
-									<span className="font-medium text-muted-foreground">
-										(ICD: {item.icd})
-									</span>
-									<Button
-										variant="destructive"
-										onClick={() => handleRemoveDiagnosisItem(item.id)}
-										className="h-6 w-6"
+									<div
+										className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+											selectedLabTests.has(test)
+												? "bg-primary border-primary"
+												: "border-muted-foreground"
+										}`}
 									>
-										<Trash2 />
-									</Button>
-								</div>
-							</div>
-						))}
-				</Card>
-				<Card className="col-span-2 gap-4 row-span-1 rounded-none min-h-52">
-					<div className="flex items-center w-full gap-2 px-2">
-						<Label className="font-semibold">Prescription: </Label>
-						<Popover
-							open={medicinesSearchOpen}
-							onOpenChange={setMedicinesSearchOpen}
-						>
-							<PopoverTrigger asChild>
-								<Button
-									variant="outline"
-									role="combobox"
-									className="justify-between w-3xl"
-								>
-									Select a medicine...
-									<ChevronsUpDown className="ml-2 h-4 w-4" />
-								</Button>
-							</PopoverTrigger>
-							<PopoverContent className="p-0 w-3xl" align="start" side="top">
-								<Command shouldFilter={false}>
-									<CommandInput
-										placeholder="Type a medicine to search..."
-										value={prescriptionQuery}
-										onValueChange={setPrescriptionQuery}
-									/>
-									<CommandList>
-										<CommandEmpty>No medicines found.</CommandEmpty>
-										<CommandGroup heading="Medicines">
-											{filteredMedicines.map(({ medicine }) => (
-												<CommandItem
-													key={medicine.id}
-													onSelect={() => {
-														handleAddMedicine(medicine); //chekc by brand instead of drug name
-														setMedicinesSearchOpen(false);
-													}}
-													className="flex justify-between"
-												>
-													<span>
-														{medicine.company} {medicine.brand}
-													</span>
-													<span className="mx-1 text-muted-foreground text-right">
-														({medicine.drug}) - {medicine.strength} -{" "}
-														{medicine.type}
-													</span>
-												</CommandItem>
-											))}
-										</CommandGroup>
-									</CommandList>
-								</Command>
-							</PopoverContent>
-						</Popover>
-					</div>
-					{prescriptionItems.length > 0 &&
-						prescriptionItems.map((item) => (
-							<div key={item.id} className="px-2">
-								<div className="w-full pb-1 flex flex-wrap">
-									<span className="font-semibold">
-										{item.company} {item.brand}
-									</span>
-									<span className="mx-1 text-muted-foreground text-right">
-										({item.drug}) - {item.strength} - {item.type}
-									</span>
-								</div>
-								<div className="gap-2 flex">
-									<div className="grid grid-cols-4 gap-2 w-full">
-										<Input
-											value={item.dosage}
-											onChange={(e) =>
-												handleUpdatePrescriptionItem(
-													item.id,
-													"dosage",
-													e.target.value,
-												)
-											}
-											placeholder="e.g., 500mg"
-											className="h-8"
-										/>
-										<Input
-											value={item.frequency}
-											onChange={(e) =>
-												handleUpdatePrescriptionItem(
-													item.id,
-													"frequency",
-													e.target.value,
-												)
-											}
-											placeholder="e.g., 2x daily"
-											className="h-8"
-										/>
-										<Input
-											value={item.duration}
-											onChange={(e) =>
-												handleUpdatePrescriptionItem(
-													item.id,
-													"duration",
-													e.target.value,
-												)
-											}
-											placeholder="e.g., 7 days"
-											className="h-8"
-										/>
-										<Input
-											value={item.comments}
-											onChange={(e) =>
-												handleUpdatePrescriptionItem(
-													item.id,
-													"comments",
-													e.target.value,
-												)
-											}
-											placeholder="Optional notes"
-											className="h-8"
-										/>
+										{selectedLabTests.has(test) && (
+											<div className="w-2.5 h-2.5 rounded-full bg-primary-foreground" />
+										)}
 									</div>
-									<Button
-										variant="destructive"
-										size="sm"
-										onClick={() => handleRemovePrescriptionItem(item.id)}
-										className="h-8 w-8 p-0"
-									>
-										<Trash2 className="h-4 w-4" />
-									</Button>
+									<span>{test}</span>
 								</div>
-							</div>
-						))}
-				</Card>
-				<Card className="col-span-4 row-span-1 rounded-tr-none rounded-tl-none py-2 px-2">
-					<div className="flex justify-end gap-2">
-						<Button variant="outline" onClick={() => setLabTestModalOpen(true)}>
-							Request Lab Tests
-						</Button>
-						<ButtonGroup>
-							<Button variant="outline" onClick={handleFinalize}>
-								{finalizeButtonValue}
+							))}
+						</div>
+						<DialogFooter>
+							<Button
+								variant="outline"
+								onClick={() => setLabTestModalOpen(false)}
+							>
+								Cancel
 							</Button>
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button variant="outline">
-										<ChevronDown />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									<DropdownMenuItem
-										onClick={() => setFinalizeButtonValue("Finalize (OPD)")}
-									>
-										Finalise (OPD)
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										onClick={() => setFinalizeButtonValue("Admit")}
-									>
-										Admit
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										onClick={() => setFinalizeButtonValue("Referral")}
-									>
-										Referral
-									</DropdownMenuItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</ButtonGroup>
+							<Button onClick={handleRequestLabTests}>Submit</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
+
+				<Card className="mb-2">
+					<div className="flex gap-4 mx-3">
+						<Field>
+							<FieldLabel className="font-semibold">Patient Name</FieldLabel>
+							<div className="border rounded-md bg-muted text-sm px-2 py-1">
+								{caseDetail?.patientName || "—"}
+							</div>
+						</Field>
+						<Field>
+							<FieldLabel className="font-semibold">Age</FieldLabel>
+							<div className="border rounded-md bg-muted text-sm px-2 py-1">
+								{caseDetail?.patientAge || "—"}
+							</div>
+						</Field>
+						<Field>
+							<FieldLabel className="font-semibold">ID/PSRN</FieldLabel>
+							<div className="border rounded-md bg-muted text-sm px-2 py-1">
+								{caseDetail?.identifier || "—"}
+							</div>
+						</Field>
 					</div>
 				</Card>
+				<Card className="mb-2">
+					<div className="flex gap-4 mx-3">
+						<Field>
+							<FieldLabel className="font-semibold">
+								Body Temperature
+							</FieldLabel>
+							<div className="border rounded-md bg-muted text-sm px-2 py-1 max-width-20px">
+								{caseDetail?.temperature || "—"}
+							</div>
+						</Field>
+						<Field>
+							<FieldLabel className="font-semibold">Heart Rate</FieldLabel>
+							<div className="border rounded-md bg-muted text-sm px-2 py-1">
+								{caseDetail?.heartRate || "—"}
+							</div>
+						</Field>
+						<Field>
+							<FieldLabel className="font-semibold">
+								Respiratory Rate
+							</FieldLabel>
+							<div className="border rounded-md bg-muted text-sm px-2 py-1">
+								{caseDetail?.respiratoryRate || "—"}
+							</div>
+						</Field>
+					</div>
+					<div className="flex gap-4 mx-3">
+						<Field>
+							<FieldLabel className="font-semibold">
+								Blood Pressure Systolic
+							</FieldLabel>
+							<div className="border rounded-md bg-muted text-sm px-2 py-1">
+								{caseDetail?.bloodPressureSystolic || "—"}
+							</div>
+						</Field>
+						<Field>
+							<FieldLabel className="font-semibold">
+								Blood Pressure Diastolic
+							</FieldLabel>
+							<div className="border rounded-md bg-muted text-sm px-2 py-1">
+								{caseDetail?.bloodPressureDiastolic || "—"}
+							</div>
+						</Field>
+					</div>
+					<div className="flex gap-4 mx-3">
+						<Field>
+							<FieldLabel className="font-semibold">Blood Sugar</FieldLabel>
+							<div className="border rounded-md bg-muted text-sm px-2 py-1">
+								{caseDetail?.bloodSugar || "—"}
+							</div>
+						</Field>
+						<Field>
+							<FieldLabel className="font-semibold">SpO2</FieldLabel>
+							<div className="border rounded-md bg-muted text-sm px-2 py-1">
+								{caseDetail?.spo2 || "—"}
+							</div>
+						</Field>
+						<Field>
+							<FieldLabel className="font-semibold">Weight</FieldLabel>
+							<div className="border rounded-md bg-muted text-sm px-2 py-1">
+								{caseDetail?.weight || "—"}
+							</div>
+						</Field>
+					</div>
+				</Card>
+				<div className="grid grid-cols-3 mb-2">
+					<Card className="col-span-1 row-span-2 rounded-r-none rounded-bl-none px-2 pt-4 pb-2">
+						<Label className="font-semibold text-lg">Consultation Notes</Label>
+						<Textarea
+							className="h-full -mt-3.5 resize-none"
+							placeholder="Write notes here..."
+						/>
+					</Card>
+					<Card className="col-span-2 row-span-1 rounded-l-none rounded-br-none min-h-52 gap-2">
+						<div className="flex items-center w-full gap-2 px-2">
+							<Label className="font-semibold">Diagnosis: </Label>
+							<Popover
+								open={diseasesSearchOpen}
+								onOpenChange={setDiseasesSearchOpen}
+							>
+								<PopoverTrigger asChild>
+									<Button
+										variant="outline"
+										role="combobox"
+										className="justify-between w-3xl"
+									>
+										Select a disease...
+										<ChevronsUpDown className="ml-2 h-4 w-4" />
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent className="p-0 w-3xl" align="start" side="top">
+									<Command shouldFilter={false}>
+										<CommandInput
+											placeholder="Type a disease to search..."
+											value={diagnosisQuery}
+											onValueChange={setDiagnosisQuery}
+										/>
+										<CommandList>
+											<CommandEmpty>No diseases found.</CommandEmpty>
+											<CommandGroup heading="Diseases">
+												{filteredDiseases.map(({ disease }) => (
+													<CommandItem
+														key={disease.id}
+														onSelect={() => {
+															handleAddDisease(disease);
+															setDiseasesSearchOpen(false);
+														}}
+														className="flex justify-between"
+													>
+														<span>
+															{disease.name} (ICD: {disease.icd})
+														</span>
+													</CommandItem>
+												))}
+											</CommandGroup>
+										</CommandList>
+									</Command>
+								</PopoverContent>
+							</Popover>
+						</div>
+						{diagnosisItems.length > 0 &&
+							diagnosisItems.map((item) => (
+								<div key={item.id} className="px-2">
+									<div className="w-full flex flex-wrap gap-2">
+										<span className="font-medium">{item.name}</span>
+										<span className="font-medium text-muted-foreground">
+											(ICD: {item.icd})
+										</span>
+										<Button
+											variant="destructive"
+											onClick={() => handleRemoveDiagnosisItem(item.id)}
+											className="h-6 w-6"
+										>
+											<Trash2 />
+										</Button>
+									</div>
+								</div>
+							))}
+					</Card>
+					<Card className="col-span-2 gap-4 row-span-1 rounded-none min-h-52">
+						<div className="flex items-center w-full gap-2 px-2">
+							<Label className="font-semibold">Prescription: </Label>
+							<Popover
+								open={medicinesSearchOpen}
+								onOpenChange={setMedicinesSearchOpen}
+							>
+								<PopoverTrigger asChild>
+									<Button
+										variant="outline"
+										role="combobox"
+										className="justify-between w-3xl"
+									>
+										Select a medicine...
+										<ChevronsUpDown className="ml-2 h-4 w-4" />
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent className="p-0 w-3xl" align="start" side="top">
+									<Command shouldFilter={false}>
+										<CommandInput
+											placeholder="Type a medicine to search..."
+											value={prescriptionQuery}
+											onValueChange={setPrescriptionQuery}
+										/>
+										<CommandList>
+											<CommandEmpty>No medicines found.</CommandEmpty>
+											<CommandGroup heading="Medicines">
+												{filteredMedicines.map(({ medicine }) => (
+													<CommandItem
+														key={medicine.id}
+														onSelect={() => {
+															handleAddMedicine(medicine); //chekc by brand instead of drug name
+															setMedicinesSearchOpen(false);
+														}}
+														className="flex justify-between"
+													>
+														<span>
+															{medicine.company} {medicine.brand}
+														</span>
+														<span className="mx-1 text-muted-foreground text-right">
+															({medicine.drug}) - {medicine.strength} -{" "}
+															{medicine.type}
+														</span>
+													</CommandItem>
+												))}
+											</CommandGroup>
+										</CommandList>
+									</Command>
+								</PopoverContent>
+							</Popover>
+						</div>
+						{prescriptionItems.length > 0 &&
+							prescriptionItems.map((item) => (
+								<div key={item.id} className="px-2">
+									<div className="w-full pb-1 flex flex-wrap">
+										<span className="font-semibold">
+											{item.company} {item.brand}
+										</span>
+										<span className="mx-1 text-muted-foreground text-right">
+											({item.drug}) - {item.strength} - {item.type}
+										</span>
+									</div>
+									<div className="gap-2 flex">
+										<div className="grid grid-cols-4 gap-2 w-full">
+											<Input
+												value={item.dosage}
+												onChange={(e) =>
+													handleUpdatePrescriptionItem(
+														item.id,
+														"dosage",
+														e.target.value,
+													)
+												}
+												placeholder="e.g., 500mg"
+												className="h-8"
+											/>
+											<Input
+												value={item.frequency}
+												onChange={(e) =>
+													handleUpdatePrescriptionItem(
+														item.id,
+														"frequency",
+														e.target.value,
+													)
+												}
+												placeholder="e.g., 2x daily"
+												className="h-8"
+											/>
+											<Input
+												value={item.duration}
+												onChange={(e) =>
+													handleUpdatePrescriptionItem(
+														item.id,
+														"duration",
+														e.target.value,
+													)
+												}
+												placeholder="e.g., 7 days"
+												className="h-8"
+											/>
+											<Input
+												value={item.comments}
+												onChange={(e) =>
+													handleUpdatePrescriptionItem(
+														item.id,
+														"comments",
+														e.target.value,
+													)
+												}
+												placeholder="Optional notes"
+												className="h-8"
+											/>
+										</div>
+										<Button
+											variant="destructive"
+											size="sm"
+											onClick={() => handleRemovePrescriptionItem(item.id)}
+											className="h-8 w-8 p-0"
+										>
+											<Trash2 className="h-4 w-4" />
+										</Button>
+									</div>
+								</div>
+							))}
+					</Card>
+					<Card className="col-span-4 row-span-1 rounded-tr-none rounded-tl-none py-2 px-2">
+						<div className="flex justify-end gap-2">
+							<Button
+								variant="outline"
+								onClick={() => setLabTestModalOpen(true)}
+							>
+								Request Lab Tests
+							</Button>
+							<ButtonGroup>
+								<Button variant="outline" onClick={handleFinalize}>
+									{finalizeButtonValue}
+								</Button>
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button variant="outline">
+											<ChevronDown />
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end">
+										<DropdownMenuItem
+											onClick={() => setFinalizeButtonValue("Finalize (OPD)")}
+										>
+											Finalise (OPD)
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => setFinalizeButtonValue("Admit")}
+										>
+											Admit
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => setFinalizeButtonValue("Referral")}
+										>
+											Referral
+										</DropdownMenuItem>
+									</DropdownMenuContent>
+								</DropdownMenu>
+							</ButtonGroup>
+						</div>
+					</Card>
+				</div>
 			</div>
-		</div>
+		</>
 	);
 }

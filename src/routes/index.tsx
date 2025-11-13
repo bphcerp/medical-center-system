@@ -1,4 +1,5 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { client } from "./api/$";
 
@@ -43,32 +44,9 @@ function App() {
 		return null;
 	}
 
-	const handleLogout = async () => {
-		const res = await client.api.logout.$get();
-		if (res.status === 200) {
-			navigate({ to: "/login" });
-			return;
-		}
-		alert("Failed to logout. Please try again.");
-	};
-
 	return (
-		<div className="px-4">
-			<div className="py-4 flex justify-between">
-				<span className="text-lg">
-					<span>Logged in as: </span>
-					<span className="font-bold">
-						{user.user.name} ({user.user.username})
-					</span>
-				</span>
-				<Button className="ml-4" variant="secondary" onClick={handleLogout}>
-					Logout
-				</Button>
-			</div>
-			<h1 className="text-2xl font-bold mb-4">
-				Welcome to the Medical Center System
-			</h1>
-
+		<>
+			<TopBar title="Medical Center System" />
 			<div className="flex justify-center pt-8">
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-8 justify-items-stretch w-2/3">
 					{allowedRoutes.map((route) => (
@@ -90,6 +68,6 @@ function App() {
 					))}
 				</div>
 			</div>
-		</div>
+		</>
 	);
 }
