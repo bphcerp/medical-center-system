@@ -47,8 +47,10 @@ const registrationTypeDetails: RegistrationTypeDetails = {
 
 export function RegistrationForm({
 	setToken,
+	isPatientRegistering = true,
 }: {
 	setToken: (token: number) => void;
+	isPatientRegistering?: boolean;
 }) {
 	const id = useId();
 	const nameId = useId();
@@ -324,9 +326,13 @@ export function RegistrationForm({
 						onClick={registrationType === "visitor" ? unsetVisitor : setVisitor}
 						className="px-0"
 					>
-						{registrationType === "visitor"
-							? "I am not a visitor"
-							: "I am a visitor"}
+						{isPatientRegistering
+							? registrationType === "visitor"
+								? "I am not a visitor"
+								: "I am a visitor"
+							: registrationType === "visitor"
+								? "Patient is not a visitor"
+								: "Patient is a visitor"}
 					</Button>
 				)}
 				<div className="grow" />
