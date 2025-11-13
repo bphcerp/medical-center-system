@@ -1,7 +1,8 @@
 import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDown, ChevronsUpDown, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -121,41 +122,45 @@ function ConsultationPage() {
 
 	const [diseasesSearchOpen, setDiseasesSearchOpen] = useState<boolean>(false);
 
-	const filteredDiseases = diseases
-		.reduce(
-			(acc, disease) => {
-				if (diagnosisQuery === "") {
-					acc.push({
-						disease,
-						count: 0,
-					});
-					return acc;
-				}
+	const filteredDiseases = useMemo(
+		() =>
+			diseases
+				.reduce(
+					(acc, disease) => {
+						if (diagnosisQuery === "") {
+							acc.push({
+								disease,
+								count: 0,
+							});
+							return acc;
+						}
 
-				const count = diagnosisQuery
-					.trim()
-					.split(/\s+/)
-					.reduce((count, term) => {
-						return (
-							count +
-							(disease.icd.toLowerCase().includes(term.toLowerCase()) ||
-							disease.name.toLowerCase().includes(term.toLowerCase())
-								? 1
-								: 0)
-						);
-					}, 0);
+						const count = diagnosisQuery
+							.trim()
+							.split(/\s+/)
+							.reduce((count, term) => {
+								return (
+									count +
+									(disease.icd.toLowerCase().includes(term.toLowerCase()) ||
+									disease.name.toLowerCase().includes(term.toLowerCase())
+										? 1
+										: 0)
+								);
+							}, 0);
 
-				if (count > 0) {
-					acc.push({
-						disease,
-						count,
-					});
-				}
-				return acc;
-			},
-			[] as { disease: (typeof diseases)[0]; count: number }[],
-		)
-		.sort((a, b) => b.count - a.count);
+						if (count > 0) {
+							acc.push({
+								disease,
+								count,
+							});
+						}
+						return acc;
+					},
+					[] as { disease: (typeof diseases)[0]; count: number }[],
+				)
+				.sort((a, b) => b.count - a.count),
+		[diseases, diagnosisQuery],
+	);
 
 	const handleAddDisease = (disease: (typeof diseases)[0]) => {
 		if (diagnosisItems.some((item) => item.id === disease.id)) {
@@ -190,46 +195,66 @@ function ConsultationPage() {
 	const [selectedLabTests, setSelectedLabTests] = useState<Set<LabReportType>>(
 		new Set(),
 	);
-
+	const medicationListRef = useRef(null);
+	const diseaseListRef = useRef(null);
 	const availableLabTests = labReportTypes;
 
-	const filteredMedicines = medicines
-		.reduce(
-			(acc, medicine) => {
-				if (prescriptionQuery === "") {
-					acc.push({
-						medicine,
-						count: 0,
-					});
-					return acc;
-				}
+	const filteredMedicines = useMemo(
+		() =>
+			medicines
+				.reduce(
+					(acc, medicine) => {
+						if (prescriptionQuery === "") {
+							acc.push({
+								medicine,
+								count: 0,
+							});
+							return acc;
+						}
 
-				const count = prescriptionQuery
-					.trim()
-					.split(/\s+/)
-					.reduce((count, term) => {
-						return (
-							count +
-							(medicine.drug.toLowerCase().includes(term.toLowerCase()) ||
-							medicine.brand.toLowerCase().includes(term.toLowerCase()) ||
-							medicine.company.toLowerCase().includes(term.toLowerCase()) ||
-							medicine.type.toLowerCase().includes(term.toLowerCase())
-								? 1
-								: 0)
-						);
-					}, 0);
+						const count = prescriptionQuery
+							.trim()
+							.split(/\s+/)
+							.reduce((count, term) => {
+								return (
+									count +
+									(medicine.drug.toLowerCase().includes(term.toLowerCase()) ||
+									medicine.brand.toLowerCase().includes(term.toLowerCase()) ||
+									medicine.company.toLowerCase().includes(term.toLowerCase()) ||
+									medicine.type.toLowerCase().includes(term.toLowerCase())
+										? 1
+										: 0)
+								);
+							}, 0);
 
-				if (count > 0) {
-					acc.push({
-						medicine,
-						count,
-					});
-				}
-				return acc;
-			},
-			[] as { medicine: (typeof medicines)[0]; count: number }[],
-		)
-		.sort((a, b) => b.count - a.count);
+						if (count > 0) {
+							acc.push({
+								medicine,
+								count,
+							});
+						}
+						return acc;
+					},
+					[] as { medicine: (typeof medicines)[0]; count: number }[],
+				)
+				.sort((a, b) => b.count - a.count),
+		[medicines, prescriptionQuery],
+	);
+
+	const medicationRowVirtualizer = useVirtualizer({
+		count: filteredMedicines.length,
+		getScrollElement: () => medicationListRef.current,
+		estimateSize: () => 48,
+		overscan: 15,
+		initialOffset: 0,
+	});
+	const diseaseRowVirtualizer = useVirtualizer({
+		count: filteredDiseases.length,
+		getScrollElement: () => diseaseListRef.current,
+		estimateSize: () => 48,
+		overscan: 15,
+		initialOffset: 0,
+	});
 
 	const handleAddMedicine = (medicine: (typeof medicines)[0]) => {
 		//heck if medicine already exists in the prescription
@@ -532,24 +557,44 @@ function ConsultationPage() {
 											value={diagnosisQuery}
 											onValueChange={setDiagnosisQuery}
 										/>
-										<CommandList>
-											<CommandEmpty>No diseases found.</CommandEmpty>
-											<CommandGroup heading="Diseases">
-												{filteredDiseases.map(({ disease }) => (
-													<CommandItem
-														key={disease.id}
-														onSelect={() => {
-															handleAddDisease(disease);
-															setDiseasesSearchOpen(false);
-														}}
-														className="flex justify-between"
-													>
-														<span>
-															{disease.name} (ICD: {disease.icd})
-														</span>
-													</CommandItem>
-												))}
-											</CommandGroup>
+										<CommandList ref={diseaseListRef}>
+											<div
+												style={{
+													height:
+														diseaseRowVirtualizer.getTotalSize() > 0
+															? `${diseaseRowVirtualizer.getTotalSize()}px`
+															: "auto",
+												}}
+												className="relative w-full"
+											>
+												<CommandEmpty>No diseases found.</CommandEmpty>
+												<CommandGroup>
+													{diseaseRowVirtualizer
+														.getVirtualItems()
+														.map((virtualItem) => {
+															const disease =
+																filteredDiseases[virtualItem.index].disease;
+															return (
+																<CommandItem
+																	key={virtualItem.key}
+																	onSelect={() => {
+																		handleAddDisease(disease);
+																		setDiseasesSearchOpen(false);
+																	}}
+																	className="flex absolute top-0 left-0 w-full justify-between"
+																	style={{
+																		height: `${virtualItem.size}px`,
+																		transform: `translateY(${virtualItem.start}px)`,
+																	}}
+																>
+																	<span>
+																		{disease.name} (ICD: {disease.icd})
+																	</span>
+																</CommandItem>
+															);
+														})}
+												</CommandGroup>
+											</div>
 										</CommandList>
 									</Command>
 								</PopoverContent>
@@ -598,28 +643,46 @@ function ConsultationPage() {
 											value={prescriptionQuery}
 											onValueChange={setPrescriptionQuery}
 										/>
-										<CommandList>
-											<CommandEmpty>No medicines found.</CommandEmpty>
-											<CommandGroup heading="Medicines">
-												{filteredMedicines.map(({ medicine }) => (
-													<CommandItem
-														key={medicine.id}
-														onSelect={() => {
-															handleAddMedicine(medicine); //chekc by brand instead of drug name
-															setMedicinesSearchOpen(false);
-														}}
-														className="flex justify-between"
-													>
-														<span>
-															{medicine.company} {medicine.brand}
-														</span>
-														<span className="mx-1 text-muted-foreground text-right">
-															({medicine.drug}) - {medicine.strength} -{" "}
-															{medicine.type}
-														</span>
-													</CommandItem>
-												))}
-											</CommandGroup>
+										<CommandList ref={medicationListRef}>
+											<div
+												style={{
+													height:
+														medicationRowVirtualizer.getTotalSize() > 0
+															? `${medicationRowVirtualizer.getTotalSize()}px`
+															: "auto",
+												}}
+												className="relative w-full"
+											>
+												<CommandEmpty>No medicines found.</CommandEmpty>
+												{medicationRowVirtualizer
+													.getVirtualItems()
+													.map((virtualItem) => {
+														const medicine =
+															filteredMedicines[virtualItem.index].medicine;
+														return (
+															<CommandItem
+																key={virtualItem.key}
+																onSelect={() => {
+																	handleAddMedicine(medicine); //check by brand instead of drug name
+																	setMedicinesSearchOpen(false);
+																}}
+																className="flex absolute top-0 left-0 w-full justify-between"
+																style={{
+																	height: `${virtualItem.size}px`,
+																	transform: `translateY(${virtualItem.start}px)`,
+																}}
+															>
+																<span>
+																	{medicine.company} {medicine.brand}
+																</span>
+																<span className="mx-1 text-muted-foreground text-right">
+																	({medicine.drug}) - {medicine.strength} -{" "}
+																	{medicine.type}
+																</span>
+															</CommandItem>
+														);
+													})}
+											</div>
 										</CommandList>
 									</Command>
 								</PopoverContent>
