@@ -18,6 +18,13 @@ export const finalizedStateEnum = pgEnum("finalized_state", [
 export const identifierTypes = ["psrn", "student_id", "phone"] as const;
 export const identifierType = pgEnum("identifier_type", identifierTypes);
 
+export const medicineCategoryEnum = pgEnum("medicine_category", [
+	"Capsule/Tablet",
+	"External Application",
+	"Injection",
+	"Liquids/Syrups",
+]);
+
 export const diseasesTable = pgTable(
 	"diseases",
 	{
@@ -35,6 +42,7 @@ export const medicinesTable = pgTable("medicines", {
 	brand: varchar({ length: 1023 }).notNull(),
 	strength: varchar({ length: 255 }).notNull(),
 	type: varchar({ length: 255 }).notNull(),
+	category: medicineCategoryEnum("category").notNull(),
 	price: real().notNull(),
 });
 
