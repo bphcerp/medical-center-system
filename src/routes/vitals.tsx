@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
-import { Activity, Check, Plus } from "lucide-react";
+import { Activity, ArrowLeft, Check, Plus } from "lucide-react";
 import type React from "react";
 import { useEffect, useId, useState } from "react";
 import { RegistrationForm } from "@/components/registration-card";
@@ -20,6 +20,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { useWindowWidthAtLeast } from "@/lib/hooks";
 import { cn, titleCase } from "@/lib/utils";
 import { client } from "./api/$";
 
@@ -81,9 +82,15 @@ function Vitals() {
 	const [focusedPatient, setFocusedPatient] = useState<
 		(typeof unprocessed)[number] | null
 	>(null);
+
+	const isDesktop = useWindowWidthAtLeast("lg");
+
 	useEffect(() => {
-		setFocusedPatient(unprocessed.length > 0 ? unprocessed[0] : null);
-	}, [unprocessed]);
+		if (isDesktop && focusedPatient === null) {
+			setFocusedPatient(unprocessed.length > 0 ? unprocessed[0] : null);
+		}
+	}, [unprocessed, isDesktop, focusedPatient]);
+
 	const [assignedDoctor, setAssignedDoctor] = useState<number | null>(null);
 
 	const router = useRouter();
@@ -153,7 +160,12 @@ function Vitals() {
 				<h1 className="text-3xl font-bold">Patient Queue</h1>
 			</div>
 			<div className="flex items-stretch divide-x divide-border grow min-h-0">
-				<div className="relative flex flex-col flex-2 px-4 pt-4 gap-4 overflow-y-scroll bottom-0 min-h-0">
+				<div
+					className={cn(
+						"relative flex flex-col flex-2 px-4 pt-4 gap-4 overflow-y-scroll bg-background bottom-0 min-h-0 z-10",
+						isDesktop || focusedPatient === null ? "flex" : "hidden",
+					)}
+				>
 					{unprocessed.length === 0 && (
 						<p className="text-center my-auto">No patients in queue</p>
 					)}
@@ -200,43 +212,51 @@ function Vitals() {
 						<NewPatientDialog />
 					</div>
 				</div>
-				<div className="h-full flex-5 px-12 flex">
+				<div className="absolute lg:static flex-5 p-4 lg:p-12 flex w-full">
 					{focusedPatient ? (
-						<form className="mt-12 w-full" action={handleCreateCase}>
+						<form
+							className="flex flex-col gap-4 w-full"
+							action={handleCreateCase}
+						>
+							<div className="flex flex-col gap-2">
+								<Button
+									variant="outline"
+									className="self-start lg:hidden mb-2"
+									onClick={() => setFocusedPatient(null)}
+								>
+									<ArrowLeft /> Queue
+								</Button>
+								<p className="italic text-muted-foreground">
+									Entering vitals for
+								</p>
+								<div className="flex items-stretch gap-3">
+									<PatientTypeBadge
+										key={focusedPatient.patients.id}
+										type={focusedPatient.patients.type}
+										className="text-3xl border px-3 tabular-nums tracking-tight font-medium flex items-center min-w-14"
+									>
+										{focusedPatient.unprocessed.id}
+									</PatientTypeBadge>
+									<div className="flex flex-col gap-0.5">
+										<span className="text-3xl font-bold">
+											{focusedPatient.patients.name}
+										</span>
+										<span className="flex items-center gap-2">
+											<span className="text-muted-foreground font-medium text-lg">
+												{titleCase(focusedPatient.patients.sex)},{" "}
+												{focusedPatient.patients.age} year
+												{focusedPatient.patients.age !== 1 ? "s" : ""} old
+											</span>
+											<PatientTypeBadge type={focusedPatient.patients.type} />
+										</span>
+									</div>
+								</div>
+							</div>
 							<FieldSet>
 								<FieldGroup>
-									<div className="flex flex-col gap-2">
-										<p className="italic text-muted-foreground">
-											Entering vitals for
-										</p>
-										<div className="flex items-stretch gap-3">
-											<PatientTypeBadge
-												key={focusedPatient.patients.id}
-												type={focusedPatient.patients.type}
-												className="text-3xl border px-3 tabular-nums tracking-tight font-medium flex items-center min-w-14"
-											>
-												{focusedPatient.unprocessed.id}
-											</PatientTypeBadge>
-											<div className="flex flex-col gap-0.5">
-												<span className="text-3xl font-bold">
-													{focusedPatient.patients.name}
-												</span>
-												<span className="flex items-center gap-2">
-													<span className="text-muted-foreground font-medium text-lg">
-														{titleCase(focusedPatient.patients.sex)},{" "}
-														{focusedPatient.patients.age} year
-														{focusedPatient.patients.age !== 1 ? "s" : ""} old
-													</span>
-													<PatientTypeBadge
-														type={focusedPatient.patients.type}
-													/>
-												</span>
-											</div>
-										</div>
-									</div>
-									<div className="flex items-start gap-4">
-										<div className="flex-2 flex flex-col gap-4 p-4 rounded-lg bg-pink-700/5">
-											<div className="grid grid-cols-2 gap-4 flex-2">
+									<div className="flex flex-wrap items-start gap-4">
+										<div className="flex flex-col gap-4 p-4 rounded-lg bg-pink-700/5 max-w-140">
+											<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-2">
 												<Field>
 													<FieldLabel htmlFor={bodyTemperatureId}>
 														Body Temperature (optional)
@@ -302,7 +322,7 @@ function Vitals() {
 													</InputGroup>
 												</Field>
 											</div>
-											<div className="grid grid-cols-2 gap-4 pt-4 border-t border-pink-700/40">
+											<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-4 border-t border-pink-700/40">
 												<Field>
 													<FieldLabel htmlFor={bloodPressureSystolicId}>
 														Blood Pressure Systolic (optional)
@@ -337,7 +357,7 @@ function Vitals() {
 												</Field>
 											</div>
 										</div>
-										<div className="flex-1 grid grid-cols-1 gap-4 p-4 rounded-lg bg-purple-700/5">
+										<div className="grid grid-cols-1 gap-4 p-4 rounded-lg bg-purple-700/5 max-w-70">
 											<Field>
 												<FieldLabel htmlFor={weightId}>
 													Weight (optional)
@@ -372,7 +392,7 @@ function Vitals() {
 											</Field>
 										</div>
 									</div>
-									<Separator className="my-2" />
+									<Separator className="hidden lg:inline my-2" />
 									<div className="flex items-end gap-4">
 										<Field>
 											<FieldLabel htmlFor={doctorAssignedId}>
