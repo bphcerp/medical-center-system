@@ -2,11 +2,12 @@ import { date, integer, pgTable, varchar } from "drizzle-orm/pg-core";
 import { medicinesTable } from "./case";
 
 export const inventoryMedicinesTable = pgTable("inventory_medicines", {
-	// id: integer().primaryKey().generatedAlwaysAsIdentity(),
+	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	medicine: integer()
 		.references(() => medicinesTable.id)
 		.notNull(),
 	quantity: integer().notNull(),
+	criticalQty: integer(),
 });
 
 export const batchesTable = pgTable("batches", {

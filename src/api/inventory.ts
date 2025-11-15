@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { inventoryMedicinesTable } from "@/db/inventory";
 import { db } from "./index";
-import { eq } from "drizzle-orm"; // used for WHERE conditions
-import { zValidator } from "@hono/zod-validator"; // for input validation
+import { eq } from "drizzle-orm";
+import { zValidator } from "@hono/zod-validator";
 import z from "zod";
 
 const api = new Hono()
