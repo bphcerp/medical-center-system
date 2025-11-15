@@ -19,6 +19,7 @@ import type { Permission } from "@/lib/types/permissions";
 import { db } from ".";
 import doctor from "./doctor";
 import files from "./files";
+import inventory from "./inventory";
 import lab from "./lab";
 import rbac from "./rbac";
 import role from "./role";
@@ -307,7 +308,8 @@ export const unauthenticated = new Hono()
 				token: token[0].id,
 			});
 		},
-	);
+	)
+	.route("/inventory", inventory);
 
 export const authenticated = new Hono()
 	.use(
