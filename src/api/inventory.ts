@@ -1,38 +1,57 @@
 import { Hono } from "hono";
-import { inventoryMedicinesTable } from "@/db/inventory";
+import { inventoryMedicinesTable , batchesTable } from "@/db/inventory";
 import { db } from "./index";
 import { eq } from "drizzle-orm";
 import { zValidator } from "@hono/zod-validator";
 import z from "zod";
 
 const api = new Hono()
+	api.get("/", async (c) => {
+	// Step 1: join inventory with batches
+	const rows = await db
+		.select({
+		inv_id: inventoryMedicinesTable.id,
+		inv_medicine: inventoryMedicinesTable.medicine,
+		inv_quantity: inventoryMedicinesTable.quantity,
+		batch_id: batchesTable.id,
+		batch_num: batchesTable.batchNum,
+		batch_expiry: batchesTable.expiry,
+		batch_quantity: batchesTable.quantity,
+		})
+		.from(inventoryMedicinesTable)
+		.leftJoin(
+		batchesTable,
+		eq(batchesTable.medicineId, inventoryMedicinesTable.id)
+		);
 
-	// GET all medicines in inventory
-	.get("/", async (c) => {
-		const data = await db.select().from(inventoryMedicinesTable);
-		return c.json({ inventory: data });
-	})
+	// Step 2: group rows by inventory item
+	const map = new Map();
 
-	// POST — add a new inventory item
-	.post(
-		"/",
-		zValidator(
-			"json",
-			z.object({
-				medicine: z.number().int(),
-				quantity: z.number().int(),
-			}),
-		),
-		async (c) => {
-			const { medicine, quantity } = c.req.valid("json");
+	for (const r of rows) {
 
-			// Insert into database
-			await db.insert(inventoryMedicinesTable).values({
-				medicine,
-				quantity,
+		if (!map.has(r.inv_id)) {
+		map.set(r.inv_id, {
+			id: r.inv_id,
+			medicine: r.inv_medicine,
+			quantity: 0,
+			batches: [],
+		});
+		}
+
+		// If a batch exists, add it
+		if (r.batch_id !== null) {
+			const item = map.get(r.inv_id);
+			map.get(r.inv_id).batches.push({
+				id: r.batch_id,
+				batchNum: r.batch_num,
+				expiry: r.batch_expiry,
+				quantity: r.batch_quantity,
 			});
+			item.quantity += r.batch_quantity;
+		}
+	}
 
-			return c.json({ success: true, message: "Item added to inventory." });
+	return c.json({ inventory: Array.from(map.values()) });
 		},
 	)
 

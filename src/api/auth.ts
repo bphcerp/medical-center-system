@@ -24,6 +24,7 @@ import rbac from "./rbac";
 import role from "./role";
 import user from "./user";
 import vitals from "./vitals";
+import inventory from "./inventory";
 
 export type JWTPayload = {
 	passwordHash: null;
@@ -307,7 +308,8 @@ export const unauthenticated = new Hono()
 				token: token[0].id,
 			});
 		},
-	);
+	)
+	.route("/inventory", inventory);
 
 export const authenticated = new Hono()
 	.use(
