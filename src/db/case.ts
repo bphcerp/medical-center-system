@@ -1,13 +1,13 @@
 import { sql } from "drizzle-orm";
 import {
 	integer,
+	jsonb,
 	pgEnum,
 	pgTable,
 	real,
 	text,
 	uniqueIndex,
 	varchar,
-	jsonb
 } from "drizzle-orm/pg-core";
 import { patientsTable } from "./patient";
 
@@ -57,6 +57,7 @@ export const casePrescriptionsTable = pgTable("case_prescriptions", {
 		.notNull(),
 	dosage: varchar({ length: 255 }).notNull(),
 	frequency: varchar({ length: 255 }).notNull(),
+	duration: varchar({ length: 255 }).notNull(),
 	categoryData: jsonb(),
 	comment: text(),
 });
