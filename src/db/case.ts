@@ -25,7 +25,10 @@ export const medicineCategories = [
 	"Injection",
 	"Liquids/Syrups",
 ] as const;
-export const medicineCategoryEnum = pgEnum("medicine_category", medicineCategories);
+export const medicineCategoryEnum = pgEnum(
+	"medicine_category",
+	medicineCategories,
+);
 
 export const diseasesTable = pgTable(
 	"diseases",

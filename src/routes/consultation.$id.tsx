@@ -43,8 +43,8 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import type { medicineCategories } from "@/db/case";
 import { type LabReportType, labReportTypes } from "@/db/lab";
-import { medicineCategories } from "@/db/case";
 import { client } from "./api/$";
 
 type PrescriptionItem = {
@@ -831,10 +831,18 @@ function ConsultationPage() {
 														<SelectItem value="3">3 times a day</SelectItem>
 														<SelectItem value="4">4 times a day</SelectItem>
 														<SelectItem value="5">5 times a day</SelectItem>
-														<SelectItem value="alternate days">Alternate days</SelectItem>
-														<SelectItem value="once a week">Once a week</SelectItem>
-														<SelectItem value="twice a week">Twice a week</SelectItem>
-														<SelectItem value="thrice a week">Thrice a week</SelectItem>
+														<SelectItem value="alternate days">
+															Alternate days
+														</SelectItem>
+														<SelectItem value="once a week">
+															Once a week
+														</SelectItem>
+														<SelectItem value="twice a week">
+															Twice a week
+														</SelectItem>
+														<SelectItem value="thrice a week">
+															Thrice a week
+														</SelectItem>
 													</SelectContent>
 												</Select>
 												<Select
@@ -859,10 +867,18 @@ function ConsultationPage() {
 													duration={item.duration}
 													durationUnit={item.durationUnit}
 													onDurationChange={(value) =>
-														handleUpdatePrescriptionItem(item.id, "duration", value)
+														handleUpdatePrescriptionItem(
+															item.id,
+															"duration",
+															value,
+														)
 													}
 													onDurationUnitChange={(value) =>
-														handleUpdatePrescriptionItem(item.id, "durationUnit", value)
+														handleUpdatePrescriptionItem(
+															item.id,
+															"durationUnit",
+															value,
+														)
 													}
 												/>
 												<Input
@@ -926,9 +942,15 @@ function ConsultationPage() {
 														<SelectItem value="2">Twice a day</SelectItem>
 														<SelectItem value="3">3 times a day</SelectItem>
 														<SelectItem value="4">4 times a day</SelectItem>
-														<SelectItem value="alternate days">Alternate days</SelectItem>
-														<SelectItem value="once a week">Once a week</SelectItem>
-														<SelectItem value="twice a week">Twice a week</SelectItem>
+														<SelectItem value="alternate days">
+															Alternate days
+														</SelectItem>
+														<SelectItem value="once a week">
+															Once a week
+														</SelectItem>
+														<SelectItem value="twice a week">
+															Twice a week
+														</SelectItem>
 														<SelectItem value="as needed">As needed</SelectItem>
 													</SelectContent>
 												</Select>
@@ -936,10 +958,18 @@ function ConsultationPage() {
 													duration={item.duration}
 													durationUnit={item.durationUnit}
 													onDurationChange={(value) =>
-														handleUpdatePrescriptionItem(item.id, "duration", value)
+														handleUpdatePrescriptionItem(
+															item.id,
+															"duration",
+															value,
+														)
 													}
 													onDurationUnitChange={(value) =>
-														handleUpdatePrescriptionItem(item.id, "durationUnit", value)
+														handleUpdatePrescriptionItem(
+															item.id,
+															"durationUnit",
+															value,
+														)
 													}
 												/>
 												<Input
@@ -1012,10 +1042,18 @@ function ConsultationPage() {
 														<SelectItem value="every 12 hours">
 															Every 12 hours
 														</SelectItem>
-														<SelectItem value="alternate days">Alternate days</SelectItem>
-														<SelectItem value="once a week">Once a week</SelectItem>
-														<SelectItem value="twice a week">Twice a week</SelectItem>
-														<SelectItem value="thrice a week">Thrice a week</SelectItem>
+														<SelectItem value="alternate days">
+															Alternate days
+														</SelectItem>
+														<SelectItem value="once a week">
+															Once a week
+														</SelectItem>
+														<SelectItem value="twice a week">
+															Twice a week
+														</SelectItem>
+														<SelectItem value="thrice a week">
+															Thrice a week
+														</SelectItem>
 														<SelectItem value="as needed">As needed</SelectItem>
 													</SelectContent>
 												</Select>
@@ -1023,10 +1061,18 @@ function ConsultationPage() {
 													duration={item.duration}
 													durationUnit={item.durationUnit}
 													onDurationChange={(value) =>
-														handleUpdatePrescriptionItem(item.id, "duration", value)
+														handleUpdatePrescriptionItem(
+															item.id,
+															"duration",
+															value,
+														)
 													}
 													onDurationUnitChange={(value) =>
-														handleUpdatePrescriptionItem(item.id, "durationUnit", value)
+														handleUpdatePrescriptionItem(
+															item.id,
+															"durationUnit",
+															value,
+														)
 													}
 												/>
 												<Select
@@ -1101,10 +1147,18 @@ function ConsultationPage() {
 														<SelectItem value="3">3 times a day</SelectItem>
 														<SelectItem value="4">4 times a day</SelectItem>
 														<SelectItem value="5">5 times a day</SelectItem>
-														<SelectItem value="alternate days">Alternate days</SelectItem>
-														<SelectItem value="once a week">Once a week</SelectItem>
-														<SelectItem value="twice a week">Twice a week</SelectItem>
-														<SelectItem value="thrice a week">Thrice a week</SelectItem>
+														<SelectItem value="alternate days">
+															Alternate days
+														</SelectItem>
+														<SelectItem value="once a week">
+															Once a week
+														</SelectItem>
+														<SelectItem value="twice a week">
+															Twice a week
+														</SelectItem>
+														<SelectItem value="thrice a week">
+															Thrice a week
+														</SelectItem>
 													</SelectContent>
 												</Select>
 												<Select
@@ -1129,10 +1183,18 @@ function ConsultationPage() {
 													duration={item.duration}
 													durationUnit={item.durationUnit}
 													onDurationChange={(value) =>
-														handleUpdatePrescriptionItem(item.id, "duration", value)
+														handleUpdatePrescriptionItem(
+															item.id,
+															"duration",
+															value,
+														)
 													}
 													onDurationUnitChange={(value) =>
-														handleUpdatePrescriptionItem(item.id, "durationUnit", value)
+														handleUpdatePrescriptionItem(
+															item.id,
+															"durationUnit",
+															value,
+														)
 													}
 												/>
 												<Input
