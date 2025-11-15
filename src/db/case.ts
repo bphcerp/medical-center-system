@@ -19,12 +19,13 @@ export const finalizedStateEnum = pgEnum("finalized_state", [
 export const identifierTypes = ["psrn", "student_id", "phone"] as const;
 export const identifierType = pgEnum("identifier_type", identifierTypes);
 
-export const medicineCategoryEnum = pgEnum("medicine_category", [
+export const medicineCategories = [
 	"Capsule/Tablet",
 	"External Application",
 	"Injection",
 	"Liquids/Syrups",
-]);
+] as const;
+export const medicineCategoryEnum = pgEnum("medicine_category", medicineCategories);
 
 export const diseasesTable = pgTable(
 	"diseases",

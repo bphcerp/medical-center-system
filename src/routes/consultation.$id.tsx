@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { type LabReportType, labReportTypes } from "@/db/lab";
+import { medicineCategories } from "@/db/case";
 import { client } from "./api/$";
 
 type PrescriptionItem = {
@@ -53,11 +54,7 @@ type PrescriptionItem = {
 	company: string;
 	strength: string;
 	type: string;
-	category:
-		| "Capsule/Tablet"
-		| "External Application"
-		| "Injection"
-		| "Liquids/Syrups";
+	category: (typeof medicineCategories)[number];
 	dosage: string;
 	frequency: string;
 	duration: string;
@@ -68,6 +65,43 @@ type PrescriptionItem = {
 	injectionRoute?: string;
 	liquidTiming?: string;
 };
+
+function DurationInput({
+	duration,
+	durationUnit,
+	onDurationChange,
+	onDurationUnitChange,
+}: {
+	duration: string;
+	durationUnit?: string;
+	onDurationChange: (value: string) => void;
+	onDurationUnitChange: (value: string) => void;
+}) {
+	return (
+		<>
+			<Input
+				type="number"
+				value={duration}
+				onChange={(e) => onDurationChange(e.target.value)}
+				placeholder="0"
+				className="h-10 w-15"
+			/>
+			<Select
+				value={durationUnit || "days"}
+				onValueChange={onDurationUnitChange}
+			>
+				<SelectTrigger className="h-8 w-28">
+					<SelectValue />
+				</SelectTrigger>
+				<SelectContent>
+					<SelectItem value="days">days</SelectItem>
+					<SelectItem value="weeks">weeks</SelectItem>
+					<SelectItem value="months">months</SelectItem>
+				</SelectContent>
+			</Select>
+		</>
+	);
+}
 
 type DiagnosisItem = {
 	id: number;
@@ -797,6 +831,10 @@ function ConsultationPage() {
 														<SelectItem value="3">3 times a day</SelectItem>
 														<SelectItem value="4">4 times a day</SelectItem>
 														<SelectItem value="5">5 times a day</SelectItem>
+														<SelectItem value="alternate days">Alternate days</SelectItem>
+														<SelectItem value="once a week">Once a week</SelectItem>
+														<SelectItem value="twice a week">Twice a week</SelectItem>
+														<SelectItem value="thrice a week">Thrice a week</SelectItem>
 													</SelectContent>
 												</Select>
 												<Select
@@ -817,38 +855,16 @@ function ConsultationPage() {
 														<SelectItem value="after">After meal</SelectItem>
 													</SelectContent>
 												</Select>
-												<Input
-													type="number"
-													value={item.duration}
-													onChange={(e) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"duration",
-															e.target.value,
-														)
+												<DurationInput
+													duration={item.duration}
+													durationUnit={item.durationUnit}
+													onDurationChange={(value) =>
+														handleUpdatePrescriptionItem(item.id, "duration", value)
 													}
-													placeholder="0"
-													className="h-10 w-15"
+													onDurationUnitChange={(value) =>
+														handleUpdatePrescriptionItem(item.id, "durationUnit", value)
+													}
 												/>
-												<Select
-													value={item.durationUnit || "days"}
-													onValueChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"durationUnit",
-															value,
-														)
-													}
-												>
-													<SelectTrigger className="h-8 w-28">
-														<SelectValue />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="days">days</SelectItem>
-														<SelectItem value="weeks">weeks</SelectItem>
-														<SelectItem value="months">months</SelectItem>
-													</SelectContent>
-												</Select>
 												<Input
 													value={item.comments}
 													onChange={(e) =>
@@ -910,41 +926,22 @@ function ConsultationPage() {
 														<SelectItem value="2">Twice a day</SelectItem>
 														<SelectItem value="3">3 times a day</SelectItem>
 														<SelectItem value="4">4 times a day</SelectItem>
+														<SelectItem value="alternate days">Alternate days</SelectItem>
+														<SelectItem value="once a week">Once a week</SelectItem>
+														<SelectItem value="twice a week">Twice a week</SelectItem>
 														<SelectItem value="as needed">As needed</SelectItem>
 													</SelectContent>
 												</Select>
-												<Input
-													type="number"
-													value={item.duration}
-													onChange={(e) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"duration",
-															e.target.value,
-														)
+												<DurationInput
+													duration={item.duration}
+													durationUnit={item.durationUnit}
+													onDurationChange={(value) =>
+														handleUpdatePrescriptionItem(item.id, "duration", value)
 													}
-													placeholder="0"
-													className="h-10 w-15"
+													onDurationUnitChange={(value) =>
+														handleUpdatePrescriptionItem(item.id, "durationUnit", value)
+													}
 												/>
-												<Select
-													value={item.durationUnit || "days"}
-													onValueChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"durationUnit",
-															value,
-														)
-													}
-												>
-													<SelectTrigger className="h-8 w-28">
-														<SelectValue />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="days">days</SelectItem>
-														<SelectItem value="weeks">weeks</SelectItem>
-														<SelectItem value="months">months</SelectItem>
-													</SelectContent>
-												</Select>
 												<Input
 													value={item.applicationArea || ""}
 													onChange={(e) =>
@@ -1015,41 +1012,23 @@ function ConsultationPage() {
 														<SelectItem value="every 12 hours">
 															Every 12 hours
 														</SelectItem>
+														<SelectItem value="alternate days">Alternate days</SelectItem>
+														<SelectItem value="once a week">Once a week</SelectItem>
+														<SelectItem value="twice a week">Twice a week</SelectItem>
+														<SelectItem value="thrice a week">Thrice a week</SelectItem>
 														<SelectItem value="as needed">As needed</SelectItem>
 													</SelectContent>
 												</Select>
-												<Input
-													type="number"
-													value={item.duration}
-													onChange={(e) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"duration",
-															e.target.value,
-														)
+												<DurationInput
+													duration={item.duration}
+													durationUnit={item.durationUnit}
+													onDurationChange={(value) =>
+														handleUpdatePrescriptionItem(item.id, "duration", value)
 													}
-													placeholder="0"
-													className="h-10 w-15"
+													onDurationUnitChange={(value) =>
+														handleUpdatePrescriptionItem(item.id, "durationUnit", value)
+													}
 												/>
-												<Select
-													value={item.durationUnit || "days"}
-													onValueChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"durationUnit",
-															value,
-														)
-													}
-												>
-													<SelectTrigger className="h-8 w-28">
-														<SelectValue />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="days">days</SelectItem>
-														<SelectItem value="weeks">weeks</SelectItem>
-														<SelectItem value="months">months</SelectItem>
-													</SelectContent>
-												</Select>
 												<Select
 													value={item.injectionRoute || ""}
 													onValueChange={(value) =>
@@ -1122,6 +1101,10 @@ function ConsultationPage() {
 														<SelectItem value="3">3 times a day</SelectItem>
 														<SelectItem value="4">4 times a day</SelectItem>
 														<SelectItem value="5">5 times a day</SelectItem>
+														<SelectItem value="alternate days">Alternate days</SelectItem>
+														<SelectItem value="once a week">Once a week</SelectItem>
+														<SelectItem value="twice a week">Twice a week</SelectItem>
+														<SelectItem value="thrice a week">Thrice a week</SelectItem>
 													</SelectContent>
 												</Select>
 												<Select
@@ -1142,38 +1125,16 @@ function ConsultationPage() {
 														<SelectItem value="after">After meal</SelectItem>
 													</SelectContent>
 												</Select>
-												<Input
-													type="number"
-													value={item.duration}
-													onChange={(e) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"duration",
-															e.target.value,
-														)
+												<DurationInput
+													duration={item.duration}
+													durationUnit={item.durationUnit}
+													onDurationChange={(value) =>
+														handleUpdatePrescriptionItem(item.id, "duration", value)
 													}
-													placeholder="0"
-													className="h-10 w-15"
+													onDurationUnitChange={(value) =>
+														handleUpdatePrescriptionItem(item.id, "durationUnit", value)
+													}
 												/>
-												<Select
-													value={item.durationUnit || "days"}
-													onValueChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"durationUnit",
-															value,
-														)
-													}
-												>
-													<SelectTrigger className="h-8 w-28">
-														<SelectValue />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="days">days</SelectItem>
-														<SelectItem value="weeks">weeks</SelectItem>
-														<SelectItem value="months">months</SelectItem>
-													</SelectContent>
-												</Select>
 												<Input
 													value={item.comments}
 													onChange={(e) =>
