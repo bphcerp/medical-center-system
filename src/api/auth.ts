@@ -19,12 +19,12 @@ import type { Permission } from "@/lib/types/permissions";
 import { db } from ".";
 import doctor from "./doctor";
 import files from "./files";
+import inventory from "./inventory";
 import lab from "./lab";
 import rbac from "./rbac";
 import role from "./role";
 import user from "./user";
 import vitals from "./vitals";
-import inventory from "./inventory";
 
 export type JWTPayload = {
 	passwordHash: null;
