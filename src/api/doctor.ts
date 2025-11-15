@@ -178,6 +178,7 @@ const doctor = new Hono()
 						dosage: z.string(),
 						frequency: z.string(),
 						comment: z.string().optional(),
+						categoryData: z.record(z.string(), z.any()).optional(),
 					}),
 				),
 			}),
@@ -218,6 +219,7 @@ const doctor = new Hono()
 						dosage: p.dosage,
 						frequency: p.frequency,
 						comment: p.comment || null,
+						categoryData: p.categoryData || null,
 					})),
 				);
 			});
