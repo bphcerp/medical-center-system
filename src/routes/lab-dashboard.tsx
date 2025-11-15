@@ -8,6 +8,7 @@ import { Beaker } from "lucide-react";
 import { z } from "zod";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
 	Table,
 	TableBody,
@@ -18,17 +19,23 @@ import {
 } from "@/components/ui/table";
 import { client } from "./api/$";
 
-const labRequestSchema = z.object({
-	reportId: z.number(),
+const labTestReportSchema = z.object({
+	labTestReportId: z.number(),
 	caseId: z.number(),
+	testName: z.string(),
+	status: z.enum([
+		"Requested",
+		"Sample Collected",
+		"Waiting For Report",
+		"Complete",
+	]),
 	patientName: z.string(),
 	doctorName: z.string(),
-	testsRequested: z.string(),
 });
 
 const pendingRequestsSchema = z.object({
 	success: z.boolean(),
-	reports: z.array(labRequestSchema),
+	reports: z.array(labTestReportSchema),
 });
 
 export const Route = createFileRoute("/lab-dashboard")({
@@ -36,16 +43,11 @@ export const Route = createFileRoute("/lab-dashboard")({
 		const res = await client.api.lab.pending.$get();
 		switch (res.status) {
 			case 401:
-				throw redirect({
-					to: "/login",
-				});
+				throw redirect({ to: "/login" });
 			case 403:
-				alert("You don't have the permission to access Doctor Dashboard.");
-				throw redirect({
-					to: "/",
-				});
+				alert("You don't have permission to access Lab Dashboard.");
+				throw redirect({ to: "/" });
 		}
-
 		const json = await res.json();
 		const data = pendingRequestsSchema.parse(json);
 		return data;
@@ -60,64 +62,110 @@ export const Route = createFileRoute("/lab-dashboard")({
 
 function LabDashboard() {
 	const router = useRouter();
-
 	const { reports } = Route.useLoaderData();
 
 	const handleRefresh = () => {
 		void router.invalidate();
 	};
 
+	const getStatusColor = (status: string) => {
+		switch (status) {
+			case "Requested":
+				return "bg-yellow-100 text-yellow-800";
+			case "Sample Collected":
+				return "bg-blue-100 text-blue-800";
+			case "Waiting For Report":
+				return "bg-purple-100 text-purple-800";
+			default:
+				return "bg-gray-100 text-gray-800";
+		}
+	};
+
+	// group reports by case
+	const caseGroups = reports.reduce(
+		(acc, report) => {
+			if (!acc[report.caseId]) {
+				acc[report.caseId] = {
+					caseId: report.caseId,
+					patientName: report.patientName,
+					doctorName: report.doctorName,
+					tests: [],
+				};
+			}
+			acc[report.caseId].tests.push(report);
+			return acc;
+		},
+		{} as Record<
+			number,
+			{
+				caseId: number;
+				patientName: string;
+				doctorName: string;
+				tests: typeof reports;
+			}
+		>,
+	);
+
 	return (
 		<>
-			<TopBar title="Lab Dashboard" />
-			<div className="min-h-screen w-full px-8 py-4">
-				<div className="flex items-center justify-between">
-					<h2 className="text-2xl font-semibold mb-4">Pending Lab Requests</h2>
-					<Button onClick={handleRefresh}>Refresh</Button>
+			<TopBar title="LabDashboard" />
+			<div className="container mx-auto p-6">
+				<div className="flex justify-end mb-4">
+					<Button onClick={handleRefresh} variant="outline">
+						Refresh
+					</Button>
 				</div>
-
-				<div className="border rounded-lg overflow-hidden bg-white">
+				<h1 className="text-2xl font-bold mb-6">Pending Lab Tests</h1>
+				{reports.length === 0 ? (
+					<p className="text-muted-foreground">No pending lab tests.</p>
+				) : (
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead className="w-[120px]">Case ID</TableHead>
-								<TableHead>Patient Name</TableHead>
-								<TableHead>Requesting Doctor</TableHead>
-								<TableHead>Tests Requested</TableHead>
-								<TableHead>Action</TableHead>
+								<TableHead>Case ID</TableHead>
+								<TableHead>Patient</TableHead>
+								<TableHead>Doctor</TableHead>
+								<TableHead>Tests & Status</TableHead>
+								<TableHead>Actions</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{reports.length > 0 ? (
-								reports.map((req) => (
-									<TableRow key={req.reportId}>
-										<TableCell>{req.caseId}</TableCell>
-										<TableCell>{req.patientName}</TableCell>
-										<TableCell>{req.doctorName}</TableCell>
-										<TableCell>{req.testsRequested}</TableCell>
-										<TableCell>
-											<Link
-												to="/result-entry/$reportId"
-												params={{ reportId: String(req.reportId) }}
-											>
-												<Button variant="outline">Enter Results</Button>
-											</Link>
-										</TableCell>
-									</TableRow>
-								))
-							) : (
-								<TableRow>
-									<TableCell
-										colSpan={5}
-										className="text-center text-muted-foreground py-8"
-									>
-										No pending lab requests.
+							{Object.values(caseGroups).map((group) => (
+								<TableRow key={group.caseId}>
+									<TableCell>{group.caseId}</TableCell>
+									<TableCell>{group.patientName}</TableCell>
+									<TableCell>{group.doctorName}</TableCell>
+									<TableCell>
+										<div className="flex flex-col gap-1">
+											{group.tests.map((test) => (
+												<div
+													key={test.labTestReportId}
+													className="flex items-center gap-2"
+												>
+													<span className="text-sm">{test.testName}</span>
+													<Badge
+														className={getStatusColor(test.status)}
+														variant="secondary"
+													>
+														{test.status}
+													</Badge>
+												</div>
+											))}
+										</div>
+									</TableCell>
+									<TableCell>
+										<Link
+											to="/test-entry/$caseId"
+											params={{ caseId: group.caseId.toString() }}
+										>
+											<Button size="sm">Process</Button>
+										</Link>
 									</TableCell>
 								</TableRow>
-							)}
+							))}
 						</TableBody>
 					</Table>
-				</div>
+				)}
 			</div>
 		</>
 	);

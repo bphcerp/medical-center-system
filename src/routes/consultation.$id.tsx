@@ -2,10 +2,9 @@ import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDown, ChevronsUpDown, Trash2 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import { Card } from "@/components/ui/card";
 import {
 	Command,
@@ -35,8 +34,6 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { Textarea } from "@/components/ui/textarea";
-import { type LabReportType, labReportTypes } from "@/db/lab";
 import { client } from "./api/$";
 
 type PrescriptionItem = {
@@ -67,41 +64,36 @@ export const Route = createFileRoute("/consultation/$id")({
 				to: "/login",
 			});
 		}
+
 		const user = await res.json();
 		if ("error" in user) {
 			throw redirect({
 				to: "/login",
 			});
 		}
+
 		const consultationRes = await client.api.doctor.consultation[
 			":caseId"
 		].$get({
 			param: { caseId: params.id },
 		});
-
 		if (consultationRes.status !== 200) {
 			throw new Error("Failed to fetch consultation details");
 		}
 
 		const { caseDetail } = await consultationRes.json();
-
 		const medicinesRes = await client.api.doctor.medicines.$get();
-
 		if (medicinesRes.status !== 200) {
 			throw new Error("Failed to fetch medicines details");
 		}
 
 		const { medicines } = await medicinesRes.json();
-		// console.log(medicines);
-
 		const diseasesRes = await client.api.doctor.diseases.$get();
-
 		if (diseasesRes.status !== 200) {
 			throw new Error("Failed to fetch diseases details");
 		}
 
 		const { diseases } = await diseasesRes.json();
-
 		return { user, caseDetail, medicines, diseases };
 	},
 	component: ConsultationPage,
@@ -116,11 +108,42 @@ function ConsultationPage() {
 		"Finalize (OPD)" | "Admit" | "Referral"
 	>("Finalize (OPD)");
 
-	const [diagnosisQuery, setDiagnosisQuery] = useState<string>("");
-
+	const [diagnosisQuery, setDiagnosisQuery] = useState("");
 	const [diagnosisItems, setDiagnosisItems] = useState<DiagnosisItem[]>([]);
+	const [diseasesSearchOpen, setDiseasesSearchOpen] = useState(false);
 
-	const [diseasesSearchOpen, setDiseasesSearchOpen] = useState<boolean>(false);
+	const [prescriptionQuery, setPrescriptionQuery] = useState("");
+	const [medicinesSearchOpen, setMedicinesSearchOpen] = useState(false);
+	const [prescriptionItems, setPrescriptionItems] = useState<
+		PrescriptionItem[]
+	>([]);
+
+	const [labTestModalOpen, setLabTestModalOpen] = useState(false);
+	const [selectedLabTests, setSelectedLabTests] = useState<Set<number>>(
+		new Set(),
+	);
+	const [availableTests, setAvailableTests] = useState<
+		Array<{
+			id: number;
+			name: string;
+			description: string | null;
+			category: string | null;
+		}>
+	>([]);
+
+	const medicationListRef = useRef<HTMLDivElement>(null);
+	const diseaseListRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		async function fetchTests() {
+			const res = await client.api.lab.tests.$get();
+			if (res.ok) {
+				const data = await res.json();
+				setAvailableTests(data.tests);
+			}
+		}
+		fetchTests();
+	}, []);
 
 	const filteredDiseases = useMemo(
 		() =>
@@ -154,6 +177,7 @@ function ConsultationPage() {
 								count,
 							});
 						}
+
 						return acc;
 					},
 					[] as { disease: (typeof diseases)[0]; count: number }[],
@@ -173,7 +197,6 @@ function ConsultationPage() {
 			name: disease.name,
 			icd: disease.icd,
 		};
-
 		setDiagnosisItems([...diagnosisItems, newItem]);
 		setDiagnosisQuery("");
 	};
@@ -181,23 +204,6 @@ function ConsultationPage() {
 	const handleRemoveDiagnosisItem = (id: number) => {
 		setDiagnosisItems(diagnosisItems.filter((item) => item.id !== id));
 	};
-
-	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
-
-	const [medicinesSearchOpen, setMedicinesSearchOpen] =
-		useState<boolean>(false);
-
-	const [prescriptionItems, setPrescriptionItems] = useState<
-		PrescriptionItem[]
-	>([]);
-
-	const [labTestModalOpen, setLabTestModalOpen] = useState<boolean>(false);
-	const [selectedLabTests, setSelectedLabTests] = useState<Set<LabReportType>>(
-		new Set(),
-	);
-	const medicationListRef = useRef(null);
-	const diseaseListRef = useRef(null);
-	const availableLabTests = labReportTypes;
 
 	const filteredMedicines = useMemo(
 		() =>
@@ -233,6 +239,7 @@ function ConsultationPage() {
 								count,
 							});
 						}
+
 						return acc;
 					},
 					[] as { medicine: (typeof medicines)[0]; count: number }[],
@@ -248,6 +255,7 @@ function ConsultationPage() {
 		overscan: 15,
 		initialOffset: 0,
 	});
+
 	const diseaseRowVirtualizer = useVirtualizer({
 		count: filteredDiseases.length,
 		getScrollElement: () => diseaseListRef.current,
@@ -257,7 +265,6 @@ function ConsultationPage() {
 	});
 
 	const handleAddMedicine = (medicine: (typeof medicines)[0]) => {
-		//heck if medicine already exists in the prescription
 		if (prescriptionItems.some((item) => item.id === medicine.id)) {
 			alert("This medicine is already in the prescription");
 			return;
@@ -270,20 +277,21 @@ function ConsultationPage() {
 			company: medicine.company,
 			strength: medicine.strength,
 			type: medicine.type,
-
 			dosage: "",
 			frequency: "",
 			duration: "",
 			comments: "",
 		};
-
 		setPrescriptionItems([...prescriptionItems, newItem]);
 		setPrescriptionQuery("");
 	};
 
 	const handleUpdatePrescriptionItem = (
 		id: number,
-		field: keyof Omit<PrescriptionItem, "id" | "medicine">,
+		field: keyof Omit<
+			PrescriptionItem,
+			"id" | "drug" | "brand" | "company" | "strength" | "type"
+		>,
 		value: string,
 	) => {
 		setPrescriptionItems(
@@ -297,12 +305,12 @@ function ConsultationPage() {
 		setPrescriptionItems(prescriptionItems.filter((item) => item.id !== id));
 	};
 
-	const handleToggleLabTest = (test: LabReportType) => {
+	const handleToggleLabTest = (testId: number) => {
 		const newSelected = new Set(selectedLabTests);
-		if (newSelected.has(test)) {
-			newSelected.delete(test);
+		if (newSelected.has(testId)) {
+			newSelected.delete(testId);
 		} else {
-			newSelected.add(test);
+			newSelected.add(testId);
 		}
 		setSelectedLabTests(newSelected);
 	};
@@ -313,11 +321,11 @@ function ConsultationPage() {
 			return;
 		}
 
-		const tests = Array.from(selectedLabTests);
+		const testIds = Array.from(selectedLabTests);
 		const res = await client.api.doctor.requestLabTests.$post({
 			json: {
 				caseId: Number(id),
-				tests,
+				testIds,
 			},
 		});
 
@@ -334,11 +342,17 @@ function ConsultationPage() {
 
 	if (!caseDetail) {
 		return (
-			<div className="container mx-auto p-6">
-				<h1 className="text-3xl font-bold">Consultation Page</h1>
-				<p className="text-muted-foreground mt-2">Case ID: {id}</p>
-				<p className="mt-4">No consultation details found for this case.</p>
-			</div>
+			<>
+				<TopBar title="Consultation Page" />
+				<div className="container mx-auto p-6">
+					<Card className="p-6">
+						<p className="text-muted-foreground">Case ID: {id}</p>
+						<p className="text-muted-foreground">
+							No consultation details found for this case.
+						</p>
+					</Card>
+				</div>
+			</>
 		);
 	}
 
@@ -360,6 +374,7 @@ function ConsultationPage() {
 				);
 				return;
 		}
+
 		const caseRes = await client.api.doctor.finalizeCase.$post({
 			json: {
 				caseId: Number(id),
@@ -379,6 +394,7 @@ function ConsultationPage() {
 			alert("error" in error ? error.error : "Failed to save case data");
 			return;
 		}
+
 		navigate({
 			to: "/doctor",
 		});
@@ -387,320 +403,294 @@ function ConsultationPage() {
 	return (
 		<>
 			<TopBar title={`Consultation for ${caseDetail.patientName}`} />
-			<div className="p-6">
-				<h1 className="text-3xl font-bold">
-					Consultation for {caseDetail.patientName}
-				</h1>
-				<p className="text-muted-foreground my-2">
-					Token Number: {caseDetail.token}
-				</p>
 
-				<Dialog open={labTestModalOpen} onOpenChange={setLabTestModalOpen}>
-					<DialogContent>
-						<DialogHeader>
-							<DialogTitle>Request Lab Tests</DialogTitle>
-						</DialogHeader>
-						<div className="space-y-2">
-							<p className="text-sm text-muted-foreground">
-								Select the lab tests to request:
-							</p>
-							{availableLabTests.map((test) => (
-								// biome-ignore lint/a11y/noStaticElementInteractions: TODO: replace this with a checkbox-like element to improve accessibility
-								// biome-ignore lint/a11y/useKeyWithClickEvents: see above TODO
-								<div
-									key={test}
-									className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-accent"
-									onClick={() => handleToggleLabTest(test)}
-								>
-									<div
-										className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-											selectedLabTests.has(test)
-												? "bg-primary border-primary"
-												: "border-muted-foreground"
-										}`}
-									>
-										{selectedLabTests.has(test) && (
-											<div className="w-2.5 h-2.5 rounded-full bg-primary-foreground" />
-										)}
-									</div>
-									<span>{test}</span>
-								</div>
-							))}
-						</div>
-						<DialogFooter>
-							<Button
-								variant="outline"
-								onClick={() => setLabTestModalOpen(false)}
+			<Dialog open={labTestModalOpen} onOpenChange={setLabTestModalOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Request Lab Tests</DialogTitle>
+					</DialogHeader>
+					<div className="space-y-3">
+						<p className="text-sm text-muted-foreground">
+							Select the lab tests to request:
+						</p>
+						{availableTests.map((test) => (
+							<div
+								key={test.id}
+								className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-accent"
+								onClick={() => handleToggleLabTest(test.id)}
 							>
-								Cancel
-							</Button>
-							<Button onClick={handleRequestLabTests}>Submit</Button>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
+								<div
+									className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+										selectedLabTests.has(test.id)
+											? "bg-primary border-primary"
+											: "border-muted-foreground"
+									}`}
+								>
+									{selectedLabTests.has(test.id) && (
+										<div className="w-2.5 h-2.5 rounded-full bg-primary-foreground" />
+									)}
+								</div>
+								<div>
+									<div className="font-medium">{test.name}</div>
+									{test.description && (
+										<div className="text-sm text-muted-foreground">
+											{test.description}
+										</div>
+									)}
+								</div>
+							</div>
+						))}
+					</div>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setLabTestModalOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button onClick={handleRequestLabTests}>Submit</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 
-				<Card className="mb-2">
-					<div className="flex gap-4 mx-3">
-						<Field>
-							<FieldLabel className="font-semibold">Patient Name</FieldLabel>
-							<div className="border rounded-md bg-muted text-sm px-2 py-1">
+			<div className="container mx-auto p-6 space-y-6">
+				<Card className="p-6">
+					<h2 className="text-lg font-semibold mb-4">Patient Details</h2>
+					<div className="grid grid-cols-3 gap-4">
+						<div>
+							<Label className="text-muted-foreground">Token Number</Label>
+							<div className="font-medium">{caseDetail.token}</div>
+						</div>
+						<div>
+							<Label className="text-muted-foreground">Patient Name</Label>
+							<div className="font-medium">
 								{caseDetail?.patientName || "—"}
 							</div>
-						</Field>
-						<Field>
-							<FieldLabel className="font-semibold">Age</FieldLabel>
-							<div className="border rounded-md bg-muted text-sm px-2 py-1">
-								{caseDetail?.patientAge || "—"}
-							</div>
-						</Field>
-						<Field>
-							<FieldLabel className="font-semibold">ID/PSRN</FieldLabel>
-							<div className="border rounded-md bg-muted text-sm px-2 py-1">
-								{caseDetail?.identifier || "—"}
-							</div>
-						</Field>
+						</div>
+						<div>
+							<Label className="text-muted-foreground">Age</Label>
+							<div className="font-medium">{caseDetail?.patientAge || "—"}</div>
+						</div>
+						<div>
+							<Label className="text-muted-foreground">ID/PSRN</Label>
+							<div className="font-medium">{caseDetail?.identifier || "—"}</div>
+						</div>
 					</div>
 				</Card>
-				<Card className="mb-2">
-					<div className="flex gap-4 mx-3">
-						<Field>
-							<FieldLabel className="font-semibold">
-								Body Temperature
-							</FieldLabel>
-							<div className="border rounded-md bg-muted text-sm px-2 py-1 max-width-20px">
+
+				<Card className="p-6">
+					<h2 className="text-lg font-semibold mb-4">Vitals</h2>
+					<div className="grid grid-cols-4 gap-4">
+						<div>
+							<Label className="text-muted-foreground">Temperature</Label>
+							<div className="font-medium">
 								{caseDetail?.temperature || "—"}
 							</div>
-						</Field>
-						<Field>
-							<FieldLabel className="font-semibold">Heart Rate</FieldLabel>
-							<div className="border rounded-md bg-muted text-sm px-2 py-1">
-								{caseDetail?.heartRate || "—"}
-							</div>
-						</Field>
-						<Field>
-							<FieldLabel className="font-semibold">
-								Respiratory Rate
-							</FieldLabel>
-							<div className="border rounded-md bg-muted text-sm px-2 py-1">
+						</div>
+						<div>
+							<Label className="text-muted-foreground">Heart Rate</Label>
+							<div className="font-medium">{caseDetail?.heartRate || "—"}</div>
+						</div>
+						<div>
+							<Label className="text-muted-foreground">Respiratory Rate</Label>
+							<div className="font-medium">
 								{caseDetail?.respiratoryRate || "—"}
 							</div>
-						</Field>
-					</div>
-					<div className="flex gap-4 mx-3">
-						<Field>
-							<FieldLabel className="font-semibold">
-								Blood Pressure Systolic
-							</FieldLabel>
-							<div className="border rounded-md bg-muted text-sm px-2 py-1">
+						</div>
+						<div>
+							<Label className="text-muted-foreground">BP Systolic</Label>
+							<div className="font-medium">
 								{caseDetail?.bloodPressureSystolic || "—"}
 							</div>
-						</Field>
-						<Field>
-							<FieldLabel className="font-semibold">
-								Blood Pressure Diastolic
-							</FieldLabel>
-							<div className="border rounded-md bg-muted text-sm px-2 py-1">
+						</div>
+						<div>
+							<Label className="text-muted-foreground">BP Diastolic</Label>
+							<div className="font-medium">
 								{caseDetail?.bloodPressureDiastolic || "—"}
 							</div>
-						</Field>
-					</div>
-					<div className="flex gap-4 mx-3">
-						<Field>
-							<FieldLabel className="font-semibold">Blood Sugar</FieldLabel>
-							<div className="border rounded-md bg-muted text-sm px-2 py-1">
-								{caseDetail?.bloodSugar || "—"}
-							</div>
-						</Field>
-						<Field>
-							<FieldLabel className="font-semibold">SpO2</FieldLabel>
-							<div className="border rounded-md bg-muted text-sm px-2 py-1">
-								{caseDetail?.spo2 || "—"}
-							</div>
-						</Field>
-						<Field>
-							<FieldLabel className="font-semibold">Weight</FieldLabel>
-							<div className="border rounded-md bg-muted text-sm px-2 py-1">
-								{caseDetail?.weight || "—"}
-							</div>
-						</Field>
+						</div>
+						<div>
+							<Label className="text-muted-foreground">Blood Sugar</Label>
+							<div className="font-medium">{caseDetail?.bloodSugar || "—"}</div>
+						</div>
+						<div>
+							<Label className="text-muted-foreground">SpO2</Label>
+							<div className="font-medium">{caseDetail?.spo2 || "—"}</div>
+						</div>
+						<div>
+							<Label className="text-muted-foreground">Weight</Label>
+							<div className="font-medium">{caseDetail?.weight || "—"}</div>
+						</div>
 					</div>
 				</Card>
-				<div className="grid grid-cols-3 mb-2">
-					<Card className="col-span-1 row-span-2 rounded-r-none rounded-bl-none px-2 pt-4 pb-2">
-						<Label className="font-semibold text-lg">Consultation Notes</Label>
-						<Textarea
-							className="h-full -mt-3.5 resize-none"
-							placeholder="Write notes here..."
-						/>
-					</Card>
-					<Card className="col-span-2 row-span-1 rounded-l-none rounded-br-none min-h-52 gap-2">
-						<div className="flex items-center w-full gap-2 px-2">
-							<Label className="font-semibold">Diagnosis: </Label>
-							<Popover
-								open={diseasesSearchOpen}
-								onOpenChange={setDiseasesSearchOpen}
-							>
-								<PopoverTrigger asChild>
-									<Button
-										variant="outline"
-										role="combobox"
-										className="justify-between w-3xl"
+
+				<Card className="p-6 space-y-4">
+					<h2 className="text-lg font-semibold">Consultation Notes</h2>
+
+					<div>
+						<FieldLabel>Diagnosis:</FieldLabel>
+						<Popover
+							open={diseasesSearchOpen}
+							onOpenChange={setDiseasesSearchOpen}
+						>
+							<PopoverTrigger asChild>
+								<Button
+									variant="outline"
+									role="combobox"
+									className="w-full justify-between"
+								>
+									Select a disease...
+									<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent className="w-full p-0">
+								<Command>
+									<CommandInput
+										placeholder="Search diseases..."
+										value={diagnosisQuery}
+										onValueChange={setDiagnosisQuery}
+									/>
+									<CommandList
+										ref={diseaseListRef}
+										style={{
+											height:
+												diseaseRowVirtualizer.getTotalSize() > 0
+													? `${diseaseRowVirtualizer.getTotalSize()}px`
+													: "auto",
+										}}
+										className="relative w-full"
 									>
-										Select a disease...
-										<ChevronsUpDown className="ml-2 h-4 w-4" />
-									</Button>
-								</PopoverTrigger>
-								<PopoverContent className="p-0 w-3xl" align="start" side="top">
-									<Command shouldFilter={false}>
-										<CommandInput
-											placeholder="Type a disease to search..."
-											value={diagnosisQuery}
-											onValueChange={setDiagnosisQuery}
-										/>
-										<CommandList ref={diseaseListRef}>
-											<div
-												style={{
-													height:
-														diseaseRowVirtualizer.getTotalSize() > 0
-															? `${diseaseRowVirtualizer.getTotalSize()}px`
-															: "auto",
-												}}
-												className="relative w-full"
-											>
-												<CommandEmpty>No diseases found.</CommandEmpty>
-												<CommandGroup>
-													{diseaseRowVirtualizer
-														.getVirtualItems()
-														.map((virtualItem) => {
-															const disease =
-																filteredDiseases[virtualItem.index].disease;
-															return (
-																<CommandItem
-																	key={virtualItem.key}
-																	onSelect={() => {
-																		handleAddDisease(disease);
-																		setDiseasesSearchOpen(false);
-																	}}
-																	className="flex absolute top-0 left-0 w-full justify-between"
-																	style={{
-																		height: `${virtualItem.size}px`,
-																		transform: `translateY(${virtualItem.start}px)`,
-																	}}
-																>
-																	<span>
-																		{disease.name} (ICD: {disease.icd})
-																	</span>
-																</CommandItem>
-															);
-														})}
-												</CommandGroup>
-											</div>
-										</CommandList>
-									</Command>
-								</PopoverContent>
-							</Popover>
-						</div>
+										<CommandEmpty>No diseases found.</CommandEmpty>
+										<CommandGroup>
+											{diseaseRowVirtualizer
+												.getVirtualItems()
+												.map((virtualItem) => {
+													const disease =
+														filteredDiseases[virtualItem.index].disease;
+													return (
+														<CommandItem
+															key={disease.id}
+															value={disease.name}
+															onSelect={() => {
+																handleAddDisease(disease);
+																setDiseasesSearchOpen(false);
+															}}
+															className="flex absolute top-0 left-0 w-full justify-between"
+															style={{
+																height: `${virtualItem.size}px`,
+																transform: `translateY(${virtualItem.start}px)`,
+															}}
+														>
+															{disease.name} (ICD: {disease.icd})
+														</CommandItem>
+													);
+												})}
+										</CommandGroup>
+									</CommandList>
+								</Command>
+							</PopoverContent>
+						</Popover>
+
 						{diagnosisItems.length > 0 &&
 							diagnosisItems.map((item) => (
-								<div key={item.id} className="px-2">
-									<div className="w-full flex flex-wrap gap-2">
-										<span className="font-medium">{item.name}</span>
-										<span className="font-medium text-muted-foreground">
-											(ICD: {item.icd})
-										</span>
-										<Button
-											variant="destructive"
-											onClick={() => handleRemoveDiagnosisItem(item.id)}
-											className="h-6 w-6"
-										>
-											<Trash2 />
-										</Button>
-									</div>
+								<div
+									key={item.id}
+									className="flex items-center justify-between border rounded-md p-2 mt-2"
+								>
+									<span>
+										{item.name} (ICD: {item.icd})
+									</span>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => handleRemoveDiagnosisItem(item.id)}
+										className="h-6 w-6"
+									>
+										<Trash2 />
+									</Button>
 								</div>
 							))}
-					</Card>
-					<Card className="col-span-2 gap-4 row-span-1 rounded-none min-h-52">
-						<div className="flex items-center w-full gap-2 px-2">
-							<Label className="font-semibold">Prescription: </Label>
-							<Popover
-								open={medicinesSearchOpen}
-								onOpenChange={setMedicinesSearchOpen}
-							>
-								<PopoverTrigger asChild>
-									<Button
-										variant="outline"
-										role="combobox"
-										className="justify-between w-3xl"
+					</div>
+
+					<div>
+						<FieldLabel>Prescription:</FieldLabel>
+						<Popover
+							open={medicinesSearchOpen}
+							onOpenChange={setMedicinesSearchOpen}
+						>
+							<PopoverTrigger asChild>
+								<Button
+									variant="outline"
+									role="combobox"
+									className="w-full justify-between"
+								>
+									Select a medicine...
+									<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent className="w-full p-0">
+								<Command>
+									<CommandInput
+										placeholder="Search medicines..."
+										value={prescriptionQuery}
+										onValueChange={setPrescriptionQuery}
+									/>
+									<CommandList
+										ref={medicationListRef}
+										style={{
+											height:
+												medicationRowVirtualizer.getTotalSize() > 0
+													? `${medicationRowVirtualizer.getTotalSize()}px`
+													: "auto",
+										}}
+										className="relative w-full"
 									>
-										Select a medicine...
-										<ChevronsUpDown className="ml-2 h-4 w-4" />
-									</Button>
-								</PopoverTrigger>
-								<PopoverContent className="p-0 w-3xl" align="start" side="top">
-									<Command shouldFilter={false}>
-										<CommandInput
-											placeholder="Type a medicine to search..."
-											value={prescriptionQuery}
-											onValueChange={setPrescriptionQuery}
-										/>
-										<CommandList ref={medicationListRef}>
-											<div
-												style={{
-													height:
-														medicationRowVirtualizer.getTotalSize() > 0
-															? `${medicationRowVirtualizer.getTotalSize()}px`
-															: "auto",
-												}}
-												className="relative w-full"
-											>
-												<CommandEmpty>No medicines found.</CommandEmpty>
-												{medicationRowVirtualizer
-													.getVirtualItems()
-													.map((virtualItem) => {
-														const medicine =
-															filteredMedicines[virtualItem.index].medicine;
-														return (
-															<CommandItem
-																key={virtualItem.key}
-																onSelect={() => {
-																	handleAddMedicine(medicine); //check by brand instead of drug name
-																	setMedicinesSearchOpen(false);
-																}}
-																className="flex absolute top-0 left-0 w-full justify-between"
-																style={{
-																	height: `${virtualItem.size}px`,
-																	transform: `translateY(${virtualItem.start}px)`,
-																}}
-															>
-																<span>
-																	{medicine.company} {medicine.brand}
-																</span>
-																<span className="mx-1 text-muted-foreground text-right">
-																	({medicine.drug}) - {medicine.strength} -{" "}
-																	{medicine.type}
-																</span>
-															</CommandItem>
-														);
-													})}
-											</div>
-										</CommandList>
-									</Command>
-								</PopoverContent>
-							</Popover>
-						</div>
+										<CommandEmpty>No medicines found.</CommandEmpty>
+										<CommandGroup>
+											{medicationRowVirtualizer
+												.getVirtualItems()
+												.map((virtualItem) => {
+													const medicine =
+														filteredMedicines[virtualItem.index].medicine;
+													return (
+														<CommandItem
+															key={medicine.id}
+															value={`${medicine.company} ${medicine.brand}`}
+															onSelect={() => {
+																handleAddMedicine(medicine);
+																setMedicinesSearchOpen(false);
+															}}
+															className="flex absolute top-0 left-0 w-full justify-between"
+															style={{
+																height: `${virtualItem.size}px`,
+																transform: `translateY(${virtualItem.start}px)`,
+															}}
+														>
+															{medicine.company} {medicine.brand} (
+															{medicine.drug}) - {medicine.strength} -{" "}
+															{medicine.type}
+														</CommandItem>
+													);
+												})}
+										</CommandGroup>
+									</CommandList>
+								</Command>
+							</PopoverContent>
+						</Popover>
+
 						{prescriptionItems.length > 0 &&
 							prescriptionItems.map((item) => (
-								<div key={item.id} className="px-2">
-									<div className="w-full pb-1 flex flex-wrap">
-										<span className="font-semibold">
-											{item.company} {item.brand}
-										</span>
-										<span className="mx-1 text-muted-foreground text-right">
-											({item.drug}) - {item.strength} - {item.type}
-										</span>
+								<div
+									key={item.id}
+									className="border rounded-md p-4 mt-2 space-y-2"
+								>
+									<div className="font-medium">
+										{item.company} {item.brand} ({item.drug}) - {item.strength}{" "}
+										- {item.type}
 									</div>
-									<div className="gap-2 flex">
-										<div className="grid grid-cols-4 gap-2 w-full">
+									<div className="grid grid-cols-4 gap-2">
+										<Field>
+											<FieldLabel>Dosage</FieldLabel>
 											<Input
 												value={item.dosage}
 												onChange={(e) =>
@@ -713,6 +703,9 @@ function ConsultationPage() {
 												placeholder="e.g., 500mg"
 												className="h-8"
 											/>
+										</Field>
+										<Field>
+											<FieldLabel>Frequency</FieldLabel>
 											<Input
 												value={item.frequency}
 												onChange={(e) =>
@@ -725,6 +718,9 @@ function ConsultationPage() {
 												placeholder="e.g., 2x daily"
 												className="h-8"
 											/>
+										</Field>
+										<Field>
+											<FieldLabel>Duration</FieldLabel>
 											<Input
 												value={item.duration}
 												onChange={(e) =>
@@ -737,6 +733,9 @@ function ConsultationPage() {
 												placeholder="e.g., 7 days"
 												className="h-8"
 											/>
+										</Field>
+										<Field>
+											<FieldLabel>Comments</FieldLabel>
 											<Input
 												value={item.comments}
 												onChange={(e) =>
@@ -749,59 +748,57 @@ function ConsultationPage() {
 												placeholder="Optional notes"
 												className="h-8"
 											/>
-										</div>
-										<Button
-											variant="destructive"
-											size="sm"
-											onClick={() => handleRemovePrescriptionItem(item.id)}
-											className="h-8 w-8 p-0"
-										>
-											<Trash2 className="h-4 w-4" />
-										</Button>
+										</Field>
 									</div>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => handleRemovePrescriptionItem(item.id)}
+										className="h-8 w-8 p-0"
+									>
+										<Trash2 />
+									</Button>
 								</div>
 							))}
-					</Card>
-					<Card className="col-span-4 row-span-1 rounded-tr-none rounded-tl-none py-2 px-2">
-						<div className="flex justify-end gap-2">
-							<Button
-								variant="outline"
-								onClick={() => setLabTestModalOpen(true)}
-							>
-								Request Lab Tests
-							</Button>
-							<ButtonGroup>
-								<Button variant="outline" onClick={handleFinalize}>
+					</div>
+
+					<Button
+						variant="outline"
+						onClick={() => setLabTestModalOpen(true)}
+						className="w-full"
+					>
+						Request Lab Tests
+					</Button>
+
+					<div className="flex gap-2">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button className="flex-1">
 									{finalizeButtonValue}
+									<ChevronDown className="ml-2 h-4 w-4" />
 								</Button>
-								<DropdownMenu>
-									<DropdownMenuTrigger asChild>
-										<Button variant="outline">
-											<ChevronDown />
-										</Button>
-									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end">
-										<DropdownMenuItem
-											onClick={() => setFinalizeButtonValue("Finalize (OPD)")}
-										>
-											Finalise (OPD)
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											onClick={() => setFinalizeButtonValue("Admit")}
-										>
-											Admit
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											onClick={() => setFinalizeButtonValue("Referral")}
-										>
-											Referral
-										</DropdownMenuItem>
-									</DropdownMenuContent>
-								</DropdownMenu>
-							</ButtonGroup>
-						</div>
-					</Card>
-				</div>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent>
+								<DropdownMenuItem
+									onClick={() => setFinalizeButtonValue("Finalize (OPD)")}
+								>
+									Finalise (OPD)
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={() => setFinalizeButtonValue("Admit")}
+								>
+									Admit
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={() => setFinalizeButtonValue("Referral")}
+								>
+									Referral
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+						<Button onClick={handleFinalize}>Submit</Button>
+					</div>
+				</Card>
 			</div>
 		</>
 	);

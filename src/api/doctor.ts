@@ -9,7 +9,7 @@ import {
 	diseasesTable,
 	medicinesTable,
 } from "@/db/case";
-import { caseLabReportsTable, labReportTypes } from "@/db/lab";
+import { caseLabReportsTable, labTestsMasterTable } from "@/db/lab";
 import {
 	dependentsTable,
 	patientsTable,
@@ -64,11 +64,15 @@ const doctor = new Hono()
 					| "Lab Tests Requested" = "Waiting for Consultation";
 
 				if (reports.length > 0) {
-					const hasDone = reports.some((r) => r.status === "Done");
-					const hasInProgress = reports.some((r) => r.status === "In Progress");
+					const hasComplete = reports.some((r) => r.status === "Complete");
+					const hasInProgress = reports.some(
+						(r) =>
+							r.status === "Sample Collected" ||
+							r.status === "Waiting For Report",
+					);
 					const hasRequested = reports.some((r) => r.status === "Requested");
 
-					if (hasDone) {
+					if (hasComplete) {
 						status = "Lab Results Ready";
 					} else if (hasInProgress) {
 						status = "Lab Tests in Progress";
@@ -234,13 +238,13 @@ const doctor = new Hono()
 			"json",
 			z.object({
 				caseId: z.number().int(),
-				tests: z.array(z.enum(labReportTypes)),
+				testIds: z.array(z.number().int()).min(1),
 			}),
 		),
 		async (c) => {
 			const payload = c.get("jwtPayload") as JWTPayload;
 			const userId = payload.id;
-			const { caseId, tests } = c.req.valid("json");
+			const { caseId, testIds } = c.req.valid("json");
 
 			//is it the docs caase????
 			const [caseExists] = await db
@@ -257,11 +261,24 @@ const doctor = new Hono()
 			if (!caseExists) {
 				return c.json({ error: "Case not found" }, 404);
 			}
+			const validTests = await db
+				.select({ id: labTestsMasterTable.id })
+				.from(labTestsMasterTable)
+				.where(
+					and(
+						inArray(labTestsMasterTable.id, testIds),
+						eq(labTestsMasterTable.isActive, true),
+					),
+				);
+
+			if (validTests.length !== testIds.length) {
+				return c.json({ error: "Some test IDs are invalid" }, 400);
+			}
 
 			await db.insert(caseLabReportsTable).values(
-				tests.map((test) => ({
+				testIds.map((testId) => ({
 					caseId,
-					type: test,
+					testId,
 					status: "Requested" as const,
 				})),
 			);

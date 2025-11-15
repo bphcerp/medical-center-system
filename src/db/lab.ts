@@ -1,11 +1,22 @@
-import { index, integer, json, pgEnum, pgTable } from "drizzle-orm/pg-core";
+import {
+	index,
+	integer,
+	json,
+	pgEnum,
+	pgTable,
+	varchar,
+	boolean,
+	timestamp,
+	uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { casesTable } from "./case";
 import { filesTable } from "./files";
 
 export const statusEnum = pgEnum("status", [
 	"Requested",
-	"In Progress",
-	"Done",
+	"Sample Collected",
+	"Waiting For Report",
+	"Complete",
 ]);
 
 //exportable type as more tests can be added in the future
@@ -16,26 +27,52 @@ export type LabReportType = (typeof labReportTypes)[number];
 
 export const labReportTypeEnum = pgEnum("lab_report_type", labReportTypes);
 
-export const caseLabReportsTable = pgTable("case_lab_reports", {
-	id: integer().primaryKey().generatedAlwaysAsIdentity(),
-	caseId: integer()
-		.references(() => casesTable.id)
-		.notNull(),
-	type: labReportTypeEnum("type").notNull(),
-	status: statusEnum().notNull(),
-	data: json(),
-});
-
-export const reportFilesTable = pgTable(
-	"report_files",
+export const caseLabReportsTable = pgTable(
+	"case_lab_reports",
 	{
 		id: integer().primaryKey().generatedAlwaysAsIdentity(),
-		reportId: integer()
+		caseId: integer()
+			.references(() => casesTable.id)
+			.notNull(),
+		testId: integer()
+			.references(() => labTestsMasterTable.id)
+			.notNull(),
+		status: statusEnum().notNull().default("Requested"),
+		metadata: json(),
+		createdAt: timestamp().notNull().defaultNow(),
+		updatedAt: timestamp().notNull().defaultNow(),
+	},
+	(table) => [
+		uniqueIndex("case_test_idx").on(table.caseId, table.testId),
+		index("case_idx").on(table.caseId),
+		index("status_idx").on(table.status),
+	],
+);
+
+export const labTestFilesTable = pgTable(
+	"lab_test_files",
+	{
+		id: integer().primaryKey().generatedAlwaysAsIdentity(),
+		caseLabReportId: integer()
 			.notNull()
-			.references(() => caseLabReportsTable.id),
+			.references(() => caseLabReportsTable.id, { onDelete: "cascade" }),
 		fileId: integer()
 			.notNull()
 			.references(() => filesTable.id),
+		createdAt: timestamp().notNull().defaultNow(),
 	},
-	(table) => [index("report_file_idx").on(table.reportId)],
+	(table) => [
+		index("case_lab_report_idx").on(table.caseLabReportId),
+		index("file_idx").on(table.fileId),
+	],
 );
+
+export const labTestsMasterTable = pgTable("lab_tests_master", {
+	id: integer().primaryKey().generatedAlwaysAsIdentity(),
+	name: varchar({ length: 255 }).notNull(),
+	description: varchar({ length: 255 }),
+	category: varchar({ length: 255 }),
+	isActive: boolean().notNull().default(true),
+	createdAt: timestamp().notNull().defaultNow(),
+	updatedAt: timestamp().notNull().defaultNow(),
+});
