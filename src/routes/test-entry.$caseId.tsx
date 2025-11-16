@@ -9,17 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { client } from "./api/$";
+import { statusEnums } from "@/db/lab";
 
 const testSchema = z.object({
 	labTestReportId: z.number(),
 	testId: z.number(),
 	testName: z.string(),
-	status: z.enum([
-		"Requested",
-		"Sample Collected",
-		"Waiting For Report",
-		"Complete",
-	]),
+	status: z.enum(statusEnums),
 	metadata: z.any().nullable(),
 	fileId: z.number().nullable(),
 });
@@ -34,7 +30,7 @@ const caseDetailsSchema = z.object({
 
 type TestUpdate = {
 	labTestReportId: number;
-	status: "Requested" | "Sample Collected" | "Waiting For Report" | "Complete";
+	status: (typeof statusEnums)[number];
 	fileId?: number;
 };
 
@@ -132,7 +128,7 @@ function TestEntry() {
 							? {
 									...test,
 									fileId: data.file.id,
-									status: "Waiting For Report",
+									status: "Complete",
 								}
 							: test,
 					),
