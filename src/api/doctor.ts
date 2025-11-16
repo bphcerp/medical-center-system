@@ -66,9 +66,7 @@ const doctor = new Hono()
 				if (reports.length > 0) {
 					const hasComplete = reports.some((r) => r.status === "Complete");
 					const hasInProgress = reports.some(
-						(r) =>
-							r.status === "Sample Collected" ||
-							r.status === "Waiting For Report",
+						(r) => r.status === "Sample Collected",
 					);
 					const hasRequested = reports.some((r) => r.status === "Requested");
 
@@ -292,6 +290,19 @@ const doctor = new Hono()
 				message: "Lab tests requested successfully",
 			});
 		},
-	);
+	)
+	.get("/tests", async (c) => {
+		const activeTests = await db
+			.select({
+				id: labTestsMasterTable.id,
+				name: labTestsMasterTable.name,
+				description: labTestsMasterTable.description,
+				category: labTestsMasterTable.category,
+			})
+			.from(labTestsMasterTable)
+			.where(eq(labTestsMasterTable.isActive, true));
+
+		return c.json({ success: true, tests: activeTests });
+	});
 
 export default doctor;
