@@ -44,7 +44,6 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { medicineCategories } from "@/db/case";
-import { type LabReportType, labReportTypes } from "@/db/lab";
 import { client } from "./api/$";
 
 type PrescriptionItem = {
@@ -153,13 +152,21 @@ export const Route = createFileRoute("/consultation/$id")({
 
 		const { diseases } = await diseasesRes.json();
 
-		return { user, caseDetail, medicines, diseases };
+		const testsRes = await client.api.doctor.tests.$get();
+
+		if (testsRes.status !== 200) {
+			throw new Error("Failed to fetch lab tests details");
+		}
+
+		const { tests } = await testsRes.json();
+
+		return { user, caseDetail, medicines, diseases, tests };
 	},
 	component: ConsultationPage,
 });
 
 function ConsultationPage() {
-	const { caseDetail, medicines, diseases } = Route.useLoaderData();
+	const { caseDetail, medicines, diseases, tests } = Route.useLoaderData();
 	const navigate = useNavigate();
 	const { id } = Route.useParams();
 
@@ -245,12 +252,11 @@ function ConsultationPage() {
 	>([]);
 
 	const [labTestModalOpen, setLabTestModalOpen] = useState<boolean>(false);
-	const [selectedLabTests, setSelectedLabTests] = useState<Set<LabReportType>>(
+	const [selectedLabTests, setSelectedLabTests] = useState<Set<number>>(
 		new Set(),
 	);
 	const medicationListRef = useRef(null);
 	const diseaseListRef = useRef(null);
-	const availableLabTests = labReportTypes;
 
 	const filteredMedicines = useMemo(
 		() =>
@@ -362,12 +368,12 @@ function ConsultationPage() {
 		setPrescriptionItems(prescriptionItems.filter((item) => item.id !== id));
 	};
 
-	const handleToggleLabTest = (test: LabReportType) => {
+	const handleToggleLabTest = (testId: number) => {
 		const newSelected = new Set(selectedLabTests);
-		if (newSelected.has(test)) {
-			newSelected.delete(test);
+		if (newSelected.has(testId)) {
+			newSelected.delete(testId);
 		} else {
-			newSelected.add(test);
+			newSelected.add(testId);
 		}
 		setSelectedLabTests(newSelected);
 	};
@@ -378,11 +384,11 @@ function ConsultationPage() {
 			return;
 		}
 
-		const tests = Array.from(selectedLabTests);
+		const testIds = Array.from(selectedLabTests);
 		const res = await client.api.doctor.requestLabTests.$post({
 			json: {
 				caseId: Number(id),
-				tests,
+				testIds,
 			},
 		});
 
@@ -492,26 +498,26 @@ function ConsultationPage() {
 							<p className="text-sm text-muted-foreground">
 								Select the lab tests to request:
 							</p>
-							{availableLabTests.map((test) => (
+							{tests.map((test) => (
 								// biome-ignore lint/a11y/noStaticElementInteractions: TODO: replace this with a checkbox-like element to improve accessibility
 								// biome-ignore lint/a11y/useKeyWithClickEvents: see above TODO
 								<div
-									key={test}
+									key={test.id}
 									className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-accent"
-									onClick={() => handleToggleLabTest(test)}
+									onClick={() => handleToggleLabTest(test.id)}
 								>
 									<div
-										className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-											selectedLabTests.has(test)
+										className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+											selectedLabTests.has(test.id)
 												? "bg-primary border-primary"
 												: "border-muted-foreground"
 										}`}
 									>
-										{selectedLabTests.has(test) && (
+										{selectedLabTests.has(test.id) && (
 											<div className="w-2.5 h-2.5 rounded-full bg-primary-foreground" />
 										)}
 									</div>
-									<span>{test}</span>
+									<span>{test.name}</span>
 								</div>
 							))}
 						</div>
