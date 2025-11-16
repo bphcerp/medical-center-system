@@ -4,6 +4,27 @@ import { medicinesTable } from "@/db/case";
 import { batchesTable, inventoryMedicinesTable } from "@/db/inventory";
 import { db } from "./index";
 
+type InventoryItem = {
+	id: number;
+	quantity: number;
+	criticalQty: number | null;
+	medicine: {
+		id: number;
+		drug: string;
+		company: string;
+		brand: string;
+		strength: string;
+		type: string;
+		price: number;
+	};
+	batches: {
+		id: number;
+		batchNum: string;
+		expiry: string; // TODO: Make compatible with Date
+		quantity: number;
+	}[];
+};
+
 const inventory = new Hono().get("/", async (c) => {
 	const rows = await db
 		.select({
@@ -27,11 +48,11 @@ const inventory = new Hono().get("/", async (c) => {
 			batchQuantity: batchesTable.quantity,
 		})
 		.from(inventoryMedicinesTable)
-		.leftJoin(
+		.innerJoin(
 			batchesTable,
 			eq(batchesTable.medicineId, inventoryMedicinesTable.id),
 		)
-		.leftJoin(
+		.innerJoin(
 			medicinesTable,
 			eq(medicinesTable.id, inventoryMedicinesTable.medicine),
 		);
@@ -57,17 +78,19 @@ const inventory = new Hono().get("/", async (c) => {
 
 		if (r.batchId !== null) {
 			const item = acc.get(r.inventoryId);
-			item.batches.push({
-				id: r.batchId,
-				batchNum: r.batchNum,
-				expiry: r.batchExpiry,
-				quantity: r.batchQuantity,
-			});
-			item.quantity += r.batchQuantity;
+			if (item) {
+				item.batches.push({
+					id: r.batchId,
+					batchNum: r.batchNum,
+					expiry: r.batchExpiry,
+					quantity: r.batchQuantity,
+				});
+				item.quantity += r.batchQuantity;
+			}
 		}
 
 		return acc;
-	}, new Map()); //TODO: fix the typing here
+	}, new Map<number, InventoryItem>());
 
 	return c.json({ inventory: Array.from(inventoryMap.values()) });
 });
