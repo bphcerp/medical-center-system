@@ -1,49 +1,64 @@
 import { zValidator } from "@hono/zod-validator";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
 import { usersTable } from "@/db/auth";
 import { casesTable } from "@/db/case";
 import { filesTable } from "@/db/files";
-import { caseLabReportsTable, reportFilesTable } from "@/db/lab";
+import {
+	caseLabReportsTable,
+	labTestFilesTable,
+	labTestsMasterTable,
+	statusEnums,
+} from "@/db/lab";
 import { patientsTable } from "@/db/patient";
 import { uploadFileService } from "./fileupload.service";
 import { db } from "./index";
 import { rbacCheck } from "./rbac";
 
-const pendingStatuses = ["Requested", "In Progress"] as const;
-
-const resultSubmissionSchema = z.object({
+const testUpdateSchema = z.object({
+	labTestReportId: z.number().int(),
+	status: z.enum(statusEnums),
 	fileId: z.number().int().optional(),
-	resultsData: z.record(z.string(), z.unknown()),
+});
+
+const batchUpdateSchema = z.object({
+	tests: z.array(testUpdateSchema),
 });
 
 const lab = new Hono()
 	.use(rbacCheck({ permissions: ["lab"] }))
+
 	.get("/pending", async (c) => {
 		const pendingReports = await db
 			.select({
-				reportId: caseLabReportsTable.id,
+				labTestReportId: caseLabReportsTable.id,
 				caseId: caseLabReportsTable.caseId,
-				testsRequested: caseLabReportsTable.type,
+				testId: caseLabReportsTable.testId,
+				status: caseLabReportsTable.status,
+				testName: labTestsMasterTable.name,
 				patientId: casesTable.patient,
 				associatedUsers: casesTable.associatedUsers,
 			})
 			.from(caseLabReportsTable)
+			.innerJoin(
+				labTestsMasterTable,
+				eq(caseLabReportsTable.testId, labTestsMasterTable.id),
+			)
 			.innerJoin(casesTable, eq(caseLabReportsTable.caseId, casesTable.id))
-			.where(inArray(caseLabReportsTable.status, pendingStatuses));
+			.where(inArray(caseLabReportsTable.status, statusEnums.slice(0, 2)));
 
 		if (pendingReports.length === 0) {
 			return c.json({ success: true, reports: [] });
 		}
 
 		const patientIds = Array.from(
-			new Set(pendingReports.map((report) => report.patientId)),
+			new Set(pendingReports.map((r) => r.patientId)),
 		);
 		const doctorIds = Array.from(
 			new Set(
 				pendingReports
-					.map((report) => report.associatedUsers.at(0))
+					.map((r) => r.associatedUsers.at(0))
 					.filter((id): id is number => typeof id === "number"),
 			),
 		);
@@ -55,9 +70,6 @@ const lab = new Hono()
 						.from(patientsTable)
 						.where(inArray(patientsTable.id, patientIds))
 				: [];
-		const patientMap = new Map(
-			patients.map((patient) => [patient.id, patient.name]),
-		);
 
 		const doctors =
 			doctorIds.length > 0
@@ -66,100 +78,225 @@ const lab = new Hono()
 						.from(usersTable)
 						.where(inArray(usersTable.id, doctorIds))
 				: [];
-		const doctorMap = new Map(
-			doctors.map((doctor) => [doctor.id, doctor.name]),
-		);
 
-		const reports = pendingReports.map((report) => {
-			const doctorId = report.associatedUsers.at(0);
-			return {
-				reportId: report.reportId,
-				caseId: report.caseId,
-				patientName: patientMap.get(report.patientId) ?? "Unknown Patient",
-				doctorName:
-					doctorId != null
-						? (doctorMap.get(doctorId) ?? "Unknown Doctor")
-						: "Unknown Doctor",
-				testsRequested: report.testsRequested,
-			};
-		});
+		const patientMap = new Map(patients.map((p) => [p.id, p.name]));
+		const doctorMap = new Map(doctors.map((d) => [d.id, d.name]));
 
+		const reports = pendingReports.map((report) => ({
+			labTestReportId: report.labTestReportId,
+			caseId: report.caseId,
+			testName: report.testName,
+			status: report.status,
+			patientName: patientMap.get(report.patientId) ?? "Unknown Patient",
+			doctorName:
+				(report.associatedUsers.at(0) != null
+					? doctorMap.get(report.associatedUsers.at(0) ?? 0)
+					: null) ?? "Unknown Doctor",
+		}));
 		return c.json({ success: true, reports });
 	})
 
 	.get(
-		"/details/:reportId",
-		zValidator("param", z.object({ reportId: z.coerce.number().int() })),
+		"/details/:caseId",
+		zValidator("param", z.object({ caseId: z.coerce.number().int() })),
 		async (c) => {
-			const { reportId } = c.req.valid("param");
+			const { caseId } = c.req.valid("param");
 
-			const [reportDetail] = await db
+			const [caseDetail] = await db
 				.select({
-					reportId: caseLabReportsTable.id,
-					caseId: caseLabReportsTable.caseId,
-					type: caseLabReportsTable.type,
-					currentData: caseLabReportsTable.data,
+					caseId: casesTable.id,
 					patientId: casesTable.patient,
 					associatedUsers: casesTable.associatedUsers,
 				})
-				.from(caseLabReportsTable)
-				.innerJoin(casesTable, eq(caseLabReportsTable.caseId, casesTable.id))
-				.where(eq(caseLabReportsTable.id, reportId));
+				.from(casesTable)
+				.where(eq(casesTable.id, caseId));
 
-			if (!reportDetail) {
-				return c.json({ success: false, error: "Lab report not found" }, 404);
+			if (!caseDetail) {
+				return c.json({ success: false, error: "Case not found" }, 404);
 			}
+
+			const tests = await db
+				.select({
+					labTestReportId: caseLabReportsTable.id,
+					testId: caseLabReportsTable.testId,
+					testName: labTestsMasterTable.name,
+					status: caseLabReportsTable.status,
+					metadata: caseLabReportsTable.metadata,
+				})
+				.from(caseLabReportsTable)
+				.innerJoin(
+					labTestsMasterTable,
+					eq(caseLabReportsTable.testId, labTestsMasterTable.id),
+				)
+				.where(eq(caseLabReportsTable.caseId, caseId));
+
+			const labTestReportIds = tests.map((t) => t.labTestReportId);
+			const fileLinks =
+				labTestReportIds.length > 0
+					? await db
+							.select({
+								labTestReportId: labTestFilesTable.caseLabReportId,
+								fileId: labTestFilesTable.fileId,
+							})
+							.from(labTestFilesTable)
+							.where(
+								inArray(labTestFilesTable.caseLabReportId, labTestReportIds),
+							)
+					: [];
+
+			const fileMap = new Map(
+				fileLinks.map((f) => [f.labTestReportId, f.fileId]),
+			);
 
 			const [patient] = await db
 				.select({ name: patientsTable.name })
 				.from(patientsTable)
-				.where(eq(patientsTable.id, reportDetail.patientId))
-				.limit(1);
-			const primaryDoctorId = reportDetail.associatedUsers.at(0);
+				.where(eq(patientsTable.id, caseDetail.patientId));
+
+			const primaryDoctorId = caseDetail.associatedUsers.at(0);
 			const [doctor] =
 				primaryDoctorId != null
 					? await db
 							.select({ name: usersTable.name })
 							.from(usersTable)
 							.where(eq(usersTable.id, primaryDoctorId))
-							.limit(1)
 					: [];
+
+			const testsWithFiles = tests.map((test) => ({
+				labTestReportId: test.labTestReportId,
+				testId: test.testId,
+				testName: test.testName,
+				status: test.status,
+				metadata: test.metadata,
+				fileId: fileMap.get(test.labTestReportId) ?? null,
+			}));
 
 			return c.json({
 				success: true,
-				report: {
-					reportId: reportDetail.reportId,
-					caseId: reportDetail.caseId,
-					type: reportDetail.type,
-					results: reportDetail.currentData,
-					patientName: patient?.name ?? "Unknown Patient",
-					doctorName: doctor?.name ?? "Unknown Doctor",
-				},
+				caseId,
+				patientName: patient?.name ?? "Unknown Patient",
+				doctorName: doctor?.name ?? "Unknown Doctor",
+				tests: testsWithFiles,
 			});
 		},
 	)
 
 	.post(
-		"/upload-report-file",
+		"/update-tests/:caseId",
+		zValidator("param", z.object({ caseId: z.coerce.number().int() })),
+		zValidator("json", batchUpdateSchema),
+		async (c) => {
+			const { caseId } = c.req.valid("param");
+			const { tests } = c.req.valid("json");
+
+			try {
+				await db.transaction(async (tx) => {
+					const caseTests = await tx
+						.select({ id: caseLabReportsTable.id })
+						.from(caseLabReportsTable)
+						.where(eq(caseLabReportsTable.caseId, caseId));
+
+					const validIds = new Set(caseTests.map((t) => t.id));
+					const allValid = tests.every((t) => validIds.has(t.labTestReportId));
+
+					if (!allValid) {
+						throw new Error("Some test IDs do not belong to this case");
+					}
+
+					const [caseData] = await tx
+						.select({ associatedUsers: casesTable.associatedUsers })
+						.from(casesTable)
+						.where(eq(casesTable.id, caseId));
+
+					if (!caseData) {
+						throw new Error("Case not found");
+					}
+
+					for (const test of tests) {
+						await tx
+							.update(caseLabReportsTable)
+							.set({
+								status: test.status,
+								updatedAt: new Date(),
+							})
+							.where(eq(caseLabReportsTable.id, test.labTestReportId));
+
+						if (test.fileId) {
+							const [file] = await tx
+								.select({ id: filesTable.id })
+								.from(filesTable)
+								.where(eq(filesTable.id, test.fileId));
+
+							if (!file) {
+								throw new Error(`File ${test.fileId} not found`);
+							}
+
+							const [existing] = await tx
+								.select()
+								.from(labTestFilesTable)
+								.where(
+									and(
+										eq(labTestFilesTable.caseLabReportId, test.labTestReportId),
+										eq(labTestFilesTable.fileId, test.fileId),
+									),
+								);
+
+							if (!existing) {
+								await tx.insert(labTestFilesTable).values({
+									caseLabReportId: test.labTestReportId,
+									fileId: test.fileId,
+								});
+
+								await tx
+									.update(filesTable)
+									.set({ allowed: caseData.associatedUsers })
+									.where(eq(filesTable.id, test.fileId));
+							}
+						}
+					}
+				});
+
+				return c.json({
+					success: true,
+					message: "Tests updated successfully",
+				});
+			} catch (error) {
+				console.error("Batch update error:", error);
+				return c.json(
+					{
+						success: false,
+						error: error instanceof Error ? error.message : "Update failed",
+					},
+					400,
+				);
+			}
+		},
+	)
+
+	.post(
+		"/upload-file",
 		zValidator(
 			"form",
 			z.object({
 				file: z.instanceof(File),
-				reportId: z.coerce.number().int(),
+				labTestReportId: z.coerce.number().int(),
 			}),
 		),
 		async (c) => {
-			const { file, reportId } = c.req.valid("form");
+			const { file, labTestReportId } = c.req.valid("form");
 
 			try {
 				const [report] = await db
 					.select({ associatedUsers: casesTable.associatedUsers })
 					.from(caseLabReportsTable)
 					.innerJoin(casesTable, eq(caseLabReportsTable.caseId, casesTable.id))
-					.where(eq(caseLabReportsTable.id, reportId));
+					.where(eq(caseLabReportsTable.id, labTestReportId));
 
 				if (!report) {
-					return c.json({ success: false, error: "Report not found" }, 404);
+					return c.json(
+						{ success: false, error: "Lab test report not found" },
+						404,
+					);
 				}
 
 				const fileRecord = await uploadFileService(
@@ -175,68 +312,6 @@ const lab = new Hono()
 				console.error("File upload error in lab module:", error);
 				return c.json({ success: false, error: "File upload failed" }, 500);
 			}
-		},
-	)
-
-	.post(
-		"/submit/:reportId",
-		zValidator("param", z.object({ reportId: z.coerce.number().int() })),
-		zValidator("json", resultSubmissionSchema),
-		async (c) => {
-			const { reportId } = c.req.valid("param");
-			const { fileId, resultsData } = c.req.valid("json");
-
-			const updatedReport = await db.transaction(async (tx) => {
-				const [report] = await tx
-					.select({
-						associatedUsers: casesTable.associatedUsers,
-					})
-					.from(caseLabReportsTable)
-					.innerJoin(casesTable, eq(caseLabReportsTable.caseId, casesTable.id))
-					.where(eq(caseLabReportsTable.id, reportId));
-
-				if (!report) {
-					throw new Error("Report not found or case missing.");
-				}
-
-				const [updated] = await tx
-					.update(caseLabReportsTable)
-					.set({
-						data: resultsData,
-						status: "Done",
-					})
-					.where(eq(caseLabReportsTable.id, reportId))
-					.returning();
-
-				if (!updated) {
-					throw new Error("Failed to update lab report.");
-				}
-
-				if (fileId) {
-					await tx.insert(reportFilesTable).values({
-						reportId,
-						fileId,
-					});
-
-					await tx
-						.update(filesTable)
-						.set({
-							allowed: report.associatedUsers,
-						})
-						.where(eq(filesTable.id, fileId));
-				}
-
-				return updated;
-			});
-
-			return c.json(
-				{
-					success: true,
-					message: "Lab results submitted and report finalized.",
-					report: updatedReport,
-				},
-				200,
-			);
 		},
 	);
 
