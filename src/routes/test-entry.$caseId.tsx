@@ -2,14 +2,14 @@ import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import TopBar from "@/components/topbar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { client } from "./api/$";
+import { Label } from "@/components/ui/label";
 import { statusEnums } from "@/db/lab";
+import { client } from "./api/$";
 
 const testSchema = z.object({
 	labTestReportId: z.number(),
@@ -116,7 +116,7 @@ function TestEntry() {
 						(errorData as { error: string }).error) ||
 					res.statusText ||
 					"Unknown error";
-				alert("Upload failed: " + message);
+				alert(`Upload failed: ${message}`);
 				return;
 			}
 
@@ -188,10 +188,11 @@ function TestEntry() {
 				const message =
 					typeof errorData === "object" && errorData !== null
 						? "error" in errorData &&
-							typeof (errorData as any).error === "string"
+							typeof (errorData as { error?: string }).error === "string"
 							? (errorData as { error: string }).error
 							: "message" in errorData &&
-									typeof (errorData as any).message === "string"
+									typeof (errorData as { message?: string }).message ===
+										"string"
 								? (errorData as { message: string }).message
 								: res.statusText || "Unknown error"
 						: res.statusText || "Unknown error";

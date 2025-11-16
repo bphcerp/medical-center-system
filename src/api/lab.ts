@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { eq, inArray, and } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
 import { usersTable } from "@/db/auth";
@@ -90,10 +90,9 @@ const lab = new Hono()
 			patientName: patientMap.get(report.patientId) ?? "Unknown Patient",
 			doctorName:
 				(report.associatedUsers.at(0) != null
-					? doctorMap.get(report.associatedUsers.at(0)!)
+					? doctorMap.get(report.associatedUsers.at(0) ?? 0)
 					: null) ?? "Unknown Doctor",
 		}));
-
 		return c.json({ success: true, reports });
 	})
 

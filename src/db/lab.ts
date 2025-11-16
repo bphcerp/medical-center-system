@@ -1,13 +1,13 @@
 import {
+	boolean,
 	index,
 	integer,
 	json,
 	pgEnum,
 	pgTable,
-	varchar,
-	boolean,
 	timestamp,
 	uniqueIndex,
+	varchar,
 } from "drizzle-orm/pg-core";
 import { casesTable } from "./case";
 import { filesTable } from "./files";

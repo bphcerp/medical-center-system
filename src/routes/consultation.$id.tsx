@@ -498,9 +498,10 @@ function ConsultationPage() {
 							Select the lab tests to request:
 						</p>
 						{availableTests.map((test) => (
-							<div
+							<Button
 								key={test.id}
-								className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-accent"
+								variant="outline"
+								className="flex items-center justify-start space-x-2 w-full h-auto p-3 hover:bg-accent"
 								onClick={() => handleToggleLabTest(test.id)}
 							>
 								<div
@@ -514,7 +515,7 @@ function ConsultationPage() {
 										<div className="w-2.5 h-2.5 rounded-full bg-primary-foreground" />
 									)}
 								</div>
-								<div>
+								<div className="text-left">
 									<div className="font-medium">{test.name}</div>
 									{test.description && (
 										<div className="text-sm text-muted-foreground">
@@ -522,7 +523,7 @@ function ConsultationPage() {
 										</div>
 									)}
 								</div>
-							</div>
+							</Button>
 						))}
 					</div>
 					<DialogFooter>

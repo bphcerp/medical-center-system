@@ -7,8 +7,8 @@ import {
 import { Beaker } from "lucide-react";
 import { z } from "zod";
 import TopBar from "@/components/topbar";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Table,
 	TableBody,
