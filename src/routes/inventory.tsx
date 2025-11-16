@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import React, { useState } from "react";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
 	Table,
@@ -46,7 +46,7 @@ export const Route = createFileRoute("/inventory")({
 function InventoryPage() {
 	const { inventory } = Route.useLoaderData();
 
-	const [inventoryQuery, setInventoryQuery] = useState("");
+	const [inventoryQuery, setInventoryQuery] = useState<string>("");
 
 	return (
 		<>
@@ -65,6 +65,7 @@ function InventoryPage() {
 					<Button className="ml-2">Search</Button>
 				</div>
 			</div>
+
 			<Card>
 				<CardContent>
 					<Table>
@@ -75,10 +76,11 @@ function InventoryPage() {
 								<TableHead>Quick Actions</TableHead>
 							</TableRow>
 						</TableHeader>
+
 						<TableBody>
 							{inventory.map((item) => (
-								<>
-									<TableRow key={item.id} className="cursor-pointer">
+								<React.Fragment key={item.id}>
+									<TableRow className="cursor-pointer">
 										<TableCell>
 											<div className="p-1 flex flex-wrap">
 												<span className="font-semibold">
@@ -91,9 +93,30 @@ function InventoryPage() {
 											</div>
 										</TableCell>
 										<TableCell>{item.quantity}</TableCell>
-										<TableCell>Placeholder Text for Actions</TableCell>
+										<TableCell className="flex space-x-2">
+											<Button className="flex-1 w-full">Add Batch</Button>
+										</TableCell>
 									</TableRow>
-								</>
+
+									<TableRow className="bg-gray-100">
+										<TableCell className="font-semibold">Batch ID</TableCell>
+										<TableCell className="font-semibold">Quantity</TableCell>
+										<TableCell className="font-semibold">
+											Quick Actions
+										</TableCell>
+									</TableRow>
+
+									{item.batches.map((batch) => (
+										<TableRow key={batch.id}>
+											<TableCell>{batch.batchNum}</TableCell>
+											<TableCell>{batch.quantity}</TableCell>
+											<TableCell className="flex space-x-2">
+												<Button className="flex-1 w-full">Dispense</Button>
+												<Button className="flex-1 w-full">Add Quantity</Button>
+											</TableCell>
+										</TableRow>
+									))}
+								</React.Fragment>
 							))}
 						</TableBody>
 					</Table>
