@@ -1,8 +1,9 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/lib/contexts/auth";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/login")({
@@ -18,29 +19,16 @@ export const Route = createFileRoute("/login")({
 });
 
 function Login() {
+	const auth = useAuth();
 	const usernameId = useId();
 	const passwordId = useId();
-	const navigate = useNavigate();
 
 	const handleLogin = async (formData: FormData) => {
 		const username = formData.get("username");
 		const password = formData.get("password");
 		if (username === null || password === null) return;
-		const res = await (
-			await client.api.login.$post({
-				json: {
-					username: username as string,
-					password: password as string,
-				},
-			})
-		).json();
 
-		if ("error" in res) {
-			alert(res.error);
-		}
-		navigate({
-			to: "/",
-		});
+		await auth.logIn(username as string, password as string);
 	};
 
 	return (

@@ -1,7 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import { House, User } from "lucide-react";
-import { useContext } from "react";
-import { AuthContext } from "@/lib/contexts/auth";
+import { useAuth } from "@/lib/contexts/auth";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Button } from "./ui/button";
 import {
@@ -15,13 +14,13 @@ import {
 const TopBar = ({ title }: { title: string }) => {
 	const { navigate } = useRouter();
 
-	const { allowedRoutes } = useContext(AuthContext);
+	const auth = useAuth();
 
 	document.title = title;
 	return (
 		<div className="p-4 flex justify-between items-center border-b border-border">
 			<div className="flex gap-4 items-center">
-				{allowedRoutes.length > 1 && (
+				{auth.allowedRoutes.length > 1 && (
 					<Button
 						variant="outline"
 						className="p-6"
@@ -44,11 +43,7 @@ const TopBar = ({ title }: { title: string }) => {
 					<DropdownMenuLabel className="font-medium">
 						My Account
 					</DropdownMenuLabel>
-					<DropdownMenuItem
-						variant="destructive"
-						// Needs to use window.location.assign so that Tanstack Router doesn't interfere and show a 404
-						onClick={() => window.location.assign("/api/logout")}
-					>
+					<DropdownMenuItem variant="destructive" onClick={auth.logOut}>
 						Log Out
 					</DropdownMenuItem>
 				</DropdownMenuContent>
