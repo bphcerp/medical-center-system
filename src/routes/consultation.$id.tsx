@@ -173,6 +173,8 @@ function ConsultationPage() {
 
 	const [diseasesSearchOpen, setDiseasesSearchOpen] = useState<boolean>(false);
 
+	const [consultationNotes, setConsultationNotes] = useState<string>("");
+
 	const filteredDiseases = useMemo(
 		() =>
 			diseases
@@ -427,6 +429,7 @@ function ConsultationPage() {
 			json: {
 				caseId: Number(id),
 				finalizedState: finalizedState,
+				consultationNotes: consultationNotes,
 				diagnosis: diagnosisItems.map((d) => d.id),
 				prescriptions: prescriptionItems.map((item) => ({
 					medicineId: item.id,
@@ -498,7 +501,7 @@ function ConsultationPage() {
 									onClick={() => handleToggleLabTest(test)}
 								>
 									<div
-										className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+										className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
 											selectedLabTests.has(test)
 												? "bg-primary border-primary"
 												: "border-muted-foreground"
@@ -616,6 +619,8 @@ function ConsultationPage() {
 							Clinical Examination
 						</Label>
 						<Textarea
+							value={consultationNotes}
+							onChange={(e) => setConsultationNotes(e.target.value)}
 							className="h-full -mt-3.5 resize-none"
 							placeholder="Write notes here..."
 						/>
