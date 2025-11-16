@@ -1,51 +1,98 @@
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { medicinesTable } from "@/db/case";
 import { batchesTable, inventoryMedicinesTable } from "@/db/inventory";
 import { db } from "./index";
 
-const api = new Hono();
-api.get("/", async (c) => {
+type InventoryItem = {
+	id: number;
+	quantity: number;
+	criticalQty: number | null;
+	medicine: {
+		id: number;
+		drug: string;
+		company: string;
+		brand: string;
+		strength: string;
+		type: string;
+		price: number;
+	};
+	batches: {
+		id: number;
+		batchNum: string;
+		expiry: string; // TODO: Make compatible with Date
+		quantity: number;
+	}[];
+};
+
+const inventory = new Hono().get("/", async (c) => {
 	const rows = await db
 		.select({
-			inv_id: inventoryMedicinesTable.id,
-			inv_medicine: inventoryMedicinesTable.medicine,
-			inv_quantity: inventoryMedicinesTable.quantity,
-			batch_id: batchesTable.id,
-			batch_num: batchesTable.batchNum,
-			batch_expiry: batchesTable.expiry,
-			batch_quantity: batchesTable.quantity,
+			inventoryId: inventoryMedicinesTable.id,
+			inventoryQuantity: inventoryMedicinesTable.quantity,
+			inventoryCriticalQty: inventoryMedicinesTable.criticalQty,
+
+			// Medicine details
+			medicineId: medicinesTable.id,
+			drug: medicinesTable.drug,
+			company: medicinesTable.company,
+			brand: medicinesTable.brand,
+			strength: medicinesTable.strength,
+			type: medicinesTable.type,
+			price: medicinesTable.price,
+
+			// Batch details
+			batchId: batchesTable.id,
+			batchNum: batchesTable.batchNum,
+			batchExpiry: batchesTable.expiry,
+			batchQuantity: batchesTable.quantity,
 		})
 		.from(inventoryMedicinesTable)
-		.leftJoin(
+		.innerJoin(
 			batchesTable,
 			eq(batchesTable.medicineId, inventoryMedicinesTable.id),
+		)
+		.innerJoin(
+			medicinesTable,
+			eq(medicinesTable.id, inventoryMedicinesTable.medicine),
 		);
 
-	const map = new Map();
-
-	for (const r of rows) {
-		if (!map.has(r.inv_id)) {
-			map.set(r.inv_id, {
-				id: r.inv_id,
-				medicine: r.inv_medicine,
+	const inventoryMap = rows.reduce((acc, r) => {
+		if (!acc.has(r.inventoryId)) {
+			acc.set(r.inventoryId, {
+				id: r.inventoryId,
 				quantity: 0,
+				criticalQty: r.inventoryCriticalQty,
+				medicine: {
+					id: r.medicineId,
+					drug: r.drug,
+					company: r.company,
+					brand: r.brand,
+					strength: r.strength,
+					type: r.type,
+					price: r.price,
+				},
 				batches: [],
 			});
 		}
 
-		if (r.batch_id !== null) {
-			const item = map.get(r.inv_id);
-			map.get(r.inv_id).batches.push({
-				id: r.batch_id,
-				batchNum: r.batch_num,
-				expiry: r.batch_expiry,
-				quantity: r.batch_quantity,
-			});
-			item.quantity += r.batch_quantity;
+		if (r.batchId !== null) {
+			const item = acc.get(r.inventoryId);
+			if (item) {
+				item.batches.push({
+					id: r.batchId,
+					batchNum: r.batchNum,
+					expiry: r.batchExpiry,
+					quantity: r.batchQuantity,
+				});
+				item.quantity += r.batchQuantity;
+			}
 		}
-	}
 
-	return c.json({ inventory: Array.from(map.values()) });
+		return acc;
+	}, new Map<number, InventoryItem>());
+
+	return c.json({ inventory: Array.from(inventoryMap.values()) });
 });
 
-export default api;
+export default inventory;

@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	integer,
+	jsonb,
 	pgEnum,
 	pgTable,
 	real,
@@ -17,6 +18,17 @@ export const finalizedStateEnum = pgEnum("finalized_state", [
 ]);
 export const identifierTypes = ["psrn", "student_id", "phone"] as const;
 export const identifierType = pgEnum("identifier_type", identifierTypes);
+
+export const medicineCategories = [
+	"Capsule/Tablet",
+	"External Application",
+	"Injection",
+	"Liquids/Syrups",
+] as const;
+export const medicineCategoryEnum = pgEnum(
+	"medicine_category",
+	medicineCategories,
+);
 
 export const diseasesTable = pgTable(
 	"diseases",
@@ -35,6 +47,7 @@ export const medicinesTable = pgTable("medicines", {
 	brand: varchar({ length: 1023 }).notNull(),
 	strength: varchar({ length: 255 }).notNull(),
 	type: varchar({ length: 255 }).notNull(),
+	category: medicineCategoryEnum("category").notNull(),
 	price: real().notNull(),
 });
 
@@ -48,6 +61,8 @@ export const casePrescriptionsTable = pgTable("case_prescriptions", {
 		.notNull(),
 	dosage: varchar({ length: 255 }).notNull(),
 	frequency: varchar({ length: 255 }).notNull(),
+	duration: varchar({ length: 255 }).notNull(),
+	categoryData: jsonb(),
 	comment: text(),
 });
 

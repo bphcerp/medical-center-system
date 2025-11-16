@@ -156,10 +156,10 @@ export function RegistrationForm({
 				setVisitor();
 				return;
 			case 200:
+				break;
+			case 404:
 				setShowDetails(true);
 				return;
-			case 302:
-				break;
 			default:
 				alert("Error registering. Please report this to the front desk.");
 				resetState();
