@@ -41,9 +41,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import type { medicineCategories } from "@/db/case";
-import { type LabReportType, labReportTypes } from "@/db/lab";
 import { client } from "./api/$";
 
 type PrescriptionItem = {
@@ -79,7 +77,6 @@ function DurationInput({
 	return (
 		<>
 			<Input
-				type="number"
 				value={duration}
 				onChange={(e) => onDurationChange(e.target.value)}
 				placeholder="0"
@@ -89,7 +86,7 @@ function DurationInput({
 				value={durationUnit || "days"}
 				onValueChange={onDurationUnitChange}
 			>
-				<SelectTrigger className="h-8 w-28">
+				<SelectTrigger className="h-10 w-24">
 					<SelectValue />
 				</SelectTrigger>
 				<SelectContent>
@@ -110,7 +107,6 @@ type DiagnosisItem = {
 
 export const Route = createFileRoute("/consultation/$id")({
 	loader: async ({ params }: { params: { id: string } }) => {
-		// Check if user is authenticated
 		const res = await client.api.user.$get();
 		if (res.status !== 200) {
 			throw redirect({
@@ -189,7 +185,7 @@ function ConsultationPage() {
 
 	useEffect(() => {
 		async function fetchTests() {
-			const res = await client.api.lab.tests.$get();
+			const res = await client.api.doctor.tests.$get();
 			if (res.ok) {
 				const data = await res.json();
 				setAvailableTests(data.tests);
@@ -331,7 +327,6 @@ function ConsultationPage() {
 			strength: medicine.strength,
 			type: medicine.type,
 			category: medicine.category,
-
 			dosage: "",
 			frequency: "",
 			duration: "",
@@ -612,83 +607,74 @@ function ConsultationPage() {
 						</div>
 					</div>
 				</Card>
-				<div className="grid grid-cols-3 mb-2">
-					<Card className="col-span-1 row-span-2 rounded-r-none rounded-bl-none px-2 pt-4 pb-2">
-						<Label className="font-semibold text-lg">
-							Clinical Examination
-						</Label>
-						<Textarea
-							className="h-full -mt-3.5 resize-none"
-							placeholder="Write notes here..."
-						/>
-					</Card>
-					<Card className="col-span-2 row-span-1 rounded-l-none rounded-br-none min-h-52 gap-2">
-						<div className="flex items-center w-full gap-2 px-2">
-							<Label className="font-semibold">Diagnosis: </Label>
-							<Popover
-								open={diseasesSearchOpen}
-								onOpenChange={setDiseasesSearchOpen}
-							>
-								<PopoverTrigger asChild>
-									<Button
-										variant="outline"
-										role="combobox"
-										className="justify-between w-3xl"
+
+				<Card className="p-6 space-y-4">
+					<h2 className="text-lg font-semibold">Clinical Examination</h2>
+
+					<div>
+						<FieldLabel>Diagnosis:</FieldLabel>
+						<Popover
+							open={diseasesSearchOpen}
+							onOpenChange={setDiseasesSearchOpen}
+						>
+							<PopoverTrigger asChild>
+								<Button
+									variant="outline"
+									role="combobox"
+									className="w-full justify-between"
+								>
+									Select a disease...
+									<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent className="w-full p-0">
+								<Command>
+									<CommandInput
+										placeholder="Search diseases..."
+										value={diagnosisQuery}
+										onValueChange={setDiagnosisQuery}
+									/>
+									<CommandList
+										ref={diseaseListRef}
+										style={{
+											height:
+												diseaseRowVirtualizer.getTotalSize() > 0
+													? `${diseaseRowVirtualizer.getTotalSize()}px`
+													: "auto",
+										}}
+										className="relative w-full"
 									>
-										Select a disease...
-										<ChevronsUpDown className="ml-2 h-4 w-4" />
-									</Button>
-								</PopoverTrigger>
-								<PopoverContent className="p-0 w-3xl" align="start" side="top">
-									<Command shouldFilter={false}>
-										<CommandInput
-											placeholder="Type a disease to search..."
-											value={diagnosisQuery}
-											onValueChange={setDiagnosisQuery}
-										/>
-										<CommandList ref={diseaseListRef}>
-											<div
-												style={{
-													height:
-														diseaseRowVirtualizer.getTotalSize() > 0
-															? `${diseaseRowVirtualizer.getTotalSize()}px`
-															: "auto",
-												}}
-												className="relative w-full"
-											>
-												<CommandEmpty>No diseases found.</CommandEmpty>
-												<CommandGroup>
-													{diseaseRowVirtualizer
-														.getVirtualItems()
-														.map((virtualItem) => {
-															const disease =
-																filteredDiseases[virtualItem.index].disease;
-															return (
-																<CommandItem
-																	key={virtualItem.key}
-																	onSelect={() => {
-																		handleAddDisease(disease);
-																		setDiseasesSearchOpen(false);
-																	}}
-																	className="flex absolute top-0 left-0 w-full justify-between"
-																	style={{
-																		height: `${virtualItem.size}px`,
-																		transform: `translateY(${virtualItem.start}px)`,
-																	}}
-																>
-																	<span>
-																		{disease.name} (ICD: {disease.icd})
-																	</span>
-																</CommandItem>
-															);
-														})}
-												</CommandGroup>
-											</div>
-										</CommandList>
-									</Command>
-								</PopoverContent>
-							</Popover>
-						</div>
+										<CommandEmpty>No diseases found.</CommandEmpty>
+										<CommandGroup>
+											{diseaseRowVirtualizer
+												.getVirtualItems()
+												.map((virtualItem) => {
+													const disease =
+														filteredDiseases[virtualItem.index].disease;
+													return (
+														<CommandItem
+															key={disease.id}
+															value={disease.name}
+															onSelect={() => {
+																handleAddDisease(disease);
+																setDiseasesSearchOpen(false);
+															}}
+															className="flex absolute top-0 left-0 w-full justify-between"
+															style={{
+																height: `${virtualItem.size}px`,
+																transform: `translateY(${virtualItem.start}px)`,
+															}}
+														>
+															{disease.name} (ICD: {disease.icd})
+														</CommandItem>
+													);
+												})}
+										</CommandGroup>
+									</CommandList>
+								</Command>
+							</PopoverContent>
+						</Popover>
+
 						{diagnosisItems.length > 0 &&
 							diagnosisItems.map((item) => (
 								<div
@@ -778,449 +764,560 @@ function ConsultationPage() {
 
 						{prescriptionItems.length > 0 &&
 							prescriptionItems.map((item) => (
-								<div key={item.id} className="px-2">
-									<div className="w-full pb-1 flex flex-wrap items-center gap-2">
-										<span className="font-semibold">
-											{item.company} {item.brand}
-										</span>
-										<span className="text-muted-foreground text-sm">
-											({item.drug}) - {item.strength}
-										</span>
-										<span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-											{item.type}
-										</span>
+								<div
+									key={item.id}
+									className="border rounded-md p-4 mt-2 space-y-2"
+								>
+									<div className="font-medium">
+										{item.company} {item.brand} ({item.drug}) - {item.strength}{" "}
+										- {item.type}
 									</div>
-									<div className="gap-0.5 flex">
+									<div className="grid grid-cols-4 gap-2">
 										{item.category === "Capsule/Tablet" && (
-											<div className="flex flex-wrap gap-2 items-center w-full">
-												<Select
-													value={item.dosage}
-													onValueChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"dosage",
-															value,
-														)
-													}
-												>
-													<SelectTrigger className="h-8 flex-1 min-w-20">
-														<SelectValue placeholder="Dosage" />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="1/4">1/4 tablet</SelectItem>
-														<SelectItem value="1/2">1/2 tablet</SelectItem>
-														<SelectItem value="1">1 tablet</SelectItem>
-														<SelectItem value="2">2 tablets</SelectItem>
-													</SelectContent>
-												</Select>
-												<Select
-													value={item.frequency}
-													onValueChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"frequency",
-															value,
-														)
-													}
-												>
-													<SelectTrigger className="h-8 flex-1 min-w-[100px]">
-														<SelectValue placeholder="Frequency" />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="1">Once a day</SelectItem>
-														<SelectItem value="2">Twice a day</SelectItem>
-														<SelectItem value="3">3 times a day</SelectItem>
-														<SelectItem value="4">4 times a day</SelectItem>
-														<SelectItem value="5">5 times a day</SelectItem>
-														<SelectItem value="alternate days">
-															Alternate days
-														</SelectItem>
-														<SelectItem value="once a week">
-															Once a week
-														</SelectItem>
-														<SelectItem value="twice a week">
-															Twice a week
-														</SelectItem>
-														<SelectItem value="thrice a week">
-															Thrice a week
-														</SelectItem>
-													</SelectContent>
-												</Select>
-												<Select
-													value={item.mealTiming || ""}
-													onValueChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"mealTiming",
-															value,
-														)
-													}
-												>
-													<SelectTrigger className="h-8 flex-1 min-w-[100px]">
-														<SelectValue placeholder="Meal Timing" />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="before">Before meal</SelectItem>
-														<SelectItem value="after">After meal</SelectItem>
-													</SelectContent>
-												</Select>
-												<DurationInput
-													duration={item.duration}
-													durationUnit={item.durationUnit}
-													onDurationChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"duration",
-															value,
-														)
-													}
-													onDurationUnitChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"durationUnit",
-															value,
-														)
-													}
-												/>
-												<Input
-													value={item.comments}
-													onChange={(e) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"comments",
-															e.target.value,
-														)
-													}
-													placeholder="Notes"
-													className="h-10 flex-1 min-w-[120px]"
-												/>
-											</div>
+											<>
+												<Field>
+													<FieldLabel>Dosage</FieldLabel>
+													<Select
+														value={item.dosage}
+														onValueChange={(value) =>
+															handleUpdatePrescriptionItem(
+																item.id,
+																"dosage",
+																value,
+															)
+														}
+													>
+														<SelectTrigger className="h-10">
+															<SelectValue placeholder="Select" />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="1/4">1/4 tablet</SelectItem>
+															<SelectItem value="1/2">1/2 tablet</SelectItem>
+															<SelectItem value="1">1 tablet</SelectItem>
+															<SelectItem value="2">2 tablets</SelectItem>
+														</SelectContent>
+													</Select>
+												</Field>
+												<Field>
+													<FieldLabel>Frequency</FieldLabel>
+													<Select
+														value={item.frequency}
+														onValueChange={(value) =>
+															handleUpdatePrescriptionItem(
+																item.id,
+																"frequency",
+																value,
+															)
+														}
+													>
+														<SelectTrigger className="h-10">
+															<SelectValue placeholder="Select" />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="Once a day">
+																Once a day
+															</SelectItem>
+															<SelectItem value="Twice a day">
+																Twice a day
+															</SelectItem>
+															<SelectItem value="3 times a day">
+																3 times a day
+															</SelectItem>
+															<SelectItem value="4 times a day">
+																4 times a day
+															</SelectItem>
+															<SelectItem value="5 times a day">
+																5 times a day
+															</SelectItem>
+															<SelectItem value="Alternate days">
+																Alternate days
+															</SelectItem>
+															<SelectItem value="Once a week">
+																Once a week
+															</SelectItem>
+															<SelectItem value="Twice a week">
+																Twice a week
+															</SelectItem>
+															<SelectItem value="Thrice a week">
+																Thrice a week
+															</SelectItem>
+														</SelectContent>
+													</Select>
+												</Field>
+												<Field>
+													<FieldLabel>Meal Timing</FieldLabel>
+													<Select
+														value={item.mealTiming}
+														onValueChange={(value) =>
+															handleUpdatePrescriptionItem(
+																item.id,
+																"mealTiming",
+																value,
+															)
+														}
+													>
+														<SelectTrigger className="h-10">
+															<SelectValue placeholder="Select" />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="Before meal">
+																Before meal
+															</SelectItem>
+															<SelectItem value="After meal">
+																After meal
+															</SelectItem>
+														</SelectContent>
+													</Select>
+												</Field>
+												<Field>
+													<FieldLabel>Duration</FieldLabel>
+													<div className="flex gap-2">
+														<DurationInput
+															duration={item.duration}
+															durationUnit={item.durationUnit}
+															onDurationChange={(value) =>
+																handleUpdatePrescriptionItem(
+																	item.id,
+																	"duration",
+																	value,
+																)
+															}
+															onDurationUnitChange={(value) =>
+																handleUpdatePrescriptionItem(
+																	item.id,
+																	"durationUnit",
+																	value,
+																)
+															}
+														/>
+													</div>
+												</Field>
+												<Field>
+													<FieldLabel>Comments</FieldLabel>
+													<Input
+														value={item.comments}
+														onChange={(e) =>
+															handleUpdatePrescriptionItem(
+																item.id,
+																"comments",
+																e.target.value,
+															)
+														}
+														placeholder="Notes"
+														className="h-10 flex-1 min-w-[120px]"
+													/>
+												</Field>
+											</>
 										)}
+
 										{item.category === "External Application" && (
-											<div className="flex flex-wrap gap-2 items-center w-full">
-												<Select
-													value={item.dosage}
-													onValueChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"dosage",
-															value,
-														)
-													}
-												>
-													<SelectTrigger className="h-8 flex-1 min-w-[100px]">
-														<SelectValue placeholder="Amount" />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="thin layer">
-															Thin layer
-														</SelectItem>
-														<SelectItem value="thick layer">
-															Thick layer
-														</SelectItem>
-														<SelectItem value="pea-sized">Pea-sized</SelectItem>
-														<SelectItem value="coin-sized">
-															Coin-sized
-														</SelectItem>
-														<SelectItem value="as needed">As needed</SelectItem>
-													</SelectContent>
-												</Select>
-												<Select
-													value={item.frequency}
-													onValueChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"frequency",
-															value,
-														)
-													}
-												>
-													<SelectTrigger className="h-8 flex-1 min-w-[100px]">
-														<SelectValue placeholder="Frequency" />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="1">Once a day</SelectItem>
-														<SelectItem value="2">Twice a day</SelectItem>
-														<SelectItem value="3">3 times a day</SelectItem>
-														<SelectItem value="4">4 times a day</SelectItem>
-														<SelectItem value="alternate days">
-															Alternate days
-														</SelectItem>
-														<SelectItem value="once a week">
-															Once a week
-														</SelectItem>
-														<SelectItem value="twice a week">
-															Twice a week
-														</SelectItem>
-														<SelectItem value="as needed">As needed</SelectItem>
-													</SelectContent>
-												</Select>
-												<DurationInput
-													duration={item.duration}
-													durationUnit={item.durationUnit}
-													onDurationChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"duration",
-															value,
-														)
-													}
-													onDurationUnitChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"durationUnit",
-															value,
-														)
-													}
-												/>
-												<Input
-													value={item.applicationArea || ""}
-													onChange={(e) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"applicationArea",
-															e.target.value,
-														)
-													}
-													placeholder="Application area"
-													className="h-10 flex-1 min-w-[120px]"
-												/>
-												<Input
-													value={item.comments}
-													onChange={(e) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"comments",
-															e.target.value,
-														)
-													}
-													placeholder="Notes"
-													className="h-10 flex-1 min-w-[120px]"
-												/>
-											</div>
+											<>
+												<Field>
+													<FieldLabel>Dosage</FieldLabel>
+													<Select
+														value={item.dosage}
+														onValueChange={(value) =>
+															handleUpdatePrescriptionItem(
+																item.id,
+																"dosage",
+																value,
+															)
+														}
+													>
+														<SelectTrigger className="h-10">
+															<SelectValue placeholder="Select" />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="Thin layer">
+																Thin layer
+															</SelectItem>
+															<SelectItem value="Thick layer">
+																Thick layer
+															</SelectItem>
+															<SelectItem value="Pea-sized">
+																Pea-sized
+															</SelectItem>
+															<SelectItem value="Coin-sized">
+																Coin-sized
+															</SelectItem>
+															<SelectItem value="As needed">
+																As needed
+															</SelectItem>
+														</SelectContent>
+													</Select>
+												</Field>
+												<Field>
+													<FieldLabel>Frequency</FieldLabel>
+													<Select
+														value={item.frequency}
+														onValueChange={(value) =>
+															handleUpdatePrescriptionItem(
+																item.id,
+																"frequency",
+																value,
+															)
+														}
+													>
+														<SelectTrigger className="h-10">
+															<SelectValue placeholder="Select" />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="Once a day">
+																Once a day
+															</SelectItem>
+															<SelectItem value="Twice a day">
+																Twice a day
+															</SelectItem>
+															<SelectItem value="3 times a day">
+																3 times a day
+															</SelectItem>
+															<SelectItem value="4 times a day">
+																4 times a day
+															</SelectItem>
+															<SelectItem value="Alternate days">
+																Alternate days
+															</SelectItem>
+															<SelectItem value="Once a week">
+																Once a week
+															</SelectItem>
+															<SelectItem value="Twice a week">
+																Twice a week
+															</SelectItem>
+															<SelectItem value="As needed">
+																As needed
+															</SelectItem>
+														</SelectContent>
+													</Select>
+												</Field>
+												<Field>
+													<FieldLabel>Duration</FieldLabel>
+													<div className="flex gap-2">
+														<DurationInput
+															duration={item.duration}
+															durationUnit={item.durationUnit}
+															onDurationChange={(value) =>
+																handleUpdatePrescriptionItem(
+																	item.id,
+																	"duration",
+																	value,
+																)
+															}
+															onDurationUnitChange={(value) =>
+																handleUpdatePrescriptionItem(
+																	item.id,
+																	"durationUnit",
+																	value,
+																)
+															}
+														/>
+													</div>
+												</Field>
+												<Field>
+													<FieldLabel>Application Area</FieldLabel>
+													<Input
+														value={item.applicationArea}
+														onChange={(e) =>
+															handleUpdatePrescriptionItem(
+																item.id,
+																"applicationArea",
+																e.target.value,
+															)
+														}
+														placeholder="Application area"
+														className="h-10 flex-1 min-w-[120px]"
+													/>
+												</Field>
+												<Field>
+													<FieldLabel>Comments</FieldLabel>
+													<Input
+														value={item.comments}
+														onChange={(e) =>
+															handleUpdatePrescriptionItem(
+																item.id,
+																"comments",
+																e.target.value,
+															)
+														}
+														placeholder="Notes"
+														className="h-10 flex-1 min-w-[120px]"
+													/>
+												</Field>
+											</>
 										)}
+
 										{item.category === "Injection" && (
-											<div className="flex flex-wrap gap-2 items-center w-full">
-												<Input
-													value={item.dosage}
-													onChange={(e) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"dosage",
-															e.target.value,
-														)
-													}
-													placeholder="Dosage (mg/mL/units)"
-													className="h-10 flex-1 min-w-[120px]"
-												/>
-												<Select
-													value={item.frequency}
-													onValueChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"frequency",
-															value,
-														)
-													}
-												>
-													<SelectTrigger className="h-8 flex-1 min-w-[100px]">
-														<SelectValue placeholder="Frequency" />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="once">Once</SelectItem>
-														<SelectItem value="twice daily">
-															Twice daily
-														</SelectItem>
-														<SelectItem value="three times daily">
-															Three times daily
-														</SelectItem>
-														<SelectItem value="every 6 hours">
-															Every 6 hours
-														</SelectItem>
-														<SelectItem value="every 8 hours">
-															Every 8 hours
-														</SelectItem>
-														<SelectItem value="every 12 hours">
-															Every 12 hours
-														</SelectItem>
-														<SelectItem value="alternate days">
-															Alternate days
-														</SelectItem>
-														<SelectItem value="once a week">
-															Once a week
-														</SelectItem>
-														<SelectItem value="twice a week">
-															Twice a week
-														</SelectItem>
-														<SelectItem value="thrice a week">
-															Thrice a week
-														</SelectItem>
-														<SelectItem value="as needed">As needed</SelectItem>
-													</SelectContent>
-												</Select>
-												<DurationInput
-													duration={item.duration}
-													durationUnit={item.durationUnit}
-													onDurationChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"duration",
-															value,
-														)
-													}
-													onDurationUnitChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"durationUnit",
-															value,
-														)
-													}
-												/>
-												<Select
-													value={item.injectionRoute || ""}
-													onValueChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"injectionRoute",
-															value,
-														)
-													}
-												>
-													<SelectTrigger className="h-8 flex-1 min-w-[120px]">
-														<SelectValue placeholder="Route" />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="subcutaneous">
-															Subcutaneous (SC)
-														</SelectItem>
-														<SelectItem value="intramuscular">
-															Intramuscular (IM)
-														</SelectItem>
-														<SelectItem value="intravenous">
-															Intravenous (IV)
-														</SelectItem>
-													</SelectContent>
-												</Select>
-												<Input
-													value={item.comments}
-													onChange={(e) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"comments",
-															e.target.value,
-														)
-													}
-													placeholder="Notes"
-													className="h-10 flex-1 min-w-[120px]"
-												/>
-											</div>
+											<>
+												<Field>
+													<FieldLabel>Dosage</FieldLabel>
+													<Input
+														value={item.dosage}
+														onChange={(e) =>
+															handleUpdatePrescriptionItem(
+																item.id,
+																"dosage",
+																e.target.value,
+															)
+														}
+														placeholder="Dosage (mg/mL/units)"
+														className="h-10 flex-1 min-w-[120px]"
+													/>
+												</Field>
+												<Field>
+													<FieldLabel>Frequency</FieldLabel>
+													<Select
+														value={item.frequency}
+														onValueChange={(value) =>
+															handleUpdatePrescriptionItem(
+																item.id,
+																"frequency",
+																value,
+															)
+														}
+													>
+														<SelectTrigger className="h-10">
+															<SelectValue placeholder="Select" />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="Once">Once</SelectItem>
+															<SelectItem value="Twice daily">
+																Twice daily
+															</SelectItem>
+															<SelectItem value="Three times daily">
+																Three times daily
+															</SelectItem>
+															<SelectItem value="Every 6 hours">
+																Every 6 hours
+															</SelectItem>
+															<SelectItem value="Every 8 hours">
+																Every 8 hours
+															</SelectItem>
+															<SelectItem value="Every 12 hours">
+																Every 12 hours
+															</SelectItem>
+															<SelectItem value="Alternate days">
+																Alternate days
+															</SelectItem>
+															<SelectItem value="Once a week">
+																Once a week
+															</SelectItem>
+															<SelectItem value="Twice a week">
+																Twice a week
+															</SelectItem>
+															<SelectItem value="Thrice a week">
+																Thrice a week
+															</SelectItem>
+															<SelectItem value="As needed">
+																As needed
+															</SelectItem>
+														</SelectContent>
+													</Select>
+												</Field>
+												<Field>
+													<FieldLabel>Duration</FieldLabel>
+													<div className="flex gap-2">
+														<DurationInput
+															duration={item.duration}
+															durationUnit={item.durationUnit}
+															onDurationChange={(value) =>
+																handleUpdatePrescriptionItem(
+																	item.id,
+																	"duration",
+																	value,
+																)
+															}
+															onDurationUnitChange={(value) =>
+																handleUpdatePrescriptionItem(
+																	item.id,
+																	"durationUnit",
+																	value,
+																)
+															}
+														/>
+													</div>
+												</Field>
+												<Field>
+													<FieldLabel>Injection Route</FieldLabel>
+													<Select
+														value={item.injectionRoute}
+														onValueChange={(value) =>
+															handleUpdatePrescriptionItem(
+																item.id,
+																"injectionRoute",
+																value,
+															)
+														}
+													>
+														<SelectTrigger className="h-10">
+															<SelectValue placeholder="Select" />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="SC">
+																Subcutaneous (SC)
+															</SelectItem>
+															<SelectItem value="IM">
+																Intramuscular (IM)
+															</SelectItem>
+															<SelectItem value="IV">
+																Intravenous (IV)
+															</SelectItem>
+														</SelectContent>
+													</Select>
+												</Field>
+												<Field>
+													<FieldLabel>Comments</FieldLabel>
+													<Input
+														value={item.comments}
+														onChange={(e) =>
+															handleUpdatePrescriptionItem(
+																item.id,
+																"comments",
+																e.target.value,
+															)
+														}
+														placeholder="Notes"
+														className="h-10 flex-1 min-w-[120px]"
+													/>
+												</Field>
+											</>
 										)}
+
 										{item.category === "Liquids/Syrups" && (
-											<div className="flex flex-wrap gap-2 items-center w-full">
-												<Input
-													value={item.dosage}
-													onChange={(e) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"dosage",
-															e.target.value,
-														)
-													}
-													placeholder="Dosage (mL/teaspoon/mg)"
-													className="h-10 flex-1 min-w-[120px]"
-												/>
-												<Select
-													value={item.frequency}
-													onValueChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"frequency",
-															value,
-														)
-													}
-												>
-													<SelectTrigger className="h-8 flex-1 min-w-[100px]">
-														<SelectValue placeholder="Frequency" />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="1">Once a day</SelectItem>
-														<SelectItem value="2">Twice a day</SelectItem>
-														<SelectItem value="3">3 times a day</SelectItem>
-														<SelectItem value="4">4 times a day</SelectItem>
-														<SelectItem value="5">5 times a day</SelectItem>
-														<SelectItem value="alternate days">
-															Alternate days
-														</SelectItem>
-														<SelectItem value="once a week">
-															Once a week
-														</SelectItem>
-														<SelectItem value="twice a week">
-															Twice a week
-														</SelectItem>
-														<SelectItem value="thrice a week">
-															Thrice a week
-														</SelectItem>
-													</SelectContent>
-												</Select>
-												<Select
-													value={item.liquidTiming || ""}
-													onValueChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"liquidTiming",
-															value,
-														)
-													}
-												>
-													<SelectTrigger className="h-8 flex-1 min-w-[100px]">
-														<SelectValue placeholder="Meal Timing" />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="before">Before meal</SelectItem>
-														<SelectItem value="after">After meal</SelectItem>
-													</SelectContent>
-												</Select>
-												<DurationInput
-													duration={item.duration}
-													durationUnit={item.durationUnit}
-													onDurationChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"duration",
-															value,
-														)
-													}
-													onDurationUnitChange={(value) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"durationUnit",
-															value,
-														)
-													}
-												/>
-												<Input
-													value={item.comments}
-													onChange={(e) =>
-														handleUpdatePrescriptionItem(
-															item.id,
-															"comments",
-															e.target.value,
-														)
-													}
-													placeholder="Notes"
-													className="h-10 flex-1 min-w-[120px]"
-												/>
-											</div>
+											<>
+												<Field>
+													<FieldLabel>Dosage</FieldLabel>
+													<Input
+														value={item.dosage}
+														onChange={(e) =>
+															handleUpdatePrescriptionItem(
+																item.id,
+																"dosage",
+																e.target.value,
+															)
+														}
+														placeholder="Dosage (mL/teaspoon/mg)"
+														className="h-10 flex-1 min-w-[120px]"
+													/>
+												</Field>
+												<Field>
+													<FieldLabel>Frequency</FieldLabel>
+													<Select
+														value={item.frequency}
+														onValueChange={(value) =>
+															handleUpdatePrescriptionItem(
+																item.id,
+																"frequency",
+																value,
+															)
+														}
+													>
+														<SelectTrigger className="h-10">
+															<SelectValue placeholder="Select" />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="Once a day">
+																Once a day
+															</SelectItem>
+															<SelectItem value="Twice a day">
+																Twice a day
+															</SelectItem>
+															<SelectItem value="3 times a day">
+																3 times a day
+															</SelectItem>
+															<SelectItem value="4 times a day">
+																4 times a day
+															</SelectItem>
+															<SelectItem value="5 times a day">
+																5 times a day
+															</SelectItem>
+															<SelectItem value="Alternate days">
+																Alternate days
+															</SelectItem>
+															<SelectItem value="Once a week">
+																Once a week
+															</SelectItem>
+															<SelectItem value="Twice a week">
+																Twice a week
+															</SelectItem>
+															<SelectItem value="Thrice a week">
+																Thrice a week
+															</SelectItem>
+														</SelectContent>
+													</Select>
+												</Field>
+												<Field>
+													<FieldLabel>Liquid Timing</FieldLabel>
+													<Select
+														value={item.liquidTiming}
+														onValueChange={(value) =>
+															handleUpdatePrescriptionItem(
+																item.id,
+																"liquidTiming",
+																value,
+															)
+														}
+													>
+														<SelectTrigger className="h-10">
+															<SelectValue placeholder="Select" />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="Before meal">
+																Before meal
+															</SelectItem>
+															<SelectItem value="After meal">
+																After meal
+															</SelectItem>
+														</SelectContent>
+													</Select>
+												</Field>
+												<Field>
+													<FieldLabel>Duration</FieldLabel>
+													<div className="flex gap-2">
+														<DurationInput
+															duration={item.duration}
+															durationUnit={item.durationUnit}
+															onDurationChange={(value) =>
+																handleUpdatePrescriptionItem(
+																	item.id,
+																	"duration",
+																	value,
+																)
+															}
+															onDurationUnitChange={(value) =>
+																handleUpdatePrescriptionItem(
+																	item.id,
+																	"durationUnit",
+																	value,
+																)
+															}
+														/>
+													</div>
+												</Field>
+												<Field>
+													<FieldLabel>Comments</FieldLabel>
+													<Input
+														value={item.comments}
+														onChange={(e) =>
+															handleUpdatePrescriptionItem(
+																item.id,
+																"comments",
+																e.target.value,
+															)
+														}
+														placeholder="Notes"
+														className="h-10 flex-1 min-w-[120px]"
+													/>
+												</Field>
+											</>
 										)}
-										<Button
-											variant="destructive"
-											size="sm"
-											onClick={() => handleRemovePrescriptionItem(item.id)}
-											className="h-10 w-10 p-0"
-										>
-											<Trash2 className="h-4 w-4" />
-										</Button>
 									</div>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => handleRemovePrescriptionItem(item.id)}
+										className="h-10 w-10 p-0"
+									>
+										<Trash2 />
+									</Button>
 								</div>
 							))}
 					</div>
