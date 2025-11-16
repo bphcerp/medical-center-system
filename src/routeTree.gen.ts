@@ -13,6 +13,7 @@ import { Route as VitalsRouteImport } from './routes/vitals'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LabDashboardRouteImport } from './routes/lab-dashboard'
+import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as DoctorRouteImport } from './routes/doctor'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
@@ -40,6 +41,11 @@ const LoginRoute = LoginRouteImport.update({
 const LabDashboardRoute = LabDashboardRouteImport.update({
   id: '/lab-dashboard',
   path: '/lab-dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryRoute = InventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DoctorRoute = DoctorRouteImport.update({
@@ -86,6 +92,7 @@ const AdminRoleRoute = AdminRoleRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/doctor': typeof DoctorRoute
+  '/inventory': typeof InventoryRoute
   '/lab-dashboard': typeof LabDashboardRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/doctor': typeof DoctorRoute
+  '/inventory': typeof InventoryRoute
   '/lab-dashboard': typeof LabDashboardRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/doctor': typeof DoctorRoute
+  '/inventory': typeof InventoryRoute
   '/lab-dashboard': typeof LabDashboardRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/doctor'
+    | '/inventory'
     | '/lab-dashboard'
     | '/login'
     | '/register'
@@ -145,6 +155,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/doctor'
+    | '/inventory'
     | '/lab-dashboard'
     | '/login'
     | '/register'
@@ -159,6 +170,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/doctor'
+    | '/inventory'
     | '/lab-dashboard'
     | '/login'
     | '/register'
@@ -174,6 +186,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DoctorRoute: typeof DoctorRoute
+  InventoryRoute: typeof InventoryRoute
   LabDashboardRoute: typeof LabDashboardRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
@@ -214,6 +227,13 @@ declare module '@tanstack/react-router' {
       path: '/lab-dashboard'
       fullPath: '/lab-dashboard'
       preLoaderRoute: typeof LabDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory': {
+      id: '/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof InventoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/doctor': {
@@ -278,6 +298,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DoctorRoute: DoctorRoute,
+  InventoryRoute: InventoryRoute,
   LabDashboardRoute: LabDashboardRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
