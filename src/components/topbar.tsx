@@ -1,4 +1,4 @@
-import { useRouter } from "@tanstack/react-router";
+import { useLocation, useRouter } from "@tanstack/react-router";
 import { House, User } from "lucide-react";
 import { useAuth } from "@/lib/contexts/auth";
 import { Avatar, AvatarFallback } from "./ui/avatar";
@@ -13,6 +13,7 @@ import {
 
 const TopBar = ({ title }: { title: string }) => {
 	const { navigate } = useRouter();
+	const isRoot = useLocation({ select: (p) => p.pathname === "/" });
 
 	const auth = useAuth();
 
@@ -20,16 +21,16 @@ const TopBar = ({ title }: { title: string }) => {
 	return (
 		<div className="p-4 flex justify-between items-center border-b border-border">
 			<div className="flex gap-4 items-center">
-				{auth.allowedRoutes.length > 1 && (
+				{auth.allowedRoutes.length > 1 && !isRoot && (
 					<Button
 						variant="outline"
-						className="p-6"
+						className="p-4 aspect-square"
 						onClick={() => navigate({ to: "/" })}
 					>
-						<House className="size-6" />
+						<House className="size-4" />
 					</Button>
 				)}
-				<span className="text-2xl font-bold">{title}</span>
+				<span className="text-3xl font-bold">{title}</span>
 			</div>
 			<DropdownMenu>
 				<DropdownMenuTrigger>
