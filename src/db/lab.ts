@@ -12,20 +12,15 @@ import {
 import { casesTable } from "./case";
 import { filesTable } from "./files";
 
-export const statusEnum = pgEnum("status", [
+export const statusEnums = [
 	"Requested",
 	"Sample Collected",
-	"Waiting For Report",
 	"Complete",
-]);
+] as const;
+const statusEnum = pgEnum("status", statusEnums);
 
 //exportable type as more tests can be added in the future
 //and  changing code everywhere else wont be a headache
-export const labReportTypes = ["Blood Test", "Urinalysis"] as const;
-
-export type LabReportType = (typeof labReportTypes)[number];
-
-export const labReportTypeEnum = pgEnum("lab_report_type", labReportTypes);
 
 export const caseLabReportsTable = pgTable(
 	"case_lab_reports",

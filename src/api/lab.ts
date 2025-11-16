@@ -9,26 +9,16 @@ import {
 	caseLabReportsTable,
 	labTestFilesTable,
 	labTestsMasterTable,
+	statusEnums,
 } from "@/db/lab";
 import { patientsTable } from "@/db/patient";
 import { uploadFileService } from "./fileupload.service";
 import { db } from "./index";
 import { rbacCheck } from "./rbac";
 
-const pendingStatuses = [
-	"Requested",
-	"Sample Collected",
-	"Waiting For Report",
-] as const;
-
 const testUpdateSchema = z.object({
 	labTestReportId: z.number().int(),
-	status: z.enum([
-		"Requested",
-		"Sample Collected",
-		"Waiting For Report",
-		"Complete",
-	]),
+	status: z.enum(statusEnums),
 	fileId: z.number().int().optional(),
 });
 
@@ -36,27 +26,8 @@ const batchUpdateSchema = z.object({
 	tests: z.array(testUpdateSchema),
 });
 
-const requestLabTestsSchema = z.object({
-	caseId: z.number().int(),
-	testIds: z.array(z.number().int()).min(1),
-});
-
 const lab = new Hono()
 	.use(rbacCheck({ permissions: ["lab"] }))
-
-	.get("/tests", async (c) => {
-		const activeTests = await db
-			.select({
-				id: labTestsMasterTable.id,
-				name: labTestsMasterTable.name,
-				description: labTestsMasterTable.description,
-				category: labTestsMasterTable.category,
-			})
-			.from(labTestsMasterTable)
-			.where(eq(labTestsMasterTable.isActive, true));
-
-		return c.json({ success: true, tests: activeTests });
-	})
 
 	.get("/pending", async (c) => {
 		const pendingReports = await db
@@ -75,7 +46,7 @@ const lab = new Hono()
 				eq(caseLabReportsTable.testId, labTestsMasterTable.id),
 			)
 			.innerJoin(casesTable, eq(caseLabReportsTable.caseId, casesTable.id))
-			.where(inArray(caseLabReportsTable.status, pendingStatuses));
+			.where(inArray(caseLabReportsTable.status, statusEnums.slice(0, 2)));
 
 		if (pendingReports.length === 0) {
 			return c.json({ success: true, reports: [] });
@@ -341,74 +312,6 @@ const lab = new Hono()
 			} catch (error) {
 				console.error("File upload error in lab module:", error);
 				return c.json({ success: false, error: "File upload failed" }, 500);
-			}
-		},
-	)
-
-	.post(
-		"/request-tests",
-		zValidator("json", requestLabTestsSchema),
-		async (c) => {
-			const { caseId, testIds } = c.req.valid("json");
-
-			try {
-				const [caseExists] = await db
-					.select({ id: casesTable.id })
-					.from(casesTable)
-					.where(eq(casesTable.id, caseId));
-
-				if (!caseExists) {
-					return c.json({ success: false, error: "Case not found" }, 404);
-				}
-				const validTests = await db
-					.select({ id: labTestsMasterTable.id })
-					.from(labTestsMasterTable)
-					.where(
-						and(
-							inArray(labTestsMasterTable.id, testIds),
-							eq(labTestsMasterTable.isActive, true),
-						),
-					);
-
-				if (validTests.length !== testIds.length) {
-					return c.json(
-						{ success: false, error: "Some test IDs are invalid" },
-						400,
-					);
-				}
-
-				await db.transaction(async (tx) => {
-					for (const testId of testIds) {
-						const [existing] = await tx
-							.select()
-							.from(caseLabReportsTable)
-							.where(
-								and(
-									eq(caseLabReportsTable.caseId, caseId),
-									eq(caseLabReportsTable.testId, testId),
-								),
-							);
-
-						if (!existing) {
-							await tx.insert(caseLabReportsTable).values({
-								caseId,
-								testId,
-								status: "Requested",
-							});
-						}
-					}
-				});
-
-				return c.json({
-					success: true,
-					message: "Lab tests requested successfully",
-				});
-			} catch (error) {
-				console.error("Request tests error:", error);
-				return c.json(
-					{ success: false, error: "Failed to request tests" },
-					500,
-				);
 			}
 		},
 	);
