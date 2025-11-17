@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, gte, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import z from "zod";
 import { medicinesTable } from "@/db/case";
@@ -127,6 +127,43 @@ const inventory = new Hono()
 			return c.json({
 				success: true,
 				message: "Quantity added successfully",
+			});
+		},
+	)
+	.post(
+		"dispense",
+		zValidator(
+			"json",
+			z.object({
+				batchId: z.number().int(),
+				quantity: z.number().int().positive(),
+			}),
+		),
+		async (c) => {
+			const { batchId, quantity } = c.req.valid("json");
+
+			await db.transaction(async (tx) => {
+				const updated = await tx
+					.update(batchesTable)
+					.set({
+						quantity: sql`${batchesTable.quantity} - ${quantity}`,
+					})
+					.where(
+						and(
+							eq(batchesTable.id, batchId),
+							gte(batchesTable.quantity, quantity),
+						),
+					)
+					.returning();
+
+				if (updated.length === 0) {
+					throw new Error("Not enough quantity in stock or batch not found");
+				}
+			});
+
+			return c.json({
+				success: true,
+				message: "Quantity dispensed successfully",
 			});
 		},
 	);
