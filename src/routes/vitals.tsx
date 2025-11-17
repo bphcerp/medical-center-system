@@ -457,7 +457,7 @@ function NewPatientDialog() {
 				</Button>
 			</DialogTrigger>
 
-			<DialogContent className="w-1/3">
+			<DialogContent>
 				{token === null ? (
 					<RegistrationForm
 						setToken={handleToken}
