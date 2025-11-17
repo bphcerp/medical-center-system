@@ -34,11 +34,9 @@ const TopBar = ({ title }: { title: string }) => {
 			</div>
 			<DropdownMenu>
 				<DropdownMenuTrigger>
-					<Avatar className="border-2 border-border size-10">
-						<AvatarFallback>
-							<User />
-						</AvatarFallback>
-					</Avatar>
+					<div className="border-2 border-border p-2 rounded-full cursor-pointer hover:bg-accent">
+						<User className="size-5" />
+					</div>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent>
 					<DropdownMenuLabel className="font-medium">
