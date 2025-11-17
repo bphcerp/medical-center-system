@@ -2,7 +2,6 @@ import { redirect, useRouter } from "@tanstack/react-router";
 import { House, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { client } from "@/routes/api/$";
-import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Button } from "./ui/button";
 import {
 	DropdownMenu,
@@ -53,21 +52,19 @@ const TopBar = ({ title }: { title: string }) => {
 				{linkCount > 1 && (
 					<Button
 						variant="outline"
-						className="p-6"
+						className="p-4 aspect-square"
 						onClick={() => navigate({ to: "/" })}
 					>
-						<House className="size-6" />
+						<House className="size-4" />
 					</Button>
 				)}
-				<span className="text-2xl font-bold">{title}</span>
+				<span className="text-3xl font-bold">{title}</span>
 			</div>
 			<DropdownMenu>
 				<DropdownMenuTrigger>
-					<Avatar className="border-2 border-border size-10">
-						<AvatarFallback>
-							<User />
-						</AvatarFallback>
-					</Avatar>
+					<div className="border-2 border-border p-2 rounded-full cursor-pointer hover:bg-accent">
+						<User className="size-5" />
+					</div>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent>
 					<DropdownMenuLabel className="font-medium">
