@@ -232,7 +232,7 @@ function Vitals() {
 									<PatientTypeBadge
 										key={focusedPatient.patients.id}
 										type={focusedPatient.patients.type}
-										className="text-3xl border px-3 tabular-nums tracking-tight font-medium flex items-center min-w-14"
+										className="text-3xl border px-3 tabular-nums tracking-tight font-semibold flex items-center min-w-14"
 									>
 										{focusedPatient.unprocessed.id}
 									</PatientTypeBadge>
