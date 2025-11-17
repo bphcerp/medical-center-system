@@ -17,7 +17,7 @@ export const statusEnums = [
 	"Sample Collected",
 	"Complete",
 ] as const;
-const statusEnum = pgEnum("status", statusEnums);
+export const statusEnum = pgEnum("status", statusEnums);
 
 //exportable type as more tests can be added in the future
 //and  changing code everywhere else wont be a headache

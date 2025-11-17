@@ -4,6 +4,7 @@ export const permissions = [
 	"doctor",
 	"admin",
 	"lab",
+	"inventory",
 ] as const;
 
 export type Permission = (typeof permissions)[number];
@@ -14,4 +15,5 @@ export const permissionDescriptions: Record<Permission, string> = {
 	admin: "Create, edit, and delete user accounts, roles and permissions",
 	doctor: "Access to doctor-specific features",
 	lab: "Access to lab report entry and management",
+	inventory: "Access to inventory details",
 };

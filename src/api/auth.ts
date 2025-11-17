@@ -299,8 +299,7 @@ export const unauthenticated = new Hono()
 				token: token[0].id,
 			});
 		},
-	)
-	.route("/inventory", inventory);
+	);
 
 export const authenticated = new Hono()
 	.use(
@@ -315,4 +314,5 @@ export const authenticated = new Hono()
 	.route("/vitals", vitals)
 	.route("/doctor", doctor)
 	.route("/lab", lab)
-	.route("/files", files);
+	.route("/files", files)
+	.route("/inventory", inventory);

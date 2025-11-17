@@ -1,6 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import React, { useState } from "react";
+import { AddQuantityModal } from "@/components/inventory-add-modal";
+import { DispenseModal } from "@/components/inventory-dispense-modal";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,19 +19,18 @@ import { client } from "./api/$";
 
 export const Route = createFileRoute("/inventory")({
 	loader: async () => {
-		// TODO: Implement auth
-		// const res = await client.api.user.$get();
-		// if (res.status !== 200) {
-		// 	throw redirect({
-		// 		to: "/login",
-		// 	});
-		// }
-		// const user = await res.json();
-		// if ("error" in user) {
-		// 	throw redirect({
-		// 		to: "/login",
-		// 	});
-		// }
+		const res = await client.api.user.$get();
+		if (res.status !== 200) {
+			throw redirect({
+				to: "/login",
+			});
+		}
+		const user = await res.json();
+		if ("error" in user) {
+			throw redirect({
+				to: "/login",
+			});
+		}
 		const inventoryRes = await client.api.inventory.$get();
 
 		if (inventoryRes.status !== 200) {
@@ -58,6 +59,24 @@ function InventoryPage() {
 			newSet.add(id);
 		}
 		setExpandedRows(newSet);
+	};
+
+	const [isOpenAddQuantity, setIsOpenAddQuantity] = useState<boolean>(false);
+	const [selectedBatchId, setSelectedBatchId] = useState<number | null>(null);
+	const [selectedBatchNum, setSelectedBatchNum] = useState<string>("");
+
+	const openAddQuantity = (batchId: number, batchNum: string) => {
+		setSelectedBatchId(batchId);
+		setSelectedBatchNum(batchNum);
+		setIsOpenAddQuantity(true);
+	};
+
+	const [isOpenDispense, setIsOpenDispense] = useState<boolean>(false);
+
+	const openDispense = (batchId: number, batchNum: string) => {
+		setSelectedBatchId(batchId);
+		setSelectedBatchNum(batchNum);
+		setIsOpenDispense(true);
 	};
 
 	return (
@@ -137,8 +156,20 @@ function InventoryPage() {
 													<TableCell>{batch.batchNum}</TableCell>
 													<TableCell>{batch.quantity}</TableCell>
 													<TableCell className="flex space-x-2">
-														<Button className="flex-1 w-full">Dispense</Button>
-														<Button className="flex-1 w-full">
+														<Button
+															className="flex-1 w-full"
+															onClick={() =>
+																openDispense(batch.id, batch.batchNum)
+															}
+														>
+															Dispense
+														</Button>
+														<Button
+															className="flex-1 w-full"
+															onClick={() =>
+																openAddQuantity(batch.id, batch.batchNum)
+															}
+														>
 															Add Quantity
 														</Button>
 													</TableCell>
@@ -152,6 +183,18 @@ function InventoryPage() {
 					</Table>
 				</CardContent>
 			</Card>
+			<AddQuantityModal
+				open={isOpenAddQuantity}
+				onOpenChange={setIsOpenAddQuantity}
+				batchId={selectedBatchId}
+				batchNum={selectedBatchNum}
+			/>
+			<DispenseModal
+				open={isOpenDispense}
+				onOpenChange={setIsOpenDispense}
+				batchId={selectedBatchId}
+				batchNum={selectedBatchNum}
+			/>
 		</>
 	);
 }
