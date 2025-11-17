@@ -6,6 +6,7 @@ import {
 	pgTable,
 	real,
 	text,
+	timestamp,
 	uniqueIndex,
 	varchar,
 } from "drizzle-orm/pg-core";
@@ -99,4 +100,12 @@ export const casesTable = pgTable("cases", {
 		.array()
 		.notNull()
 		.default(sql`'{}'::integer[]`),
+
+	createdAt: timestamp("created_at", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
+		.notNull()
+		.defaultNow()
+		.$onUpdate(() => new Date()),
 });

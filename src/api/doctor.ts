@@ -101,6 +101,7 @@ const doctor = new Hono()
 				caseId: casesTable.id,
 				token: casesTable.token,
 				finalizedState: casesTable.finalizedState,
+				patientId: patientsTable.id,
 				patientName: patientsTable.name,
 				patientAge: patientsTable.age,
 				patientSex: patientsTable.sex,
