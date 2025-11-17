@@ -25,13 +25,14 @@ export function DispenseModal({
 	const router = useRouter();
 
 	const [quantity, setQuantity] = useState<number>();
-	const [error, setIsError] = useState<boolean>(false);
+	const [quantityError, setQuantityError] = useState<boolean>(false);
+	const [apiError, setApiError] = useState<boolean>(false);
 
 	const handleSubmit = async () => {
 		if (!batchId || quantity == null) return;
 
 		if (quantity <= 0) {
-			setIsError(true);
+			setQuantityError(true);
 		}
 
 		const res = await client.api.inventory.dispense.$post({
@@ -42,14 +43,19 @@ export function DispenseModal({
 			await router.invalidate();
 			onOpenChange(false);
 			setQuantity(undefined);
-			setIsError(false);
+			setQuantityError(false);
+			setApiError(false);
+		} else {
+			setQuantity(undefined);
+			setApiError(true);
 		}
 	};
 
 	const handleCancel = async () => {
 		onOpenChange(false);
 		setQuantity(undefined);
-		setIsError(false);
+		setQuantityError(false);
+		setApiError(false);
 	};
 
 	return (
@@ -73,9 +79,14 @@ export function DispenseModal({
 						Cancel
 					</Button>
 					<Button onClick={handleSubmit}>Submit</Button>
-					{error && (
+					{quantityError && (
 						<p className="text-destructive">
 							Error: Quantity cannot be negative or zero!
+						</p>
+					)}
+					{apiError && (
+						<p className="text-destructive">
+							Error: Failed to dispense quantity
 						</p>
 					)}
 				</div>
