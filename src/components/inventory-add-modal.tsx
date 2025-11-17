@@ -28,7 +28,7 @@ export function AddQuantityModal({
 	const [error, setIsError] = useState<boolean>(false);
 
 	const handleSubmit = async () => {
-		if (!batchId || !quantity) return;
+		if (!batchId || quantity == null) return;
 
 		if (quantity <= 0) {
 			setIsError(true);
@@ -75,7 +75,7 @@ export function AddQuantityModal({
 					<Button onClick={handleSubmit}>Submit</Button>
 					{error && (
 						<p className="text-destructive">
-							Error: Quantity cannot be negative!
+							Error: Quantity cannot be negative or zero!
 						</p>
 					)}
 				</div>
