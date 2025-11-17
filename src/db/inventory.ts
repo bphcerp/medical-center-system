@@ -15,6 +15,6 @@ export const batchesTable = pgTable("batches", {
 		.references(() => inventoryMedicinesTable.id)
 		.notNull(),
 	batchNum: varchar({ length: 255 }).notNull(),
-	expiry: date().notNull(), //TODO: Decide whether expired batches contribute to inventory quantity 
+	expiry: date().notNull(), //TODO: Decide whether expired batches contribute to inventory quantity
 	quantity: integer().notNull(),
 });

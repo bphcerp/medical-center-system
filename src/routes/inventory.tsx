@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import React, { useState } from "react";
 import TopBar from "@/components/topbar";
@@ -17,19 +17,18 @@ import { client } from "./api/$";
 
 export const Route = createFileRoute("/inventory")({
 	loader: async () => {
-		// TODO: Implement auth
-		// const res = await client.api.user.$get();
-		// if (res.status !== 200) {
-		// 	throw redirect({
-		// 		to: "/login",
-		// 	});
-		// }
-		// const user = await res.json();
-		// if ("error" in user) {
-		// 	throw redirect({
-		// 		to: "/login",
-		// 	});
-		// }
+		const res = await client.api.user.$get();
+		if (res.status !== 200) {
+			throw redirect({
+				to: "/login",
+			});
+		}
+		const user = await res.json();
+		if ("error" in user) {
+			throw redirect({
+				to: "/login",
+			});
+		}
 		const inventoryRes = await client.api.inventory.$get();
 
 		if (inventoryRes.status !== 200) {
