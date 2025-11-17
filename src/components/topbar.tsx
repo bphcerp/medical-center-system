@@ -1,7 +1,6 @@
 import { useLocation, useRouter } from "@tanstack/react-router";
 import { House, User } from "lucide-react";
 import { useAuth } from "@/lib/contexts/auth";
-import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Button } from "./ui/button";
 import {
 	DropdownMenu,
