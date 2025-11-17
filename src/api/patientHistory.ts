@@ -31,19 +31,7 @@ const patientHistory = new Hono()
 		const cases = await db
 			.select({
 				caseId: casesTable.id,
-				token: casesTable.token,
-				weight: casesTable.weight,
-				temperature: casesTable.temperature,
-				heartRate: casesTable.heartRate,
-				respiratoryRate: casesTable.respiratoryRate,
-				bloodPressureSystolic: casesTable.bloodPressureSystolic,
-				bloodPressureDiastolic: casesTable.bloodPressureDiastolic,
-				bloodSugar: casesTable.bloodSugar,
-				spo2: casesTable.spo2,
-				consultationNotes: casesTable.consultationNotes,
-				diagnosis: casesTable.diagnosis,
 				finalizedState: casesTable.finalizedState,
-				createdAt: casesTable.createdAt,
 				updatedAt: casesTable.updatedAt,
 			})
 			.from(casesTable)
