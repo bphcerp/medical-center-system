@@ -180,6 +180,8 @@ function ConsultationPage() {
 
 	const [diseasesSearchOpen, setDiseasesSearchOpen] = useState<boolean>(false);
 
+	const [consultationNotes, setConsultationNotes] = useState<string>("");
+
 	const filteredDiseases = useMemo(
 		() =>
 			diseases
@@ -433,6 +435,7 @@ function ConsultationPage() {
 			json: {
 				caseId: Number(id),
 				finalizedState: finalizedState,
+				consultationNotes: consultationNotes,
 				diagnosis: diagnosisItems.map((d) => d.id),
 				prescriptions: prescriptionItems.map((item) => ({
 					medicineId: item.id,
@@ -622,6 +625,8 @@ function ConsultationPage() {
 							Clinical Examination
 						</Label>
 						<Textarea
+							value={consultationNotes}
+							onChange={(e) => setConsultationNotes(e.target.value)}
 							className="h-full -mt-3.5 resize-none"
 							placeholder="Write notes here..."
 						/>
