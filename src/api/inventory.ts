@@ -51,17 +51,18 @@ const inventory = new Hono()
 				batchExpiry: batchesTable.expiry,
 				batchQuantity: batchesTable.quantity,
 			})
-			.from(inventoryMedicinesTable)
-			.innerJoin(
-				batchesTable,
-				eq(batchesTable.medicineId, inventoryMedicinesTable.id),
-			)
-			.innerJoin(
-				medicinesTable,
-				eq(medicinesTable.id, inventoryMedicinesTable.medicine),
-			);
-
-		const inventoryMap = rows.reduce((acc, r) => {
+		.from(inventoryMedicinesTable)
+		.leftJoin(
+			batchesTable,
+			eq(batchesTable.medicineId, inventoryMedicinesTable.id),
+		)
+		.leftJoin(
+			medicinesTable,
+			eq(medicinesTable.id, inventoryMedicinesTable.medicine),
+		);		const inventoryMap = rows.reduce((acc, r) => {
+			if (r.medicineId === null) {
+				return acc;
+			}
 			if (!acc.has(r.inventoryId)) {
 				acc.set(r.inventoryId, {
 					id: r.inventoryId,
@@ -97,6 +98,81 @@ const inventory = new Hono()
 		}, new Map<number, InventoryItem>());
 
 		return c.json({ inventory: Array.from(inventoryMap.values()) });
+	})
+	.get("/low_stock", async (c) => {
+		const rows = await db
+			.select({
+				inventoryId: inventoryMedicinesTable.id,
+				inventoryCriticalQty: inventoryMedicinesTable.criticalQty,
+
+				medicineId: medicinesTable.id,
+				drug: medicinesTable.drug,
+				company: medicinesTable.company,
+				brand: medicinesTable.brand,
+				strength: medicinesTable.strength,
+				type: medicinesTable.type,
+				price: medicinesTable.price,
+
+				batchId: batchesTable.id,
+				batchNum: batchesTable.batchNum,
+				batchExpiry: batchesTable.expiry,
+				batchQuantity: batchesTable.quantity,
+			})
+			.from(inventoryMedicinesTable)
+			.leftJoin(
+				batchesTable,
+				eq(batchesTable.medicineId, inventoryMedicinesTable.id)
+			)
+			.leftJoin(
+				medicinesTable,
+				eq(medicinesTable.id, inventoryMedicinesTable.medicine)
+			);
+
+		const inventoryMap = rows.reduce((acc, r) => {
+			// Skip rows where medicine data is null
+			if (r.medicineId === null) {
+				return acc;
+			}
+
+			if (!acc.has(r.inventoryId)) {
+				acc.set(r.inventoryId, {
+					id: r.inventoryId,
+					criticalQty: r.inventoryCriticalQty,
+					quantity: 0,
+					medicine: {
+						id: r.medicineId,
+						drug: r.drug!,
+						company: r.company!,
+						brand: r.brand!,
+						strength: r.strength!,
+						type: r.type!,
+						price: r.price!,
+					},
+					batches: [],
+				});
+			}
+
+			if (r.batchId !== null) {
+				const item = acc.get(r.inventoryId)!;
+				item.batches.push({
+					id: r.batchId,
+					batchNum: r.batchNum!,
+					expiry: r.batchExpiry!,
+					quantity: r.batchQuantity!,
+				});
+				item.quantity += r.batchQuantity!;
+			}
+
+			return acc;
+		}, new Map<number, InventoryItem>());
+
+		const lowStockItems = Array.from(inventoryMap.values()).filter(
+			(item) =>
+				item.criticalQty !== null &&
+				item.quantity <= item.criticalQty
+		);
+
+		return c.json({ inventory: lowStockItems });
 	})
 	.post(
 		"addQuantity",
