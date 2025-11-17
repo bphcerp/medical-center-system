@@ -29,7 +29,6 @@ const inventory = new Hono().get("/", async (c) => {
 	const rows = await db
 		.select({
 			inventoryId: inventoryMedicinesTable.id,
-			inventoryQuantity: inventoryMedicinesTable.quantity,
 			inventoryCriticalQty: inventoryMedicinesTable.criticalQty,
 
 			// Medicine details
