@@ -1,7 +1,7 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { Activity, ArrowLeft, Check, Plus } from "lucide-react";
 import type React from "react";
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { RegistrationForm } from "@/components/registration-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { useWindowWidthAtLeast } from "@/lib/hooks";
 import { cn, titleCase } from "@/lib/utils";
 import { client } from "./api/$";
 
@@ -82,14 +81,7 @@ function Vitals() {
 	const [focusedPatient, setFocusedPatient] = useState<
 		(typeof unprocessed)[number] | null
 	>(null);
-
-	const isDesktop = useWindowWidthAtLeast("lg");
-
-	useEffect(() => {
-		if (isDesktop && focusedPatient === null) {
-			setFocusedPatient(unprocessed.length > 0 ? unprocessed[0] : null);
-		}
-	}, [unprocessed, isDesktop, focusedPatient]);
+	const isFocused = focusedPatient !== null;
 
 	const [assignedDoctor, setAssignedDoctor] = useState<number | null>(null);
 
@@ -163,7 +155,8 @@ function Vitals() {
 				<div
 					className={cn(
 						"relative flex flex-col flex-2 px-4 pt-4 gap-4 overflow-y-scroll bg-background bottom-0 min-h-0 z-10",
-						isDesktop || focusedPatient === null ? "flex" : "hidden",
+						isFocused && "hidden",
+						"lg:flex",
 					)}
 				>
 					{unprocessed.length === 0 && (
@@ -212,7 +205,13 @@ function Vitals() {
 						<NewPatientDialog />
 					</div>
 				</div>
-				<div className="absolute lg:static flex-5 p-4 lg:p-12 flex w-full">
+				<div
+					className={cn(
+						"hidden flex-col absolute lg:static flex-5 p-4 lg:p-12 w-full",
+						isFocused && "flex",
+						"lg:flex",
+					)}
+				>
 					{focusedPatient ? (
 						<form
 							className="flex flex-col gap-4 w-full"
