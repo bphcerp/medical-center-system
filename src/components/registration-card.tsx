@@ -318,13 +318,21 @@ export function RegistrationForm({
 					</>
 				)}
 			</div>
-			<div className="pt-4 flex items-center w-full gap-6">
+			<div className="pt-4 flex flex-col items-stretch w-full gap-4">
+				<Button type="submit" size="lg" className="text-lg">
+					{showDetails ? "Register" : "Continue"}
+					{showDetails ? (
+						<CheckIcon className="size-5" />
+					) : (
+						<ArrowRight className="size-5" />
+					)}
+				</Button>
 				{!showDetails && (
 					<Button
 						variant="link"
 						type="button"
 						onClick={registrationType === "visitor" ? unsetVisitor : setVisitor}
-						className="px-0"
+						className="px-0 self-start"
 					>
 						{isPatientRegistering
 							? registrationType === "visitor"
@@ -335,15 +343,6 @@ export function RegistrationForm({
 								: "Patient is a visitor"}
 					</Button>
 				)}
-				<div className="grow" />
-				<Button type="submit" size="lg" className="text-lg">
-					{showDetails ? "Register" : "Continue"}
-					{showDetails ? (
-						<CheckIcon className="size-5" />
-					) : (
-						<ArrowRight className="size-5" />
-					)}
-				</Button>
 			</div>
 		</form>
 	);

@@ -58,7 +58,7 @@ const TopBar = ({ title }: { title: string }) => {
 						<House className="size-4" />
 					</Button>
 				)}
-				<span className="text-3xl font-bold">{title}</span>
+				<span className="text-2xl lg:text-3xl font-bold">{title}</span>
 			</div>
 			<DropdownMenu>
 				<DropdownMenuTrigger>
