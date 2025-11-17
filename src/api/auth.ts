@@ -19,6 +19,7 @@ import type { Permission } from "@/lib/types/permissions";
 import { db } from ".";
 import doctor from "./doctor";
 import files from "./files";
+import inventory from "./inventory";
 import lab from "./lab";
 import rbac from "./rbac";
 import role from "./role";
@@ -166,14 +167,11 @@ export const unauthenticated = new Hono()
 					if (student.length < 1) {
 						return c.json({ exists: false }, 400);
 					}
-					return c.json(
-						{
-							...student[0].patients,
-							email: student[0].students.email,
-							exists: true,
-						},
-						302,
-					);
+					return c.json({
+						...student[0].patients,
+						email: student[0].students.email,
+						exists: true,
+					});
 				}
 				case "phone": {
 					const visitor = await db
@@ -186,16 +184,13 @@ export const unauthenticated = new Hono()
 						)
 						.limit(1);
 					if (visitor.length < 1) {
-						return c.json({ exists: false }, 200);
+						return c.json({ exists: false }, 404);
 					}
-					return c.json(
-						{
-							...visitor[0].patients,
-							email: visitor[0].visitors.email,
-							exists: true,
-						},
-						302,
-					);
+					return c.json({
+						...visitor[0].patients,
+						email: visitor[0].visitors.email,
+						exists: true,
+					});
 				}
 				case "psrn": {
 					const professor = await db
@@ -218,21 +213,18 @@ export const unauthenticated = new Hono()
 							patientsTable,
 							eq(dependentsTable.patientId, patientsTable.id),
 						);
-					return c.json(
-						{
-							professor: {
-								...professor[0].patients,
-							},
-							email: professor[0].professors.email,
-							dependents: dependents.map((d) => {
-								return {
-									...d.patients,
-								};
-							}),
-							exists: true,
+					return c.json({
+						professor: {
+							...professor[0].patients,
 						},
-						302,
-					);
+						email: professor[0].professors.email,
+						dependents: dependents.map((d) => {
+							return {
+								...d.patients,
+							};
+						}),
+						exists: true,
+					});
 				}
 			}
 		},
@@ -307,7 +299,8 @@ export const unauthenticated = new Hono()
 				token: token[0].id,
 			});
 		},
-	);
+	)
+	.route("/inventory", inventory);
 
 export const authenticated = new Hono()
 	.use(

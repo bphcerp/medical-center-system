@@ -7,6 +7,7 @@ export const inventoryMedicinesTable = pgTable("inventory_medicines", {
 		.references(() => medicinesTable.id)
 		.notNull(),
 	quantity: integer().notNull(),
+	criticalQty: integer(),
 });
 
 export const batchesTable = pgTable("batches", {
