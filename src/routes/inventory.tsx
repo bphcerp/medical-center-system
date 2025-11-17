@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import React, { useState } from "react";
 import { AddQuantityModal } from "@/components/inventory-add-modal";
+import { DispenseModal } from "@/components/inventory-dispense-modal";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -68,6 +69,14 @@ function InventoryPage() {
 		setSelectedBatchId(batchId);
 		setSelectedBatchNum(batchNum);
 		setIsOpenAddQuantity(true);
+	};
+
+	const [isOpenDispense, setIsOpenDispense] = useState<boolean>(false);
+
+	const openDispense = (batchId: number, batchNum: string) => {
+		setSelectedBatchId(batchId);
+		setSelectedBatchNum(batchNum);
+		setIsOpenDispense(true);
 	};
 
 	return (
@@ -147,7 +156,14 @@ function InventoryPage() {
 													<TableCell>{batch.batchNum}</TableCell>
 													<TableCell>{batch.quantity}</TableCell>
 													<TableCell className="flex space-x-2">
-														<Button className="flex-1 w-full">Dispense</Button>
+														<Button
+															className="flex-1 w-full"
+															onClick={() =>
+																openDispense(batch.id, batch.batchNum)
+															}
+														>
+															Dispense
+														</Button>
 														<Button
 															className="flex-1 w-full"
 															onClick={() =>
@@ -167,10 +183,15 @@ function InventoryPage() {
 					</Table>
 				</CardContent>
 			</Card>
-
 			<AddQuantityModal
 				open={isOpenAddQuantity}
 				onOpenChange={setIsOpenAddQuantity}
+				batchId={selectedBatchId}
+				batchNum={selectedBatchNum}
+			/>
+			<DispenseModal
+				open={isOpenDispense}
+				onOpenChange={setIsOpenDispense}
 				batchId={selectedBatchId}
 				batchNum={selectedBatchNum}
 			/>
