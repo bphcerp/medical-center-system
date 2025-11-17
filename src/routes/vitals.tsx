@@ -232,7 +232,7 @@ function Vitals() {
 									<PatientTypeBadge
 										key={focusedPatient.patients.id}
 										type={focusedPatient.patients.type}
-										className="text-3xl border px-3 tabular-nums tracking-tight font-medium flex items-center min-w-14"
+										className="text-3xl border px-3 tabular-nums tracking-tight font-semibold flex items-center min-w-14"
 									>
 										{focusedPatient.unprocessed.id}
 									</PatientTypeBadge>
@@ -487,13 +487,13 @@ function PatientTypeBadge({
 	switch (type) {
 		case "professor":
 		case "dependent":
-			color = "text-purple-700 border-purple-700";
+			color = "text-bits-light-blue border-bits-light-blue";
 			break;
 		case "visitor":
-			color = "text-pink-700 border-pink-700";
+			color = "text-bits-red border-bits-red";
 			break;
 		case "student":
-			color = "text-teal-700 border-teal-700";
+			color = "text-bits-green border-bits-green";
 			break;
 	}
 	return (
