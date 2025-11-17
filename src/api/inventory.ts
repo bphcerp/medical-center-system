@@ -1,5 +1,7 @@
-import { eq } from "drizzle-orm";
+import { zValidator } from "@hono/zod-validator";
+import { eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
+import z from "zod";
 import { medicinesTable } from "@/db/case";
 import { batchesTable, inventoryMedicinesTable } from "@/db/inventory";
 import { db } from "./index";
@@ -95,6 +97,38 @@ const inventory = new Hono()
 		}, new Map<number, InventoryItem>());
 
 		return c.json({ inventory: Array.from(inventoryMap.values()) });
-	});
+	})
+	.post(
+		"addQuantity",
+		zValidator(
+			"json",
+			z.object({
+				batchId: z.number().int(),
+				quantity: z.number().int().positive(),
+			}),
+		),
+		async (c) => {
+			const { batchId, quantity } = c.req.valid("json");
+
+			await db.transaction(async (tx) => {
+				const updated = await tx
+					.update(batchesTable)
+					.set({
+						quantity: sql`${batchesTable.quantity} + ${quantity}`,
+					})
+					.where(eq(batchesTable.id, batchId))
+					.returning();
+
+				if (updated.length === 0) {
+					throw new Error("Batch not found");
+				}
+			});
+
+			return c.json({
+				success: true,
+				message: "Quantity added successfully",
+			});
+		},
+	);
 
 export default inventory;
