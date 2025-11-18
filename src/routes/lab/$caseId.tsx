@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { statusEnums } from "@/db/lab";
-import { handleUnauthorized } from "@/lib/utils";
+import { cn, handleUnauthorized } from "@/lib/utils";
 import { client } from "../api/$";
 
 type TestUpdate = {
@@ -99,7 +99,6 @@ function TestEntry() {
 							: test,
 					),
 				);
-				alert(`File uploaded successfully!`);
 			}
 		} catch (error) {
 			console.error("Upload error:", error);
@@ -145,7 +144,6 @@ function TestEntry() {
 			});
 
 			if (res.ok) {
-				alert("Tests updated successfully!");
 				navigate({ to: "/lab" });
 			} else {
 				const errorData = await res
@@ -204,16 +202,16 @@ function TestEntry() {
 					<CardTitle>Lab Tests</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<div className="space-y-6">
+					<div className="flex flex-col gap-6">
 						{tests.map((test) => (
 							<div
 								key={test.labTestReportId}
-								className="flex flex-col gap-4 border rounded-lg overflow-clip"
+								className="flex flex-col border rounded-lg overflow-clip"
 							>
 								<Label className="flex items-center gap-2 text-lg font-medium cursor-pointer w-full p-4 has-aria-checked:bg-accent hover:bg-accent transition-colors">
 									<Checkbox
 										id={`test-${test.labTestReportId}`}
-										className="size-6"
+										className="size-6 [&>svg]:size-10"
 										checked={test.status !== "Requested"}
 										onCheckedChange={(checked) =>
 											handleCheckboxChange(
@@ -227,33 +225,44 @@ function TestEntry() {
 								</Label>
 
 								{test.status !== "Requested" && (
-									<div className="space-y-2 p-4 pt-0">
-										<Label>Upload Report</Label>
-										<div className="flex gap-2">
-											<Input
-												type="file"
-												accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-												onChange={(e) => {
-													const file = e.target.files?.[0];
-													if (file) {
-														handleFileUpload(test.labTestReportId, file);
+									<div className="p-4 flex flex-col gap-2">
+										<Label className="flex flex-col items-start gap-3">
+											Upload Report
+											<div className="flex gap-2 w-full">
+												<Input
+													type="file"
+													accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+													className={cn(
+														"transition-colors hover:enabled:cursor-pointer hover:enabled:bg-accent file:mr-4 p-0 h-auto",
+														"file:px-4 file:py-6 file:items-center file:border-r-2 file:border-border file:text-sm file:font-semibold w-full",
+													)}
+													onChange={(e) => {
+														const file = e.target.files?.[0];
+														if (file) {
+															handleFileUpload(test.labTestReportId, file);
+														}
+													}}
+													disabled={
+														uploading[test.labTestReportId] || isSubmitting
 													}
-												}}
-												disabled={
-													uploading[test.labTestReportId] || isSubmitting
-												}
-												className="flex-1"
-											/>
-											{test.fileId && (
-												<Badge variant="outline" className="bg-green-50">
-													File uploaded (ID: {test.fileId})
-												</Badge>
-											)}
-										</div>
-										{uploading[test.labTestReportId] && (
-											<p className="text-sm text-muted-foreground">
-												Uploading...
-											</p>
+												/>
+											</div>
+										</Label>
+										{(test.fileId !== null ||
+											uploading[test.labTestReportId]) && (
+											<Badge
+												variant="outline"
+												className={cn(
+													test.fileId !== null
+														? "bg-bits-green-foreground text-bits-green"
+														: "bg-bits-yellow-foreground text-bits-yellow",
+													"rounded-lg border-0",
+												)}
+											>
+												{test.fileId !== null
+													? "File uploaded"
+													: "Uploading..."}
+											</Badge>
 										)}
 									</div>
 								)}
