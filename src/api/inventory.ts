@@ -51,15 +51,16 @@ const inventory = new Hono()
 				batchExpiry: batchesTable.expiry,
 				batchQuantity: batchesTable.quantity,
 			})
-		.from(inventoryMedicinesTable)
-		.leftJoin(
-			batchesTable,
-			eq(batchesTable.medicineId, inventoryMedicinesTable.id),
-		)
-		.leftJoin(
-			medicinesTable,
-			eq(medicinesTable.id, inventoryMedicinesTable.medicine),
-		);		const inventoryMap = rows.reduce((acc, r) => {
+			.from(inventoryMedicinesTable)
+			.leftJoin(
+				batchesTable,
+				eq(batchesTable.medicineId, inventoryMedicinesTable.id),
+			)
+			.leftJoin(
+				medicinesTable,
+				eq(medicinesTable.id, inventoryMedicinesTable.medicine),
+			);
+		const inventoryMap = rows.reduce((acc, r) => {
 			if (r.medicineId === null) {
 				return acc;
 			}
@@ -121,11 +122,11 @@ const inventory = new Hono()
 			.from(inventoryMedicinesTable)
 			.leftJoin(
 				batchesTable,
-				eq(batchesTable.medicineId, inventoryMedicinesTable.id)
+				eq(batchesTable.medicineId, inventoryMedicinesTable.id),
 			)
 			.leftJoin(
 				medicinesTable,
-				eq(medicinesTable.id, inventoryMedicinesTable.medicine)
+				eq(medicinesTable.id, inventoryMedicinesTable.medicine),
 			);
 
 		const inventoryMap = rows.reduce((acc, r) => {
@@ -167,9 +168,7 @@ const inventory = new Hono()
 		}, new Map<number, InventoryItem>());
 
 		const lowStockItems = Array.from(inventoryMap.values()).filter(
-			(item) =>
-				item.criticalQty !== null &&
-				item.quantity <= item.criticalQty
+			(item) => item.criticalQty !== null && item.quantity <= item.criticalQty,
 		);
 
 		return c.json({ inventory: lowStockItems });
@@ -194,10 +193,7 @@ const inventory = new Hono()
 				price: medicinesTable.price,
 			})
 			.from(batchesTable)
-			.leftJoin(
-				medicinesTable,
-				eq(medicinesTable.id, batchesTable.medicineId),
-			);
+			.leftJoin(medicinesTable, eq(medicinesTable.id, batchesTable.medicineId));
 
 		const nearExpiryItems = rows.filter((r) => {
 			if (r.medicineId === null) return false;
