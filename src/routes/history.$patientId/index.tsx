@@ -119,6 +119,7 @@ function HistoryPage() {
 									<TableRow>
 										<TableHead>Case ID</TableHead>
 										<TableHead>Finalized State</TableHead>
+										<TableHead>Created</TableHead>
 										<TableHead>Last Updated</TableHead>
 									</TableRow>
 								</TableHeader>
@@ -135,6 +136,7 @@ function HistoryPage() {
 										>
 											<TableCell>{caseItem.caseId}</TableCell>
 											<TableCell>{caseItem.finalizedState || "—"}</TableCell>
+											<TableCell>{formatDate(caseItem.createdAt)}</TableCell>
 											<TableCell>{formatDate(caseItem.updatedAt)}</TableCell>
 										</TableRow>
 									))}

@@ -32,6 +32,7 @@ const patientHistory = new Hono()
 			.select({
 				caseId: casesTable.id,
 				finalizedState: casesTable.finalizedState,
+				createdAt: casesTable.createdAt,
 				updatedAt: casesTable.updatedAt,
 			})
 			.from(casesTable)
