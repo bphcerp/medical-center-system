@@ -39,7 +39,7 @@ export const Route = createFileRoute("/history/$patientId/$caseId")({
 		}
 
 		const { caseDetail, prescriptions, diseases } = await historyRes.json();
-		
+
 		return {
 			user,
 			caseDetail,

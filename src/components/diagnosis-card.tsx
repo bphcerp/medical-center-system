@@ -201,7 +201,9 @@ const DiagnosisCard = ({
 					</div>
 				))
 			) : (
-				<div className="flex items-center justify-center h-full text-muted-foreground">No diagnosis recorded</div>
+				<div className="flex items-center justify-center h-full text-muted-foreground">
+					No diagnosis recorded
+				</div>
 			)}
 		</Card>
 	);
