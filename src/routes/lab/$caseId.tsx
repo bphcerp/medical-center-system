@@ -1,5 +1,6 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { LabTestStatusBadge } from "@/components/lab-test-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { statusEnums } from "@/db/lab";
+import { handleUnauthorized } from "@/lib/utils";
 import { client } from "../api/$";
 
 type TestUpdate = {
@@ -20,15 +22,9 @@ export const Route = createFileRoute("/lab/$caseId")({
 		const res = await client.api.lab.details[":caseId"].$get({
 			param: { caseId },
 		});
-
+		handleUnauthorized(res.status);
 		if (res.status === 404) {
 			throw redirect({ to: "/lab" });
-		}
-		if (res.status === 401) {
-			throw redirect({ to: "/login" });
-		}
-		if (!res.ok) {
-			throw new Error("Failed to fetch case details");
 		}
 
 		return await res.json();
@@ -49,20 +45,7 @@ function TestEntry() {
 	const [uploading, setUploading] = useState<Record<number, boolean>>({});
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const getStatusColor = (status: string) => {
-		switch (status) {
-			case "Requested":
-				return "bg-yellow-100 text-yellow-800";
-			case "Sample Collected":
-				return "bg-blue-100 text-blue-800";
-			case "Waiting For Report":
-				return "bg-purple-100 text-purple-800";
-			case "Complete":
-				return "bg-green-100 text-green-800";
-			default:
-				return "bg-gray-100 text-gray-800";
-		}
-	};
+	useEffect(() => setTests(initialTests), [initialTests]);
 
 	const handleCheckboxChange = (testId: number, checked: boolean) => {
 		setTests((prev) =>
@@ -243,12 +226,7 @@ function TestEntry() {
 											{test.testName}
 										</Label>
 									</div>
-									<Badge
-										className={getStatusColor(test.status)}
-										variant="secondary"
-									>
-										{test.status}
-									</Badge>
+									<LabTestStatusBadge status={test.status} />
 								</div>
 
 								{test.status !== "Requested" && (
@@ -257,7 +235,7 @@ function TestEntry() {
 										<div className="flex gap-2">
 											<Input
 												type="file"
-												accept=".pdf,.jpg,.jpeg,.png"
+												accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
 												onChange={(e) => {
 													const file = e.target.files?.[0];
 													if (file) {

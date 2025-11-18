@@ -5,9 +5,10 @@ import {
 	useParams,
 } from "@tanstack/react-router";
 import { Beaker } from "lucide-react";
+import { LabTestStatusBadge } from "@/components/lab-test-status-badge";
 import TopBar from "@/components/topbar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { statusEnums } from "@/db/lab";
 import { cn, handleUnauthorized } from "@/lib/utils";
 import { client } from "../api/$";
 
@@ -25,8 +26,6 @@ export const Route = createFileRoute("/lab")({
 		name: "Lab Dashboard",
 	},
 });
-
-type TestStatus = (typeof Route.types.loaderData.reports)[number]["status"];
 
 function LabDashboard() {
 	const { reports } = Route.useLoaderData();
@@ -70,7 +69,7 @@ function LabDashboard() {
 				<div
 					className={cn(
 						"flex flex-col flex-2 p-4 gap-4 overflow-y-scroll bottom-0 min-h-0",
-						caseId && "hidden lg:flex",
+						caseId !== undefined && "hidden lg:flex",
 					)}
 				>
 					{Object.values(caseGroups).map((group) => (
@@ -121,7 +120,7 @@ function LabDashboard() {
 														getBorderColor(test.status),
 													)}
 												/>
-												<LabBadge status={test.status} />
+												<LabTestStatusBadge status={test.status} />
 											</div>
 										))}
 									</div>
@@ -138,7 +137,7 @@ function LabDashboard() {
 	);
 }
 
-function getBorderColor(status: TestStatus) {
+function getBorderColor(status: (typeof statusEnums)[number]) {
 	switch (status) {
 		case "Requested":
 			return "group-hover:border-bits-red";
@@ -147,26 +146,4 @@ function getBorderColor(status: TestStatus) {
 		case "Complete":
 			return "group-hover:border-bits-green";
 	}
-}
-
-function getBadgeColor(status: TestStatus) {
-	switch (status) {
-		case "Requested":
-			return "border-bits-red text-bits-red";
-		case "Sample Collected":
-			return "border-bits-blue text-bits-blue";
-		case "Complete":
-			return "border-bits-green text-bits-green";
-	}
-}
-
-function LabBadge({ status }: { status: TestStatus }) {
-	return (
-		<Badge
-			variant="outline"
-			className={cn("text-xs rounded-sm border", getBadgeColor(status))}
-		>
-			{status}
-		</Badge>
-	);
 }
