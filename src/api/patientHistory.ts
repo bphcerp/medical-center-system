@@ -158,7 +158,17 @@ const patientHistory = new Hono()
 			return c.json({ error: "Patient email not found" }, 404);
 		}
 
-		// Store OTP in database
+		// delete any existing otps for this doctor-patient pair
+		await db
+			.delete(doctorCaseHistoryOtpsTable)
+			.where(
+				and(
+					eq(doctorCaseHistoryOtpsTable.doctorId, payload.id),
+					eq(doctorCaseHistoryOtpsTable.patientId, patientId),
+				),
+			);
+
+		// store new otp
 		await db.insert(doctorCaseHistoryOtpsTable).values({
 			doctorId: payload.id,
 			patientId,
