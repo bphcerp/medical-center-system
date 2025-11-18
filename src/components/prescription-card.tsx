@@ -240,7 +240,7 @@ const PrescriptionCard = ({
 					</PopoverContent>
 				</Popover>
 			</div>
-			{prescriptionItems.length > 0 &&
+			{prescriptionItems.length > 0 ? (
 				prescriptionItems.map((item) => (
 					<div key={item.id} className="px-2">
 						<div className="w-full pb-1 flex flex-wrap items-center gap-2">
@@ -618,7 +618,12 @@ const PrescriptionCard = ({
 							</Button>
 						</div>
 					</div>
-				))}
+				))
+			) : (
+				<div className="flex items-center justify-center h-full text-muted-foreground">
+					No prescription recorded
+				</div>
+			)}
 		</Card>
 	);
 };

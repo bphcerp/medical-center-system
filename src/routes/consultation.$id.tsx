@@ -163,7 +163,7 @@ function ConsultationPage() {
 
 	return (
 		<>
-			<TopBar title={`Consultation for ${caseDetail.patientName}`} />
+			<TopBar title={`Consultation Page`} />
 			<div className="p-6">
 				<div className="flex justify-between items-start mb-4">
 					<div>
@@ -174,16 +174,28 @@ function ConsultationPage() {
 							Token Number: {caseDetail.token}
 						</p>
 					</div>
-					<Button
-						onClick={() =>
-							navigate({
-								to: "/history/$patientId",
-								params: { patientId: String(caseDetail.patientId) },
-							})
-						}
-					>
-						View History
-					</Button>
+					<div className="flex gap-2">
+						<Button
+							variant="outline"
+							onClick={() =>
+								navigate({
+									to: "/doctor",
+								})
+							}
+						>
+							Back to Dashboard
+						</Button>
+						<Button
+							onClick={() =>
+								navigate({
+									to: "/history/$patientId",
+									params: { patientId: String(caseDetail.patientId) },
+								})
+							}
+						>
+							View History
+						</Button>
+					</div>
 				</div>
 				<LabRequestModal
 					id={id}

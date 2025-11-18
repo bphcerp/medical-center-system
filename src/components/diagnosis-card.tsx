@@ -180,7 +180,7 @@ const DiagnosisCard = ({
 					</Popover>
 				)}
 			</div>
-			{diagnosisItems.length > 0 &&
+			{diagnosisItems.length > 0 ? (
 				diagnosisItems.map((item) => (
 					<div key={item.id} className="px-2">
 						<div className="w-full flex flex-wrap gap-2">
@@ -199,7 +199,10 @@ const DiagnosisCard = ({
 							)}
 						</div>
 					</div>
-				))}
+				))
+			) : (
+				<div className="flex items-center justify-center h-full text-muted-foreground">No diagnosis recorded</div>
+			)}
 		</Card>
 	);
 };
