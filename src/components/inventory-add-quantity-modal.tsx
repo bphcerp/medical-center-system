@@ -24,15 +24,23 @@ export function AddQuantityModal({
 }) {
 	const router = useRouter();
 
-	const [quantity, setQuantity] = useState<number>();
+	const [quantity, setQuantity] = useState<number>(0);
 	const [quantityError, setQuantityError] = useState<boolean>(false);
 	const [apiError, setApiError] = useState<boolean>(false);
 
-	const handleSubmit = async () => {
-		if (!batchId || quantity == null) return;
+	const resetState = () => {
+		setQuantity(0);
+		setQuantityError(false);
+		setApiError(false);
+	};
 
-		if (quantity <= 0) {
+	const handleSubmit = async () => {
+		if (!batchId) return;
+
+		if (quantity == null || quantity <= 0) {
+			resetState();
 			setQuantityError(true);
+			return;
 		}
 
 		const res = await client.api.inventory.addQuantity.$post({
@@ -42,20 +50,16 @@ export function AddQuantityModal({
 		if (res.status === 200) {
 			await router.invalidate();
 			onOpenChange(false);
-			setQuantity(undefined);
-			setQuantityError(false);
-			setApiError(false);
+			resetState();
 		} else {
-			setQuantity(undefined);
+			resetState();
 			setApiError(true);
 		}
 	};
 
-	const handleCancel = async () => {
+	const handleCancel = () => {
 		onOpenChange(false);
-		setQuantity(undefined);
-		setQuantityError(false);
-		setApiError(false);
+		resetState();
 	};
 
 	return (
