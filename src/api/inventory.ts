@@ -23,7 +23,7 @@ type InventoryItem = {
 	batches: {
 		id: number;
 		batchNum: string;
-		expiry: string; // TODO: Make compatible with Date
+		expiry: string;
 		quantity: number;
 	}[];
 };
@@ -164,6 +164,42 @@ const inventory = new Hono()
 			return c.json({
 				success: true,
 				message: "Quantity dispensed successfully",
+			});
+		},
+	)
+	.post(
+		"batch",
+		zValidator(
+			"json",
+			z.object({
+				medicineId: z.number().int().positive(),
+				batchNum: z.string().min(1),
+				expiry: z.iso.date(),
+				quantity: z.number().int().positive(),
+			}),
+		),
+		async (c) => {
+			const { medicineId, batchNum, expiry, quantity } = c.req.valid("json");
+
+			const [duplicateBatch] = await db
+				.select()
+				.from(batchesTable)
+				.where(eq(batchesTable.batchNum, batchNum));
+
+			if (duplicateBatch) {
+				return c.json({ success: false, error: "Duplicate batch" }, 400);
+			}
+
+			await db.insert(batchesTable).values({
+				medicineId,
+				batchNum,
+				expiry,
+				quantity,
+			});
+
+			return c.json({
+				success: true,
+				message: "Batch added successfully",
 			});
 		},
 	);

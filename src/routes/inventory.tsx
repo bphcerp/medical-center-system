@@ -1,7 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import React, { useState } from "react";
-import { AddQuantityModal } from "@/components/inventory-add-modal";
+import { AddBatchModal } from "@/components/inventory-add-batch-modal";
+import { AddQuantityModal } from "@/components/inventory-add-quantity-modal";
 import { DispenseModal } from "@/components/inventory-dispense-modal";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,17 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { client } from "./api/$";
+
+// Maybe make this standard?
+export type Medicine = {
+	id: number;
+	drug: string;
+	company: string;
+	brand: string;
+	strength: string;
+	type: string;
+	price: number;
+};
 
 export const Route = createFileRoute("/inventory")({
 	loader: async () => {
@@ -79,6 +91,16 @@ function InventoryPage() {
 		setIsOpenDispense(true);
 	};
 
+	const [isOpenAddBatch, setIsOpenAddBatch] = useState<boolean>(false);
+	const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(
+		null,
+	);
+
+	const openAddBatch = (selectedMedicine: Medicine) => {
+		setSelectedMedicine(selectedMedicine);
+		setIsOpenAddBatch(true);
+	};
+
 	return (
 		<>
 			<TopBar title="Inventory Dashboard" />
@@ -133,7 +155,12 @@ function InventoryPage() {
 										</TableCell>
 										<TableCell>{item.quantity}</TableCell>
 										<TableCell className="flex space-x-2">
-											<Button className="flex-1 w-full">Add Batch</Button>
+											<Button
+												className="flex-1 w-full"
+												onClick={() => openAddBatch(item.medicine)}
+											>
+												Add Batch
+											</Button>
 										</TableCell>
 									</TableRow>
 
@@ -183,6 +210,11 @@ function InventoryPage() {
 					</Table>
 				</CardContent>
 			</Card>
+			<AddBatchModal
+				open={isOpenAddBatch}
+				onOpenChange={setIsOpenAddBatch}
+				medicine={selectedMedicine}
+			/>
 			<AddQuantityModal
 				open={isOpenAddQuantity}
 				onOpenChange={setIsOpenAddQuantity}
