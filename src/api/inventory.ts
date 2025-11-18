@@ -174,6 +174,39 @@ const inventory = new Hono()
 
 		return c.json({ inventory: lowStockItems });
 	})
+	.get("/near_expiry", async (c) => {
+		const now = new Date();
+		const threshold = new Date();
+		threshold.setDate(now.getDate() + 30);
+
+		const rows = await db
+			.select({
+				batchId: batchesTable.id,
+				batchNum: batchesTable.batchNum,
+				expiry: batchesTable.expiry,
+				quantity: batchesTable.quantity,
+				medicineId: medicinesTable.id,
+				drug: medicinesTable.drug,
+				company: medicinesTable.company,
+				brand: medicinesTable.brand,
+				strength: medicinesTable.strength,
+				type: medicinesTable.type,
+				price: medicinesTable.price,
+			})
+			.from(batchesTable)
+			.leftJoin(
+				medicinesTable,
+				eq(medicinesTable.id, batchesTable.medicineId),
+			);
+
+		const nearExpiryItems = rows.filter((r) => {
+			if (r.medicineId === null) return false;
+			const expiryDate = new Date(r.expiry);
+			return expiryDate <= threshold;
+		});
+
+		return c.json({ inventory: nearExpiryItems });
+	})
 	.post(
 		"addQuantity",
 		zValidator(

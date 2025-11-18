@@ -52,6 +52,15 @@ export async function getLowStock() {
   return inventory;
 }
 
+export async function getNearExpiry() {
+  const res = await client.api.inventory.near_expiry.$get();
+  if (res.status !== 200) {
+    throw new Error("Failed to fetch near expiry inventory!");
+  }
+  const { inventory } = await res.json();
+  return inventory;
+}
+
 function InventoryPage() {
   const { inventory } = Route.useLoaderData();
 
@@ -63,6 +72,9 @@ function InventoryPage() {
   const [filteredInventory, setFilteredInventory] = useState<InventoryItem[] | null>(null);
   const [isLowStockLoading, setIsLowStockLoading] = useState(false);
   const [lowStockError, setLowStockError] = useState<string | null>(null);
+  const [nearExpiryInventory, setNearExpiryInventory] = useState<any[] | null>(null);
+  const [isNearExpiryLoading, setIsNearExpiryLoading] = useState(false);
+  const [nearExpiryError, setNearExpiryError] = useState<string | null>(null);
 
   const toggleRow = (id: number) => {
     const newSet = new Set(expandedRows);
@@ -96,11 +108,13 @@ function InventoryPage() {
     if (filteredInventory) {
       setFilteredInventory(null);
       setLowStockError(null);
+      setNearExpiryInventory(null);
       return;
     }
 
     setIsLowStockLoading(true);
     setLowStockError(null);
+    setNearExpiryInventory(null);
 
     try {
       const inventoryArray = await getLowStock();
@@ -114,7 +128,30 @@ function InventoryPage() {
     }
   };
 
-  const displayedInventory = filteredInventory ?? inventory;
+  const handleNearExpiryClick = async () => {
+    if (nearExpiryInventory) {
+      setNearExpiryInventory(null);
+      setNearExpiryError(null);
+      return;
+    }
+
+    setIsNearExpiryLoading(true);
+    setNearExpiryError(null);
+    setFilteredInventory(null);
+
+    try {
+      const inventoryArray = await getNearExpiry();
+      setNearExpiryInventory(inventoryArray);
+    } catch (err: any) {
+      console.error("Near expiry fetch failed. ", err);
+      setNearExpiryError(err?.message ?? "Failed to fetch near expiry items.");
+      setNearExpiryInventory(null);
+    } finally {
+      setIsNearExpiryLoading(false);
+    }
+  };
+
+  const displayedInventory = filteredInventory ?? nearExpiryInventory ?? inventory;
 
   return (
     <>
@@ -132,7 +169,15 @@ function InventoryPage() {
             {isLowStockLoading ? "Loading…" : filteredInventory ? "Showing Low Stock (Clear)" : "Low Stock"}
           </Button>
 
-          <Button className="mr-2">Near Expiry</Button>
+          <Button
+            className="mr-2"
+            onClick={handleNearExpiryClick}
+            disabled={isNearExpiryLoading}
+            aria-pressed={!!nearExpiryInventory}
+            aria-busy={isNearExpiryLoading}
+          >
+            {isNearExpiryLoading ? "Loading…" : nearExpiryInventory ? "Showing Near Expiry (Clear)" : "Near Expiry"}
+          </Button>
 
           <Input
             type="text"
@@ -144,9 +189,9 @@ function InventoryPage() {
         </div>
       </div>
 
-      {lowStockError && (
+      {(lowStockError || nearExpiryError) && (
         <div className="mx-6 mb-2 text-sm text-red-600" role="alert">
-          {lowStockError}
+          {lowStockError || nearExpiryError}
         </div>
       )}
 
@@ -155,71 +200,93 @@ function InventoryPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Medicine</TableHead>
-                <TableHead>Total Quantity</TableHead>
-                <TableHead>Quick Actions</TableHead>
+                {nearExpiryInventory ? (
+                  <>
+                    <TableHead>Batch Number</TableHead>
+                    <TableHead>Medicine Name</TableHead>
+                    <TableHead>Quantity</TableHead>
+                    <TableHead>Expiry Date</TableHead>
+                  </>
+                ) : (
+                  <>
+                    <TableHead>Medicine</TableHead>
+                    <TableHead>Total Quantity</TableHead>
+                    <TableHead>Quick Actions</TableHead>
+                  </>
+                )}
               </TableRow>
             </TableHeader>
 
             <TableBody>
-              {displayedInventory.map((item) => (
-                <React.Fragment key={item.id}>
-                  <TableRow>
-                    <TableCell onClick={() => toggleRow(item.id)} className="cursor-pointer">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold">
-                          {item.medicine.company} {item.medicine.brand}
-                        </span>
-                        <span className="mx-1 text-muted-foreground text-right">
-                          ({item.medicine.drug}) - {item.medicine.strength} - {item.medicine.type}
-                        </span>
-                        {expandedRows.has(item.id) ? (
-                          <ChevronDown className="w-5 h-5" />
-                        ) : (
-                          <ChevronRight className="w-5 h-5" />
-                        )}
-                      </div>
-                    </TableCell>
-
+              {nearExpiryInventory ? (
+                nearExpiryInventory.map((item: any) => (
+                  <TableRow key={item.batchId}>
+                    <TableCell>{item.batchNum}</TableCell>
+                    <TableCell>{item.drug}</TableCell>
                     <TableCell>{item.quantity}</TableCell>
-
-                    <TableCell className="flex space-x-2">
-                      <Button className="flex-1 w-full">Add Batch</Button>
-                    </TableCell>
+                    <TableCell>{item.expiry}</TableCell>
                   </TableRow>
+                ))
+              ) : (
+                displayedInventory.map((item) => (
+                  <React.Fragment key={item.id}>
+                    <TableRow>
+                      <TableCell onClick={() => toggleRow(item.id)} className="cursor-pointer">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold">
+                            {item.medicine.company} {item.medicine.brand}
+                          </span>
+                          <span className="mx-1 text-muted-foreground text-right">
+                            ({item.medicine.drug}) - {item.medicine.strength} - {item.medicine.type}
+                          </span>
+                          {expandedRows.has(item.id) ? (
+                            <ChevronDown className="w-5 h-5" />
+                          ) : (
+                            <ChevronRight className="w-5 h-5" />
+                          )}
+                        </div>
+                      </TableCell>
 
-                  {expandedRows.has(item.id) && (
-                    <>
-                      <TableRow className="bg-gray-100">
-                        <TableCell className="font-semibold">Batch ID</TableCell>
-                        <TableCell className="font-semibold">Quantity</TableCell>
-                        <TableCell className="font-semibold">Quick Actions</TableCell>
-                      </TableRow>
+                      <TableCell>{item.quantity}</TableCell>
 
-                      {(item.batches ?? []).map((batch) => (
-                        <TableRow key={batch.id}>
-                          <TableCell>{batch.batchNum}</TableCell>
-                          <TableCell>{batch.quantity}</TableCell>
-                          <TableCell className="flex space-x-2">
-                            <Button
-                              className="flex-1 w-full"
-                              onClick={() => openDispense(batch.id, batch.batchNum)}
-                            >
-                              Dispense
-                            </Button>
-                            <Button
-                              className="flex-1 w-full"
-                              onClick={() => openAddQuantity(batch.id, batch.batchNum)}
-                            >
-                              Add Quantity
-                            </Button>
-                          </TableCell>
+                      <TableCell className="flex space-x-2">
+                        <Button className="flex-1 w-full">Add Batch</Button>
+                      </TableCell>
+                    </TableRow>
+
+                    {expandedRows.has(item.id) && (
+                      <>
+                        <TableRow className="bg-gray-100">
+                          <TableCell className="font-semibold">Batch ID</TableCell>
+                          <TableCell className="font-semibold">Quantity</TableCell>
+                          <TableCell className="font-semibold">Quick Actions</TableCell>
                         </TableRow>
-                      ))}
-                    </>
-                  )}
-                </React.Fragment>
-              ))}
+
+                        {(item.batches ?? []).map((batch: any) => (
+                          <TableRow key={batch.id}>
+                            <TableCell>{batch.batchNum}</TableCell>
+                            <TableCell>{batch.quantity}</TableCell>
+                            <TableCell className="flex space-x-2">
+                              <Button
+                                className="flex-1 w-full"
+                                onClick={() => openDispense(batch.id, batch.batchNum)}
+                              >
+                                Dispense
+                              </Button>
+                              <Button
+                                className="flex-1 w-full"
+                                onClick={() => openAddQuantity(batch.id, batch.batchNum)}
+                              >
+                                Add Quantity
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </>
+                    )}
+                  </React.Fragment>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
