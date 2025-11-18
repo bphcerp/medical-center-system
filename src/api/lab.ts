@@ -32,13 +32,15 @@ const lab = new Hono()
 	.get("/pending", async (c) => {
 		const pendingReports = await db
 			.select({
-				labTestReportId: caseLabReportsTable.id,
 				caseId: caseLabReportsTable.caseId,
 				testId: caseLabReportsTable.testId,
 				status: caseLabReportsTable.status,
-				testName: labTestsMasterTable.name,
+				updatedAt: caseLabReportsTable.updatedAt,
+				labTestReportId: caseLabReportsTable.id,
+				token: casesTable.token,
 				patientId: casesTable.patient,
 				associatedUsers: casesTable.associatedUsers,
+				testName: labTestsMasterTable.name,
 			})
 			.from(caseLabReportsTable)
 			.innerJoin(
@@ -85,6 +87,7 @@ const lab = new Hono()
 		const reports = pendingReports.map((report) => ({
 			labTestReportId: report.labTestReportId,
 			caseId: report.caseId,
+			token: report.token,
 			testName: report.testName,
 			status: report.status,
 			patientName: patientMap.get(report.patientId) ?? "Unknown Patient",
