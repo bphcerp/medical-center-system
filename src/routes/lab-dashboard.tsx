@@ -1,10 +1,5 @@
-import {
-	createFileRoute,
-	Link,
-	redirect,
-	useRouter,
-} from "@tanstack/react-router";
-import { Beaker } from "lucide-react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { Beaker, RefreshCw } from "lucide-react";
 import { z } from "zod";
 import TopBar from "@/components/topbar";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +12,25 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { handleUnauthorized } from "@/lib/utils";
 import { client } from "./api/$";
+
+export const Route = createFileRoute("/lab-dashboard")({
+	loader: async () => {
+		const res = await client.api.lab.pending.$get();
+		handleUnauthorized(res.status);
+
+		const json = await res.json();
+		const data = pendingRequestsSchema.parse(json);
+		return data;
+	},
+	component: LabDashboard,
+	staticData: {
+		requiredPermissions: ["lab"],
+		icon: Beaker,
+		name: "Lab Dashboard",
+	},
+});
 
 const labTestReportSchema = z.object({
 	labTestReportId: z.number(),
@@ -36,28 +49,6 @@ const labTestReportSchema = z.object({
 const pendingRequestsSchema = z.object({
 	success: z.boolean(),
 	reports: z.array(labTestReportSchema),
-});
-
-export const Route = createFileRoute("/lab-dashboard")({
-	loader: async () => {
-		const res = await client.api.lab.pending.$get();
-		switch (res.status) {
-			case 401:
-				throw redirect({ to: "/login" });
-			case 403:
-				alert("You don't have permission to access Lab Dashboard.");
-				throw redirect({ to: "/" });
-		}
-		const json = await res.json();
-		const data = pendingRequestsSchema.parse(json);
-		return data;
-	},
-	component: LabDashboard,
-	staticData: {
-		requiredPermissions: ["lab"],
-		icon: Beaker,
-		name: "Lab Dashboard",
-	},
 });
 
 function LabDashboard() {
@@ -108,10 +99,11 @@ function LabDashboard() {
 
 	return (
 		<>
-			<TopBar title="LabDashboard" />
+			<TopBar title="Lab Dashboard" />
 			<div className="container mx-auto p-6">
 				<div className="flex justify-end mb-4">
-					<Button onClick={handleRefresh} variant="outline">
+					<Button onClick={handleRefresh} variant="outline" className="group">
+						<RefreshCw />
 						Refresh
 					</Button>
 				</div>
