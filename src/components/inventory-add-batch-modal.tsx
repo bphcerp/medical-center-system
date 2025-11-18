@@ -79,6 +79,7 @@ export function AddBatchModal({
 
 	const handleCancel = () => {
 		resetState();
+		onOpenChange(false);
 	};
 
 	if (!medicine) return null;
