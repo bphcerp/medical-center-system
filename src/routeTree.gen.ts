@@ -16,7 +16,6 @@ import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as DoctorRouteImport } from './routes/doctor'
 import { Route as LabRouteRouteImport } from './routes/lab/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as LabIndexRouteImport } from './routes/lab/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as LabCaseIdRouteImport } from './routes/lab/$caseId'
 import { Route as ConsultationIdRouteImport } from './routes/consultation.$id'
@@ -58,11 +57,6 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const LabIndexRoute = LabIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => LabRouteRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
@@ -109,10 +103,10 @@ export interface FileRoutesByFullPath {
   '/consultation/$id': typeof ConsultationIdRoute
   '/lab/$caseId': typeof LabCaseIdRoute
   '/admin': typeof AdminIndexRoute
-  '/lab/': typeof LabIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/lab': typeof LabRouteRouteWithChildren
   '/doctor': typeof DoctorRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
@@ -124,7 +118,6 @@ export interface FileRoutesByTo {
   '/consultation/$id': typeof ConsultationIdRoute
   '/lab/$caseId': typeof LabCaseIdRoute
   '/admin': typeof AdminIndexRoute
-  '/lab': typeof LabIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -141,7 +134,6 @@ export interface FileRoutesById {
   '/consultation/$id': typeof ConsultationIdRoute
   '/lab/$caseId': typeof LabCaseIdRoute
   '/admin/': typeof AdminIndexRoute
-  '/lab/': typeof LabIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -159,10 +151,10 @@ export interface FileRouteTypes {
     | '/consultation/$id'
     | '/lab/$caseId'
     | '/admin'
-    | '/lab/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/lab'
     | '/doctor'
     | '/inventory'
     | '/login'
@@ -174,7 +166,6 @@ export interface FileRouteTypes {
     | '/consultation/$id'
     | '/lab/$caseId'
     | '/admin'
-    | '/lab'
   id:
     | '__root__'
     | '/'
@@ -190,7 +181,6 @@ export interface FileRouteTypes {
     | '/consultation/$id'
     | '/lab/$caseId'
     | '/admin/'
-    | '/lab/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -259,13 +249,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lab/': {
-      id: '/lab/'
-      path: '/'
-      fullPath: '/lab/'
-      preLoaderRoute: typeof LabIndexRouteImport
-      parentRoute: typeof LabRouteRoute
-    }
     '/admin/': {
       id: '/admin/'
       path: '/admin'
@@ -313,12 +296,10 @@ declare module '@tanstack/react-router' {
 
 interface LabRouteRouteChildren {
   LabCaseIdRoute: typeof LabCaseIdRoute
-  LabIndexRoute: typeof LabIndexRoute
 }
 
 const LabRouteRouteChildren: LabRouteRouteChildren = {
   LabCaseIdRoute: LabCaseIdRoute,
-  LabIndexRoute: LabIndexRoute,
 }
 
 const LabRouteRouteWithChildren = LabRouteRoute._addFileChildren(

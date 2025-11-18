@@ -3,7 +3,6 @@ import {
 	Link,
 	Outlet,
 	useParams,
-	useRouter,
 } from "@tanstack/react-router";
 import { Beaker } from "lucide-react";
 import TopBar from "@/components/topbar";
@@ -27,27 +26,10 @@ export const Route = createFileRoute("/lab")({
 	},
 });
 
+type TestStatus = (typeof Route.types.loaderData.reports)[number]["status"];
+
 function LabDashboard() {
-	const router = useRouter();
 	const { reports } = Route.useLoaderData();
-
-	const handleRefresh = () => {
-		void router.invalidate();
-	};
-
-	const getStatusColor = (
-		status: (typeof Route.types.loaderData.reports)[number]["status"],
-	) => {
-		switch (status) {
-			case "Requested":
-				return "bg-yellow-100 text-yellow-800";
-			case "Sample Collected":
-				return "bg-blue-100 text-blue-800";
-			default:
-				return "bg-gray-100 text-gray-800";
-		}
-	};
-
 	// group reports by case
 	const caseGroups = reports.reduce(
 		(acc, report) => {
@@ -85,7 +67,12 @@ function LabDashboard() {
 		<div className="h-screen flex flex-col">
 			<TopBar title="Lab Dashboard" />
 			<div className="flex items-stretch divide-x divide-border grow min-h-0">
-				<div className="flex flex-col flex-2 p-4 gap-4 overflow-y-scroll bottom-0 min-h-0 z-10">
+				<div
+					className={cn(
+						"flex flex-col flex-2 p-4 gap-4 overflow-y-scroll bottom-0 min-h-0",
+						caseId && "hidden lg:flex",
+					)}
+				>
 					{Object.values(caseGroups).map((group) => (
 						<Link
 							to="/lab/$caseId"
@@ -96,7 +83,7 @@ function LabDashboard() {
 								variant="ghost"
 								key={group.caseId}
 								className={cn(
-									"flex gap-3 p-0 rounded-lg border-2 items-stretch overflow-clip bg-card h-auto w-full",
+									"flex gap-3 p-0 rounded-lg border-2 items-stretch overflow-clip bg-card h-auto w-full group",
 									caseId === group.caseId && "border-primary",
 								)}
 							>
@@ -109,20 +96,27 @@ function LabDashboard() {
 											: "bg-accent text-accent-foreground",
 									)}
 								>
-									{group.token}
+									{group.token}{" "}
 								</span>
-								<div className="flex grow flex-col items-start text-base py-2 pr-2">
-									<span className="whitespace-normal text-left">
+								<div className="flex grow flex-col items-stretch text-base py-2 pr-2 gap-1.5 whitespace-normal text-left">
+									<span className="whitespace-normal text-lg font-semibold">
 										{group.patientName}
 									</span>
-									<span className="text-muted-foreground font-medium text-left text-sm">
-										Requested by {group.doctorName}
-									</span>
-									<div className="flex flex-col">
+									<div className="text-muted-foreground text-left text-xs italic">
+										<span className="text-base/1 font-semibold not-italic mr-1.5">
+											{group.doctorName}
+										</span>
+										requested these tests:
+									</div>
+									<div className="flex flex-col gap-1 pl-2">
 										{group.tests.map((test) => (
-											<div className="flex gap-2" key={test.labTestReportId}>
-												<span>{test.testName}</span>{" "}
-												<Badge>{test.status}</Badge>
+											<div
+												className="flex gap-2 items-center text-sm/1 font-normal"
+												key={test.labTestReportId}
+											>
+												{test.testName}
+												<span className="h-0 border-t-3 grow border-dotted transition-colors" />
+												<LabBadge status={test.status} />
 											</div>
 										))}
 									</div>
@@ -131,10 +125,32 @@ function LabDashboard() {
 						</Link>
 					))}
 				</div>
-				<div className="flex-5">
+				<div className={cn("flex-5", !caseId && "hidden lg:block")}>
 					<Outlet />
 				</div>
 			</div>
 		</div>
+	);
+}
+
+function getStatusColor(status: TestStatus) {
+	switch (status) {
+		case "Requested":
+			return "border-bits-red text-bits-red";
+		case "Sample Collected":
+			return "border-bits-blue text-bits-blue";
+		case "Complete":
+			return "border-bits-green text-bits-green";
+	}
+}
+
+function LabBadge({ status }: { status: TestStatus }) {
+	return (
+		<Badge
+			variant="outline"
+			className={cn("text-xs rounded-sm border", getStatusColor(status))}
+		>
+			{status}
+		</Badge>
 	);
 }

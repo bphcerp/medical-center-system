@@ -498,7 +498,8 @@ function PatientTypeBadge({
 	}
 	return (
 		<Badge
-			className={cn("border bg-transparent rounded-sm", color, className)}
+			variant="outline"
+			className={cn("border rounded-sm", color, className)}
 			{...props}
 		>
 			{children ?? type}

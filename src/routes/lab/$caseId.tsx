@@ -1,31 +1,13 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { statusEnums } from "@/db/lab";
+import type { statusEnums } from "@/db/lab";
 import { client } from "../api/$";
-
-const testSchema = z.object({
-	labTestReportId: z.number(),
-	testId: z.number(),
-	testName: z.string(),
-	status: z.enum(statusEnums),
-	metadata: z.any().nullable(),
-	fileId: z.number().nullable(),
-});
-
-const caseDetailsSchema = z.object({
-	success: z.boolean(),
-	caseId: z.number(),
-	patientName: z.string(),
-	doctorName: z.string(),
-	tests: z.array(testSchema),
-});
 
 type TestUpdate = {
 	labTestReportId: number;
@@ -34,9 +16,9 @@ type TestUpdate = {
 };
 
 export const Route = createFileRoute("/lab/$caseId")({
-	loader: async ({ params }: { params: { caseId: string } }) => {
+	loader: async ({ params: { caseId } }) => {
 		const res = await client.api.lab.details[":caseId"].$get({
-			param: { caseId: params.caseId },
+			param: { caseId },
 		});
 
 		if (res.status === 404) {
@@ -49,17 +31,19 @@ export const Route = createFileRoute("/lab/$caseId")({
 			throw new Error("Failed to fetch case details");
 		}
 
-		const json = await res.json();
-		const data = caseDetailsSchema.parse(json);
-		return data;
+		return await res.json();
 	},
 	component: TestEntry,
 });
 
 function TestEntry() {
 	const navigate = useNavigate();
-	const caseData = Route.useLoaderData();
-	const { caseId, patientName, doctorName, tests: initialTests } = caseData;
+	const {
+		caseId,
+		patientName,
+		doctorName,
+		tests: initialTests,
+	} = Route.useLoaderData();
 
 	const [tests, setTests] = useState(initialTests);
 	const [uploading, setUploading] = useState<Record<number, boolean>>({});
