@@ -206,31 +206,28 @@ function TestEntry() {
 				<CardContent>
 					<div className="space-y-6">
 						{tests.map((test) => (
-							<div key={test.labTestReportId} className="border rounded-lg p-4">
-								<div className="flex items-start justify-between mb-3">
-									<div className="flex items-center gap-3">
-										<Checkbox
-											id={`test-${test.labTestReportId}`}
-											checked={test.status !== "Requested"}
-											onCheckedChange={(checked) =>
-												handleCheckboxChange(
-													test.labTestReportId,
-													checked as boolean,
-												)
-											}
-										/>
-										<Label
-											htmlFor={`test-${test.labTestReportId}`}
-											className="text-lg font-medium cursor-pointer"
-										>
-											{test.testName}
-										</Label>
-									</div>
+							<div
+								key={test.labTestReportId}
+								className="flex flex-col gap-4 border rounded-lg overflow-clip"
+							>
+								<Label className="flex items-center gap-2 text-lg font-medium cursor-pointer w-full p-4 has-aria-checked:bg-accent hover:bg-accent transition-colors">
+									<Checkbox
+										id={`test-${test.labTestReportId}`}
+										className="size-6"
+										checked={test.status !== "Requested"}
+										onCheckedChange={(checked) =>
+											handleCheckboxChange(
+												test.labTestReportId,
+												checked as boolean,
+											)
+										}
+									/>
+									{test.testName}
 									<LabTestStatusBadge status={test.status} />
-								</div>
+								</Label>
 
 								{test.status !== "Requested" && (
-									<div className="ml-8 space-y-2">
+									<div className="space-y-2 p-4 pt-0">
 										<Label>Upload Report</Label>
 										<div className="flex gap-2">
 											<Input
