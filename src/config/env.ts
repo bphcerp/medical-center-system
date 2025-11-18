@@ -20,6 +20,8 @@ const serverSchema = z.object({
 	FRONTEND_PORT: z.coerce.number().default(3000),
 	JWT_SECRET: z.string().min(1),
 	SEAWEEDFS_MASTER: z.url().min(1),
+	EMAIL_USER: z.string().min(1),
+	EMAIL_PASS: z.string().min(1),
 });
 
 const parsed = serverSchema.parse(process.env);
