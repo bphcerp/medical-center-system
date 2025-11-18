@@ -1,6 +1,6 @@
 import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DiagnosisCard, { type DiagnosisItem } from "@/components/diagnosis-card";
 import FinalizeCaseCard, {
 	type FinalizeButtonValue,
@@ -17,6 +17,7 @@ import VitalField from "@/components/vital-field";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/consultation/$id")({
+	gcTime: 0,
 	loader: async ({ params }: { params: { id: string } }) => {
 		// Check if user is authenticated
 		const res = await client.api.user.$get();
@@ -41,7 +42,11 @@ export const Route = createFileRoute("/consultation/$id")({
 			throw new Error("Failed to fetch consultation details");
 		}
 
-		const { caseDetail } = await consultationRes.json();
+		const {
+			caseDetail,
+			prescriptions,
+			diseases: diagnosesFromCase,
+		} = await consultationRes.json();
 
 		const medicinesRes = await client.api.doctor.medicines.$get();
 
@@ -68,24 +73,131 @@ export const Route = createFileRoute("/consultation/$id")({
 
 		const { tests } = await testsRes.json();
 
-		return { user, caseDetail, medicines, diseases, tests };
+		return {
+			user,
+			caseDetail,
+			medicines,
+			diseases,
+			tests,
+			prescriptions,
+			diagnosesFromCase,
+		};
 	},
 	component: ConsultationPage,
 });
 
 function ConsultationPage() {
-	const { caseDetail, medicines, diseases, tests } = Route.useLoaderData();
+	const {
+		caseDetail,
+		medicines,
+		diseases,
+		tests,
+		prescriptions,
+		diagnosesFromCase,
+	} = Route.useLoaderData();
 	const navigate = useNavigate();
 	const { id } = Route.useParams();
 
 	const [finalizeButtonValue, setFinalizeButtonValue] =
 		useState<FinalizeButtonValue>("Finalize (OPD)");
-	const [diagnosisItems, setDiagnosisItems] = useState<DiagnosisItem[]>([]);
-	const [consultationNotes, setConsultationNotes] = useState<string>("");
+	const [diagnosisItems, setDiagnosisItems] = useState<DiagnosisItem[]>(
+		diagnosesFromCase || [],
+	);
+	const [consultationNotes, setConsultationNotes] = useState<string>(
+		caseDetail?.consultationNotes || "",
+	);
 	const [prescriptionItems, setPrescriptionItems] = useState<
 		PrescriptionItem[]
-	>([]);
+	>(
+		prescriptions?.map((p) => {
+			const categoryData =
+				typeof p.categoryData === "string"
+					? JSON.parse(p.categoryData)
+					: p.categoryData;
+			return {
+				id: p.medicineId,
+				drug: p.drug,
+				company: p.company,
+				brand: p.brand,
+				strength: p.strength,
+				type: p.type,
+				category: p.category,
+				dosage: p.dosage?.replace(/\s*tablets?$/, "") || "",
+				frequency: p.frequency || "",
+				duration: p.duration?.match(/^\d+/)?.[0] || "",
+				durationUnit: p.duration?.match(/\s+(\w+)$/)?.[1] || "days",
+				comments: p.comments || "",
+				mealTiming: categoryData?.mealTiming,
+				applicationArea: categoryData?.applicationArea,
+				injectionRoute: categoryData?.injectionRoute,
+				liquidTiming: categoryData?.liquidTiming,
+			};
+		}) || [],
+	);
 	const [labTestModalOpen, setLabTestModalOpen] = useState<boolean>(false);
+
+	async function autosave() {
+		try {
+			await client.api.doctor.autosave.$post({
+				json: {
+					caseId: Number(id),
+					consultationNotes: consultationNotes,
+					diagnosis: diagnosisItems.map((d) => d.id),
+					prescriptions: prescriptionItems.map((item) => ({
+						medicineId: item.id,
+						dosage:
+							item.category === "Capsule/Tablet" && item.dosage
+								? `${item.dosage} tablet${item.dosage === "1" ? "" : "s"}`
+								: item.dosage,
+						frequency: item.frequency,
+						duration:
+							(item.category === "Capsule/Tablet" ||
+								item.category === "External Application" ||
+								item.category === "Injection" ||
+								item.category === "Liquids/Syrups") &&
+							item.duration &&
+							item.durationUnit
+								? `${item.duration} ${item.durationUnit}`
+								: item.duration,
+						comment: item.comments,
+						categoryData:
+							item.category === "Capsule/Tablet" && item.mealTiming
+								? { mealTiming: item.mealTiming }
+								: item.category === "External Application" && item.applicationArea
+									? { applicationArea: item.applicationArea }
+									: item.category === "Injection" && item.injectionRoute
+										? { injectionRoute: item.injectionRoute }
+										: item.category === "Liquids/Syrups" && item.liquidTiming
+											? { liquidTiming: item.liquidTiming }
+											: undefined,
+					})),
+				},
+			});
+		} catch (error) {
+			console.error("Autosave failed:", error);
+			throw error;
+		}
+	}
+
+	useEffect(() => {
+		if (caseDetail?.finalizedState) {
+			return;
+		}
+
+		const intervalId = setInterval(() => {
+			autosave().catch(() => {
+				//errors is caught in the autosave function itself
+			});
+		}, 10000); //10 seconds
+
+		return () => clearInterval(intervalId);
+	}, [
+		consultationNotes,
+		diagnosisItems,
+		prescriptionItems,
+		caseDetail?.finalizedState,
+	]);
+
 	if (!caseDetail) {
 		return (
 			<div className="container mx-auto p-6">
@@ -114,48 +226,28 @@ function ConsultationPage() {
 				);
 				return;
 		}
-		const caseRes = await client.api.doctor.finalizeCase.$post({
+
+		// autosave endpoint -> finalize the case
+		try {
+			await autosave();
+		} catch (error) {
+			alert("Failed to save case data");
+			return;
+		}
+
+		const finalizeRes = await client.api.doctor.finalizeCase.$post({
 			json: {
 				caseId: Number(id),
 				finalizedState: finalizedState,
-				consultationNotes: consultationNotes,
-				diagnosis: diagnosisItems.map((d) => d.id),
-				prescriptions: prescriptionItems.map((item) => ({
-					medicineId: item.id,
-					dosage:
-						item.category === "Capsule/Tablet" && item.dosage
-							? `${item.dosage} tablet${item.dosage === "1" ? "" : "s"}`
-							: item.dosage,
-					frequency: item.frequency,
-					duration:
-						(item.category === "Capsule/Tablet" ||
-							item.category === "External Application" ||
-							item.category === "Injection" ||
-							item.category === "Liquids/Syrups") &&
-						item.duration &&
-						item.durationUnit
-							? `${item.duration} ${item.durationUnit}`
-							: item.duration,
-					comment: item.comments,
-					categoryData:
-						item.category === "Capsule/Tablet" && item.mealTiming
-							? { mealTiming: item.mealTiming }
-							: item.category === "External Application" && item.applicationArea
-								? { applicationArea: item.applicationArea }
-								: item.category === "Injection" && item.injectionRoute
-									? { injectionRoute: item.injectionRoute }
-									: item.category === "Liquids/Syrups" && item.liquidTiming
-										? { liquidTiming: item.liquidTiming }
-										: undefined,
-				})),
 			},
 		});
 
-		if (caseRes.status !== 200) {
-			const error = await caseRes.json();
-			alert("error" in error ? error.error : "Failed to save case data");
+		if (finalizeRes.status !== 200) {
+			const error = await finalizeRes.json();
+			alert("error" in error ? error.error : "Failed to finalize case");
 			return;
 		}
+
 		navigate({
 			to: "/doctor",
 		});

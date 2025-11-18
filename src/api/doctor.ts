@@ -119,6 +119,10 @@ const doctor = new Hono()
 				bloodPressureDiastolic: casesTable.bloodPressureDiastolic,
 				bloodSugar: casesTable.bloodSugar,
 				spo2: casesTable.spo2,
+				consultationNotes: casesTable.consultationNotes,
+				diagnosis: casesTable.diagnosis,
+				createdAt: casesTable.createdAt,
+				updatedAt: casesTable.updatedAt,
 			})
 			.from(casesTable)
 			.innerJoin(patientsTable, eq(casesTable.patient, patientsTable.id))
@@ -147,7 +151,44 @@ const doctor = new Hono()
 			return c.json({ error: "Case not found" }, 404);
 		}
 
-		return c.json({ caseDetail });
+		// Fetch prescriptions
+		const prescriptions = await db
+			.select({
+				id: casePrescriptionsTable.id,
+				medicineId: medicinesTable.id,
+				drug: medicinesTable.drug,
+				company: medicinesTable.company,
+				brand: medicinesTable.brand,
+				strength: medicinesTable.strength,
+				type: medicinesTable.type,
+				category: medicinesTable.category,
+				dosage: casePrescriptionsTable.dosage,
+				frequency: casePrescriptionsTable.frequency,
+				duration: casePrescriptionsTable.duration,
+				categoryData: casePrescriptionsTable.categoryData,
+				comments: casePrescriptionsTable.comment,
+			})
+			.from(casePrescriptionsTable)
+			.innerJoin(
+				medicinesTable,
+				eq(casePrescriptionsTable.medicineId, medicinesTable.id),
+			)
+			.where(eq(casePrescriptionsTable.caseId, caseId));
+
+		// Fetch diseases if diagnosis exists
+		let diseases: Array<{ id: number; name: string; icd: string }> = [];
+		if (caseDetail.diagnosis && caseDetail.diagnosis.length > 0) {
+			diseases = await db
+				.select({
+					id: diseasesTable.id,
+					name: diseasesTable.name,
+					icd: diseasesTable.icd,
+				})
+				.from(diseasesTable)
+				.where(inArray(diseasesTable.id, caseDetail.diagnosis));
+		}
+
+		return c.json({ caseDetail, prescriptions, diseases });
 	})
 	.get("/medicines", async (c) => {
 		const medicines = await db.select().from(medicinesTable);
@@ -168,44 +209,39 @@ const doctor = new Hono()
 		return c.json({ diseases });
 	})
 	.post(
-		"finalizeCase",
+		"/autosave",
 		zValidator(
 			"json",
 			z.object({
 				caseId: z.number().int(),
-				finalizedState: z.enum(["opd", "admitted", "referred"]),
 				consultationNotes: z.string().optional(),
 				diagnosis: z.array(z.number().int()).optional(),
-				prescriptions: z.array(
-					z.object({
-						medicineId: z.number().int(),
-						dosage: z.string(),
-						frequency: z.string(),
-						duration: z.string(),
-						comment: z.string().optional(),
-						categoryData: z.record(z.string(), z.any()).optional(),
-					}),
-				),
+				prescriptions: z
+					.array(
+						z.object({
+							medicineId: z.number().int(),
+							dosage: z.string(),
+							frequency: z.string(),
+							duration: z.string(),
+							comment: z.string().optional(),
+							categoryData: z.record(z.string(), z.any()).optional(),
+						}),
+					)
+					.optional(),
 			}),
 		),
 		async (c) => {
 			const payload = c.get("jwtPayload") as JWTPayload;
 			const userId = payload.id;
-			const {
-				caseId,
-				finalizedState,
-				consultationNotes,
-				prescriptions,
-				diagnosis,
-			} = c.req.valid("json");
+			const { caseId, consultationNotes, prescriptions, diagnosis } =
+				c.req.valid("json");
 
 			await db.transaction(async (tx) => {
 				const updated = await tx
 					.update(casesTable)
 					.set({
-						finalizedState,
-						...(consultationNotes ? { consultationNotes } : {}),
-						...(diagnosis ? { diagnosis } : {}),
+						...(consultationNotes !== undefined ? { consultationNotes } : {}),
+						...(diagnosis !== undefined ? { diagnosis } : {}),
 					})
 					.where(
 						and(
@@ -220,25 +256,64 @@ const doctor = new Hono()
 					throw new Error("Case not found");
 				}
 
-				if (prescriptions.length === 0) {
-					return;
+				if (prescriptions && prescriptions.length > 0) {
+					await tx
+						.delete(casePrescriptionsTable)
+						.where(eq(casePrescriptionsTable.caseId, caseId));
+
+					await tx.insert(casePrescriptionsTable).values(
+						prescriptions.map((p) => ({
+							caseId,
+							medicineId: p.medicineId,
+							dosage: p.dosage,
+							frequency: p.frequency,
+							duration: p.duration,
+							comment: p.comment || null,
+							categoryData: p.categoryData || null,
+						})),
+					);
 				}
-				await tx.insert(casePrescriptionsTable).values(
-					prescriptions.map((p) => ({
-						caseId,
-						medicineId: p.medicineId,
-						dosage: p.dosage,
-						frequency: p.frequency,
-						duration: p.duration,
-						comment: p.comment || null,
-						categoryData: p.categoryData || null,
-					})),
-				);
 			});
 
 			return c.json({
 				success: true,
-				message: "Finalized state updated successfully",
+				message: "Case data saved successfully",
+			});
+		},
+	)
+	.post(
+		"/finalizeCase",
+		zValidator(
+			"json",
+			z.object({
+				caseId: z.number().int(),
+				finalizedState: z.enum(["opd", "admitted", "referred"]),
+			}),
+		),
+		async (c) => {
+			const payload = c.get("jwtPayload") as JWTPayload;
+			const userId = payload.id;
+			const { caseId, finalizedState } = c.req.valid("json");
+
+			const updated = await db
+				.update(casesTable)
+				.set({ finalizedState })
+				.where(
+					and(
+						eq(casesTable.id, caseId),
+						arrayContains(casesTable.associatedUsers, [userId]),
+						isNull(casesTable.finalizedState),
+					),
+				)
+				.returning();
+
+			if (updated.length === 0) {
+				return c.json({ error: "Case not found or already finalized" }, 404);
+			}
+
+			return c.json({
+				success: true,
+				message: "Case finalized successfully",
 			});
 		},
 	)

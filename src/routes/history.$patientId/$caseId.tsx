@@ -28,10 +28,8 @@ export const Route = createFileRoute("/history/$patientId/$caseId")({
 			});
 		}
 
-		const historyRes = await client.api.patientHistory[":patientId"][
-			":caseId"
-		].$get({
-			param: { patientId: params.patientId, caseId: params.caseId },
+		const historyRes = await client.api.doctor.consultation[":caseId"].$get({
+			param: { caseId: params.caseId },
 		});
 
 		if (historyRes.status !== 200) {
