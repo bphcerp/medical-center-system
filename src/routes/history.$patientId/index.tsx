@@ -1,4 +1,9 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	Outlet,
+	redirect,
+	useNavigate,
+} from "@tanstack/react-router";
 import TopBar from "@/components/topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -9,9 +14,9 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { client } from "./api/$";
+import { client } from "../api/$";
 
-export const Route = createFileRoute("/history/$patientId")({
+export const Route = createFileRoute("/history/$patientId/")({
 	loader: async ({ params }: { params: { patientId: string } }) => {
 		const res = await client.api.user.$get();
 		if (res.status !== 200) {
@@ -61,7 +66,8 @@ export const Route = createFileRoute("/history/$patientId")({
 });
 
 function HistoryPage() {
-	const { patient, cases } = Route.useLoaderData();
+	const { patient, cases, patientId } = Route.useLoaderData();
+	const navigate = useNavigate();
 
 	const sortedCases = [...cases].sort((a, b) => {
 		const dateA = new Date(a.updatedAt).getTime();
@@ -118,7 +124,15 @@ function HistoryPage() {
 								</TableHeader>
 								<TableBody>
 									{sortedCases.map((caseItem) => (
-										<TableRow key={caseItem.caseId}>
+										<TableRow
+											key={caseItem.caseId}
+											className="cursor-pointer hover:bg-muted/50"
+											onClick={() =>
+												navigate({
+													to: `/history/${patientId}/${caseItem.caseId}`,
+												})
+											}
+										>
 											<TableCell>{caseItem.caseId}</TableCell>
 											<TableCell>{caseItem.finalizedState || "—"}</TableCell>
 											<TableCell>{formatDate(caseItem.updatedAt)}</TableCell>
@@ -130,6 +144,7 @@ function HistoryPage() {
 					</CardContent>
 				</Card>
 			</div>
+			<Outlet />
 		</>
 	);
 }
