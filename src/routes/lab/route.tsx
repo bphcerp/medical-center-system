@@ -115,7 +115,12 @@ function LabDashboard() {
 												key={test.labTestReportId}
 											>
 												{test.testName}
-												<span className="h-0 border-t-3 grow border-dotted transition-colors" />
+												<span
+													className={cn(
+														"h-0 border-t-3 grow border-dotted transition-colors",
+														getBorderColor(test.status),
+													)}
+												/>
 												<LabBadge status={test.status} />
 											</div>
 										))}
@@ -133,7 +138,18 @@ function LabDashboard() {
 	);
 }
 
-function getStatusColor(status: TestStatus) {
+function getBorderColor(status: TestStatus) {
+	switch (status) {
+		case "Requested":
+			return "group-hover:border-bits-red";
+		case "Sample Collected":
+			return "group-hover:border-bits-blue";
+		case "Complete":
+			return "group-hover:border-bits-green";
+	}
+}
+
+function getBadgeColor(status: TestStatus) {
 	switch (status) {
 		case "Requested":
 			return "border-bits-red text-bits-red";
@@ -148,7 +164,7 @@ function LabBadge({ status }: { status: TestStatus }) {
 	return (
 		<Badge
 			variant="outline"
-			className={cn("text-xs rounded-sm border", getStatusColor(status))}
+			className={cn("text-xs rounded-sm border", getBadgeColor(status))}
 		>
 			{status}
 		</Badge>
