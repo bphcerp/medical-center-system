@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import VitalField from "@/components/vital-field";
+import { useDebounce } from "@/lib/hooks/useDebounce";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/consultation/$id")({
@@ -136,6 +137,10 @@ function ConsultationPage() {
 	);
 	const [labTestModalOpen, setLabTestModalOpen] = useState<boolean>(false);
 
+	const debouncedConsultationNotes = useDebounce(consultationNotes, 3000);
+	const debouncedDiagnosisItems = useDebounce(diagnosisItems, 3000);
+	const debouncedPrescriptionItems = useDebounce(prescriptionItems, 3000);
+
 	async function autosave() {
 		try {
 			await client.api.doctor.autosave.$post({
@@ -163,7 +168,8 @@ function ConsultationPage() {
 						categoryData:
 							item.category === "Capsule/Tablet" && item.mealTiming
 								? { mealTiming: item.mealTiming }
-								: item.category === "External Application" && item.applicationArea
+								: item.category === "External Application" &&
+										item.applicationArea
 									? { applicationArea: item.applicationArea }
 									: item.category === "Injection" && item.injectionRoute
 										? { injectionRoute: item.injectionRoute }
@@ -184,18 +190,11 @@ function ConsultationPage() {
 			return;
 		}
 
-		const intervalId = setInterval(() => {
-			autosave().catch(() => {
-				//errors is caught in the autosave function itself
-			});
-		}, 10000); //10 seconds
-
-		return () => clearInterval(intervalId);
+		autosave().catch(() => {});
 	}, [
-		consultationNotes,
-		diagnosisItems,
-		prescriptionItems,
-		caseDetail?.finalizedState,
+		debouncedConsultationNotes,
+		debouncedDiagnosisItems,
+		debouncedPrescriptionItems,
 	]);
 
 	if (!caseDetail) {
@@ -230,7 +229,7 @@ function ConsultationPage() {
 		// autosave endpoint -> finalize the case
 		try {
 			await autosave();
-		} catch (error) {
+		} catch (_error) {
 			alert("Failed to save case data");
 			return;
 		}
