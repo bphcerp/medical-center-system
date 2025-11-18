@@ -10,6 +10,7 @@ import PrescriptionCard, {
 	type PrescriptionItem,
 } from "@/components/prescription-card";
 import TopBar from "@/components/topbar";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import VitalField from "@/components/vital-field";
@@ -164,13 +165,26 @@ function ConsultationPage() {
 		<>
 			<TopBar title={`Consultation for ${caseDetail.patientName}`} />
 			<div className="p-6">
-				<h1 className="text-3xl font-bold">
-					Consultation for {caseDetail.patientName}
-				</h1>
-				<p className="text-muted-foreground my-2">
-					Token Number: {caseDetail.token}
-				</p>
-
+				<div className="flex justify-between items-start mb-4">
+					<div>
+						<h1 className="text-3xl font-bold">
+							Consultation for {caseDetail.patientName}
+						</h1>
+						<p className="text-muted-foreground my-2">
+							Token Number: {caseDetail.token}
+						</p>
+					</div>
+					<Button
+						onClick={() =>
+							navigate({
+								to: "/history/$patientId",
+								params: { patientId: String(caseDetail.patientId) },
+							})
+						}
+					>
+						View History
+					</Button>
+				</div>
 				<LabRequestModal
 					id={id}
 					labTestModalOpen={labTestModalOpen}

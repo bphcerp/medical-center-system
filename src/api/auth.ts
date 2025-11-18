@@ -21,6 +21,7 @@ import doctor from "./doctor";
 import files from "./files";
 import inventory from "./inventory";
 import lab from "./lab";
+import patientHistory from "./patientHistory";
 import rbac from "./rbac";
 import role from "./role";
 import user from "./user";
@@ -315,4 +316,5 @@ export const authenticated = new Hono()
 	.route("/doctor", doctor)
 	.route("/lab", lab)
 	.route("/files", files)
-	.route("/inventory", inventory);
+	.route("/inventory", inventory)
+	.route("/patientHistory", patientHistory);
