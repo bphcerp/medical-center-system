@@ -181,46 +181,22 @@ const inventory = new Hono()
 		async (c) => {
 			const { medicineId, batchNum, expiry, quantity } = c.req.valid("json");
 
-			try {
-				await db.transaction(async (tx) => {
-					const [medicine] = await tx
-						.select()
-						.from(inventoryMedicinesTable)
-						.where(eq(inventoryMedicinesTable.id, medicineId));
+			const [duplicateBatch] = await db
+				.select()
+				.from(batchesTable)
+				.where(eq(batchesTable.batchNum, batchNum));
 
-					if (!medicine) {
-						throw new Error("MEDICINE_NOT_FOUND");
-					}
-
-					const [duplicateBatch] = await tx
-						.select()
-						.from(batchesTable)
-						.where(eq(batchesTable.batchNum, batchNum));
-
-					if (duplicateBatch) {
-						throw new Error("DUPLICATE_BATCH");
-					}
-
-					await tx.insert(batchesTable).values({
-						medicineId,
-						batchNum,
-						expiry,
-						quantity,
-					});
-				});
-			} catch (error: unknown) {
-				let message: string = "";
-				if (error instanceof Error) message = error.message;
-				if (message === "MEDICINE_NOT_FOUND") {
-					return c.json({ success: false, error: "Medicine not found" }, 404);
-				}
-
-				if (message === "DUPLICATE_BATCH") {
-					return c.json({ success: false, error: "Duplicate batch" }, 400);
-				}
-
-				throw error;
+			if (duplicateBatch) {
+				return c.json({ success: false, error: "Duplicate batch" }, 400);
 			}
+
+			await db.insert(batchesTable).values({
+				medicineId,
+				batchNum,
+				expiry,
+				quantity,
+			});
+
 			return c.json({
 				success: true,
 				message: "Batch added successfully",
