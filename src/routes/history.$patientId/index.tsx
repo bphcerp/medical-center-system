@@ -32,35 +32,26 @@ export const Route = createFileRoute("/history/$patientId/")({
 			});
 		}
 
+		// Fetch patient history directly without OTP
 		const historyRes = await client.api.patientHistory[":patientId"].$get({
 			param: { patientId: params.patientId },
 		});
 
-		if (historyRes.status === 401) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-		if (historyRes.status === 403) {
-			alert("You don't have permission to view patient history.");
-			throw redirect({
-				to: "/",
-			});
-		}
 		if (historyRes.status === 404) {
 			throw new Error("Patient not found");
 		}
+
 		if (historyRes.status !== 200) {
 			throw new Error("Failed to fetch patient history");
 		}
 
-		const historyData = await historyRes.json();
+		const { patient, cases } = await historyRes.json();
 
 		return {
 			user,
+			patient,
+			cases,
 			patientId: params.patientId,
-			patient: historyData.patient,
-			cases: historyData.cases,
 		};
 	},
 	component: HistoryPage,
@@ -70,11 +61,11 @@ function HistoryPage() {
 	const { patient, cases, patientId } = Route.useLoaderData();
 	const navigate = useNavigate();
 
-	const sortedCases = [...cases].sort((a, b) => {
+	const sortedCases = cases.length > 0 ? [...cases].sort((a, b) => {
 		const dateA = new Date(a.updatedAt).getTime();
 		const dateB = new Date(b.updatedAt).getTime();
 		return dateB - dateA;
-	});
+	}) : [];
 
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);
@@ -105,18 +96,30 @@ function HistoryPage() {
 							</p>
 						</div>
 					</div>
-					{latestCase && (
+					<div className="flex gap-2">
 						<Button
+							variant="outline"
 							onClick={() =>
 								navigate({
-									to: "/consultation/$id",
-									params: { id: String(latestCase.caseId) },
+									to: "/doctor",
 								})
 							}
 						>
-							Back to Consultation
+							Back to Dashboard
 						</Button>
-					)}
+						{latestCase && (
+							<Button
+								onClick={() =>
+									navigate({
+										to: "/consultation/$id",
+										params: { id: String(latestCase.caseId) },
+									})
+								}
+							>
+								View Latest Case
+							</Button>
+						)}
+					</div>
 				</div>
 
 				<Card>
