@@ -214,7 +214,7 @@ function ConsultationPage() {
 	const prevAutosaveRef = useRef<AutosaveState | null>(null);
 	const otpSentRef = useRef<boolean>(false);
 
-	const sendOtp = async () => {
+	const sendOtp = useCallback(async () => {
 		setIsSendingOtp(true);
 		setOtpError(null);
 		try {
@@ -248,7 +248,7 @@ function ConsultationPage() {
 		} finally {
 			setIsSendingOtp(false);
 		}
-	};
+	}, [id]);
 
 	// Auto-send OTP when OTP is required (only once)
 	useEffect(() => {
@@ -256,7 +256,7 @@ function ConsultationPage() {
 			otpSentRef.current = true;
 			sendOtp();
 		}
-	}, [requiresOtp, isSendingOtp]);
+	}, [requiresOtp, isSendingOtp, sendOtp]);
 
 	const handleVerifyOtp = async (otp: string) => {
 		setIsVerifying(true);
@@ -389,6 +389,7 @@ function ConsultationPage() {
 		diagnosisItems,
 		debouncedConsultationNotes,
 		debouncedPrescriptionItems,
+		caseDetail?.finalizedState,
 	]);
 
 	useEffect(() => {

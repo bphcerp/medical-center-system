@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -35,6 +35,8 @@ export function OTPVerificationDialog({
 	const [showOverride, setShowOverride] = useState(false);
 	const [overrideReason, setOverrideReason] = useState("");
 	const [isOverriding, setIsOverriding] = useState(false);
+	const otpInputId = useId();
+	const reasonInputId = useId();
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -73,9 +75,9 @@ export function OTPVerificationDialog({
 					<form onSubmit={handleSubmit}>
 						<div className="grid gap-4 py-4">
 							<div className="grid gap-2">
-								<Label htmlFor="otp">OTP Code</Label>
+								<Label htmlFor={otpInputId}>OTP Code</Label>
 								<Input
-									id="otp"
+									id={otpInputId}
 									type="text"
 									placeholder="Enter 6-digit OTP"
 									value={otp}
@@ -118,9 +120,9 @@ export function OTPVerificationDialog({
 					<form onSubmit={handleOverride}>
 						<div className="grid gap-4 py-4">
 							<div className="grid gap-2">
-								<Label htmlFor="reason">Reason for Override</Label>
+								<Label htmlFor={reasonInputId}>Reason for Override</Label>
 								<Textarea
-									id="reason"
+									id={reasonInputId}
 									placeholder="Provide a detailed reason (minimum 10 characters)..."
 									value={overrideReason}
 									onChange={(e) => setOverrideReason(e.target.value)}
