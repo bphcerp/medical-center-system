@@ -1,6 +1,7 @@
 import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { CloudCheck, RefreshCw, TriangleAlert } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import DiagnosisCard, { type DiagnosisItem } from "@/components/diagnosis-card";
 import FinalizeCaseCard, {
 	type FinalizeButtonValue,
@@ -16,6 +17,12 @@ import { Textarea } from "@/components/ui/textarea";
 import VitalField from "@/components/vital-field";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { client } from "./api/$";
+
+type AutosaveState = {
+	consultationNotes: string;
+	diagnosis: DiagnosisItem[];
+	prescriptions: PrescriptionItem[];
+};
 
 export const Route = createFileRoute("/consultation/$id")({
 	gcTime: 0,
@@ -56,7 +63,6 @@ export const Route = createFileRoute("/consultation/$id")({
 		}
 
 		const { medicines } = await medicinesRes.json();
-		// console.log(medicines);
 
 		const diseasesRes = await client.api.doctor.diseases.$get();
 
@@ -111,6 +117,7 @@ function ConsultationPage() {
 		PrescriptionItem[]
 	>(
 		prescriptions?.map((p) => {
+			// TODO: Improve this parsing logic by standardizing categoryData structure in zod
 			const categoryData =
 				typeof p.categoryData === "string"
 					? JSON.parse(p.categoryData)
@@ -136,19 +143,36 @@ function ConsultationPage() {
 		}) || [],
 	);
 	const [labTestModalOpen, setLabTestModalOpen] = useState<boolean>(false);
+	const [autosaved, setAutoSaved] = useState<boolean>(false);
+	const [autosaveError, setAutosaveError] = useState<string | null>(null);
+	const debouncedConsultationNotes = useDebounce(consultationNotes, 500);
+	const debouncedPrescriptionItems = useDebounce(prescriptionItems, 500);
+	const prevAutosaveRef = useRef<AutosaveState | null>(null);
 
-	const debouncedConsultationNotes = useDebounce(consultationNotes, 3000);
-	const debouncedDiagnosisItems = useDebounce(diagnosisItems, 3000);
-	const debouncedPrescriptionItems = useDebounce(prescriptionItems, 3000);
-
-	async function autosave() {
+	const autosave = useCallback(async () => {
+		if (
+			prevAutosaveRef.current &&
+			prevAutosaveRef.current.consultationNotes ===
+				debouncedConsultationNotes &&
+			prevAutosaveRef.current.diagnosis.length === diagnosisItems.length &&
+			prevAutosaveRef.current.diagnosis.every(
+				(d, i) => d.id === diagnosisItems[i]?.id,
+			) &&
+			JSON.stringify(prevAutosaveRef.current.prescriptions) ===
+				JSON.stringify(debouncedPrescriptionItems)
+		) {
+			// No changes since last autosave
+			return;
+		}
+		setAutoSaved(false);
+		setAutosaveError(null);
 		try {
 			await client.api.doctor.autosave.$post({
 				json: {
 					caseId: Number(id),
-					consultationNotes: consultationNotes,
+					consultationNotes: debouncedConsultationNotes,
 					diagnosis: diagnosisItems.map((d) => d.id),
-					prescriptions: prescriptionItems.map((item) => ({
+					prescriptions: debouncedPrescriptionItems.map((item) => ({
 						medicineId: item.id,
 						dosage:
 							item.category === "Capsule/Tablet" && item.dosage
@@ -180,22 +204,35 @@ function ConsultationPage() {
 				},
 			});
 		} catch (error) {
+			setAutosaveError("Failed to save");
+			setAutoSaved(false);
 			console.error("Autosave failed:", error);
 			throw error;
 		}
-	}
-
-	useEffect(() => {
-		if (caseDetail?.finalizedState) {
-			return;
-		}
-
-		autosave().catch(() => {});
+		setAutoSaved(true);
+		prevAutosaveRef.current = {
+			consultationNotes: debouncedConsultationNotes,
+			diagnosis: diagnosisItems,
+			prescriptions: debouncedPrescriptionItems,
+		};
 	}, [
+		id,
+		diagnosisItems,
 		debouncedConsultationNotes,
-		debouncedDiagnosisItems,
 		debouncedPrescriptionItems,
 	]);
+
+	useEffect(() => {
+		autosave().catch(() => {
+			console.error("Autosave failed");
+		});
+		const interval = setInterval(() => {
+			autosave().catch(() => {
+				console.error("Autosave failed");
+			});
+		}, 3000);
+		return () => clearInterval(interval);
+	}, [autosave]);
 
 	if (!caseDetail) {
 		return (
@@ -261,9 +298,26 @@ function ConsultationPage() {
 						<h1 className="text-3xl font-bold">
 							Consultation for {caseDetail.patientName}
 						</h1>
-						<p className="text-muted-foreground my-2">
-							Token Number: {caseDetail.token}
-						</p>
+						<div className="flex gap-4 items-center text-muted-foreground ">
+							<p className="my-2">Token Number: {caseDetail.token}</p>
+							<span
+								className={`my-2 flex items-center gap-2 ${autosaveError ? "text-destructive" : ""}`}
+							>
+								{autosaveError ? (
+									<>
+										<TriangleAlert className="size-4" />
+										{autosaveError}
+									</>
+								) : autosaved ? (
+									<CloudCheck className="size-4" />
+								) : (
+									<>
+										<RefreshCw className="animate-spin size-4" />
+										Saving...
+									</>
+								)}
+							</span>
+						</div>
 					</div>
 					<div className="flex gap-2">
 						<Button
