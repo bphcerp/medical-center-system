@@ -46,6 +46,12 @@ export const Route = createFileRoute("/consultation/$id")({
 			param: { caseId: params.id },
 		});
 
+		if (consultationRes.status === 403) {
+			throw redirect({
+				to: "/doctor",
+			});
+		}
+
 		if (consultationRes.status !== 200) {
 			throw new Error("Failed to fetch consultation details");
 		}
@@ -55,6 +61,16 @@ export const Route = createFileRoute("/consultation/$id")({
 			prescriptions,
 			diseases: diagnosesFromCase,
 		} = await consultationRes.json();
+
+		if (caseDetail.finalizedState !== null) {
+			throw redirect({
+				to: "/history/$patientId/$caseId",
+				params: {
+					patientId: String(caseDetail.patientId),
+					caseId: params.id,
+				},
+			});
+		}
 
 		const medicinesRes = await client.api.doctor.medicines.$get();
 

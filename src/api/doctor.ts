@@ -121,6 +121,7 @@ const doctor = new Hono()
 				spo2: casesTable.spo2,
 				consultationNotes: casesTable.consultationNotes,
 				diagnosis: casesTable.diagnosis,
+				associatedUsers: casesTable.associatedUsers,
 				createdAt: casesTable.createdAt,
 				updatedAt: casesTable.updatedAt,
 			})
@@ -136,12 +137,7 @@ const doctor = new Hono()
 				dependentsTable,
 				eq(dependentsTable.patientId, patientsTable.id),
 			)
-			.where(
-				and(
-					eq(casesTable.id, caseId),
-					arrayContains(casesTable.associatedUsers, [userId]),
-				),
-			)
+			.where(eq(casesTable.id, caseId))
 			.orderBy(casesTable.id)
 			.limit(1);
 
@@ -149,6 +145,10 @@ const doctor = new Hono()
 
 		if (!caseDetail) {
 			return c.json({ error: "Case not found" }, 404);
+		}
+
+		if (!caseDetail.associatedUsers?.includes(userId)) {
+			return c.json({ error: "Unauthorized" }, 403);
 		}
 
 		// Fetch prescriptions
@@ -253,7 +253,7 @@ const doctor = new Hono()
 					.returning();
 
 				if (updated.length === 0) {
-					throw new Error("Case not found");
+					return c.json({ error: "Case not found" }, 404);
 				}
 
 				if (prescriptions !== undefined) {
