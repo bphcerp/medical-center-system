@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { AddBatchModal } from "@/components/inventory-add-batch-modal";
 import { AddQuantityModal } from "@/components/inventory-add-quantity-modal";
 import { DispenseModal } from "@/components/inventory-dispense-modal";
@@ -101,12 +101,78 @@ function InventoryPage() {
 		setIsOpenAddBatch(true);
 	};
 
+	const terms = inventoryQuery.trim().toLowerCase().split(/\s+/);
+
+	const filteredInventory = inventory
+		.reduce(
+			(acc, inventoryItem) => {
+				if (inventoryQuery === "") {
+					acc.push({
+						inventoryItem,
+						count: 0,
+					});
+					return acc;
+				}
+
+				const medicineText = `
+					${inventoryItem.medicine.drug}
+					${inventoryItem.medicine.brand}
+					${inventoryItem.medicine.company}
+					${inventoryItem.medicine.type}
+					`.toLowerCase();
+
+				const medicineMatchesCount = terms.reduce((c, term) => {
+					return c + (medicineText.includes(term) ? 1 : 0);
+				}, 0);
+
+				const matchedBatches = inventoryItem.batches.filter((batch) => {
+					const batchText = batch.batchNum.toLowerCase();
+					return terms.some((term) => batchText.includes(term));
+				});
+
+				const count = medicineMatchesCount + matchedBatches.length;
+
+				if (count === 0) return acc;
+
+				if (medicineMatchesCount > 0) {
+					acc.push({
+						inventoryItem,
+						count,
+					});
+				} else {
+					acc.push({
+						inventoryItem: {
+							...inventoryItem,
+							batches: matchedBatches,
+						},
+						count,
+					});
+				}
+
+				return acc;
+			},
+			[] as { inventoryItem: (typeof inventory)[0]; count: number }[],
+		)
+		.sort((a, b) => b.count - a.count);
+
+	const finalInventory = filteredInventory.map((f) => f.inventoryItem);
+
+	useEffect(() => {
+		if (inventoryQuery.trim() === "") {
+			setExpandedRows(new Set());
+			return;
+		}
+
+		const matched = new Set(finalInventory.map((f) => f.id));
+		setExpandedRows(matched);
+	}, [inventoryQuery, finalInventory]);
+
 	return (
 		<>
 			<TopBar title="Inventory Dashboard" />
 			<div className="mx-6 my-2.5 flex items-center justify-between">
 				<h1 className="text-3xl font-bold">Medicine Inventory</h1>
-				<div className="flex items-center w-full max-w-2xl">
+				<div className="flex items-center w-full max-w-xl">
 					<Button className="mr-2">Low Stock</Button>
 					<Button className="mr-2">Near Expiry</Button>
 					<Input
@@ -115,7 +181,6 @@ function InventoryPage() {
 						value={inventoryQuery}
 						onChange={(e) => setInventoryQuery(e.target.value)}
 					/>
-					<Button className="ml-2">Search</Button>
 				</div>
 			</div>
 
@@ -131,7 +196,7 @@ function InventoryPage() {
 						</TableHeader>
 
 						<TableBody>
-							{inventory.map((item) => (
+							{finalInventory.map((item) => (
 								<React.Fragment key={item.id}>
 									<TableRow>
 										<TableCell
