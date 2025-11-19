@@ -32,6 +32,12 @@ export const Route = createFileRoute("/history/$patientId/$caseId")({
 			param: { caseId: params.caseId },
 		});
 
+		if (historyRes.status === 403) {
+			throw redirect({
+				to: "/doctor",
+			});
+		}
+
 		if (historyRes.status !== 200) {
 			throw new Error("Failed to fetch case details");
 		}
