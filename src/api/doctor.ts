@@ -256,22 +256,24 @@ const doctor = new Hono()
 					throw new Error("Case not found");
 				}
 
-				if (prescriptions && prescriptions.length > 0) {
+				if (prescriptions !== undefined) {
 					await tx
 						.delete(casePrescriptionsTable)
 						.where(eq(casePrescriptionsTable.caseId, caseId));
 
-					await tx.insert(casePrescriptionsTable).values(
-						prescriptions.map((p) => ({
-							caseId,
-							medicineId: p.medicineId,
-							dosage: p.dosage,
-							frequency: p.frequency,
-							duration: p.duration,
-							comment: p.comment || null,
-							categoryData: p.categoryData || null,
-						})),
-					);
+					if (prescriptions.length > 0) {
+						await tx.insert(casePrescriptionsTable).values(
+							prescriptions.map((p) => ({
+								caseId,
+								medicineId: p.medicineId,
+								dosage: p.dosage,
+								frequency: p.frequency,
+								duration: p.duration,
+								comment: p.comment || null,
+								categoryData: p.categoryData || null,
+							})),
+						);
+					}
 				}
 			});
 
