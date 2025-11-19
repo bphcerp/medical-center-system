@@ -83,11 +83,14 @@ const patientHistory = new Hono()
 			});
 		},
 	)
-	.post("/:patientId/send-otp", async (c) => {
-		// 6 digit otp
-		const otp = Math.floor(100000 + Math.random() * 900000);
-		const payload = c.get("jwtPayload") as JWTPayload;
-		const patientId = Number(c.req.param("patientId"));
+	.post(
+		"/:patientId/send-otp",
+		zValidator("param", z.object({ patientId: z.coerce.number() })),
+		async (c) => {
+			// 6 digit otp
+			const otp = Math.floor(100000 + Math.random() * 900000);
+			const payload = c.get("jwtPayload") as JWTPayload;
+			const { patientId } = c.req.valid("param");
 
 		// Get patient details to determine type
 		const [patient] = await db
