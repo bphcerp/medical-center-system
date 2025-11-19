@@ -168,10 +168,16 @@
 
 @theme {
   --color-bits-red: var(--color-red-500);
+  --color-bits-red-foreground: var(--color-red-50);
   --color-bits-yellow: var(--color-yellow-600);
+  --color-bits-yellow-foreground: var(--color-yellow-50);
   --color-bits-blue: var(--color-blue-900);
+  --color-bits-blue-foreground: var(--color-blue-50);
   --color-bits-green: var(--color-emerald-600);
+  --color-bits-green-foreground: var(--color-emerald-50);
   --color-bits-light-blue: var(--color-sky-500);
+  --color-bits-light-blue-foreground: var(--color-sky-50);
+
 }
 
 @layer base {

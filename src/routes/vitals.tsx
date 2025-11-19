@@ -3,6 +3,7 @@ import { Activity, ArrowLeft, Check, Plus } from "lucide-react";
 import type React from "react";
 import { useId, useState } from "react";
 import { RegistrationForm } from "@/components/registration-card";
+import TopBar from "@/components/topbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -148,9 +149,7 @@ function Vitals() {
 
 	return (
 		<div className="flex flex-col items-stretch h-screen">
-			<div className="flex border-b p-4">
-				<h1 className="text-3xl font-bold">Patient Queue</h1>
-			</div>
+			<TopBar title="Patient Queue" />
 			<div className="flex items-stretch divide-x divide-border grow min-h-0">
 				<div
 					className={cn(
@@ -498,7 +497,8 @@ function PatientTypeBadge({
 	}
 	return (
 		<Badge
-			className={cn("border bg-transparent rounded-sm", color, className)}
+			variant="outline"
+			className={cn("border rounded-sm", color, className)}
 			{...props}
 		>
 			{children ?? type}

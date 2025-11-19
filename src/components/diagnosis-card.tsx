@@ -28,6 +28,7 @@ const DiagnosisCard = ({
 	diseases,
 	diagnosisItems,
 	setDiagnosisItems,
+	readonly = false,
 }: {
 	diseases: {
 		id: number;
@@ -36,6 +37,7 @@ const DiagnosisCard = ({
 	}[];
 	diagnosisItems: DiagnosisItem[];
 	setDiagnosisItems: (items: DiagnosisItem[]) => void;
+	readonly?: boolean;
 }) => {
 	const [diseasesSearchOpen, setDiseasesSearchOpen] = useState<boolean>(false);
 	const [diagnosisQuery, setDiagnosisQuery] = useState<string>("");
@@ -112,68 +114,73 @@ const DiagnosisCard = ({
 		<Card className="col-span-2 row-span-1 rounded-l-none rounded-br-none min-h-52 gap-2">
 			<div className="flex items-center w-full gap-2 px-2">
 				<Label className="font-semibold">Diagnosis: </Label>
-				<Popover open={diseasesSearchOpen} onOpenChange={setDiseasesSearchOpen}>
-					<PopoverTrigger asChild>
-						<Button
-							variant="outline"
-							role="combobox"
-							className="justify-between w-3xl"
-						>
-							Select a disease...
-							<ChevronsUpDown className="ml-2 h-4 w-4" />
-						</Button>
-					</PopoverTrigger>
-					<PopoverContent className="p-0 w-3xl" align="start" side="top">
-						<Command shouldFilter={false}>
-							<CommandInput
-								placeholder="Type a disease to search..."
-								value={diagnosisQuery}
-								onValueChange={setDiagnosisQuery}
-							/>
-							<CommandList ref={diseaseListRef}>
-								<div
-									style={{
-										height:
-											diseaseRowVirtualizer.getTotalSize() > 0
-												? `${diseaseRowVirtualizer.getTotalSize()}px`
-												: "auto",
-									}}
-									className="relative w-full"
-								>
-									<CommandEmpty>No diseases found.</CommandEmpty>
-									<CommandGroup>
-										{diseaseRowVirtualizer
-											.getVirtualItems()
-											.map((virtualItem) => {
-												const disease =
-													filteredDiseases[virtualItem.index].disease;
-												return (
-													<CommandItem
-														key={virtualItem.key}
-														onSelect={() => {
-															handleAddDisease(disease);
-															setDiseasesSearchOpen(false);
-														}}
-														className="flex absolute top-0 left-0 w-full justify-between"
-														style={{
-															height: `${virtualItem.size}px`,
-															transform: `translateY(${virtualItem.start}px)`,
-														}}
-													>
-														<span>
-															{disease.name} (ICD: {disease.icd})
-														</span>
-													</CommandItem>
-												);
-											})}
-									</CommandGroup>
-								</div>
-							</CommandList>
-						</Command>
-					</PopoverContent>
-				</Popover>
+				{!readonly && (
+					<Popover
+						open={diseasesSearchOpen}
+						onOpenChange={setDiseasesSearchOpen}
+					>
+						<PopoverTrigger asChild>
+							<Button
+								variant="outline"
+								role="combobox"
+								className="justify-between w-3xl"
+							>
+								Select a disease...
+								<ChevronsUpDown className="ml-2 h-4 w-4" />
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent className="p-0 w-3xl" align="start" side="top">
+							<Command shouldFilter={false}>
+								<CommandInput
+									placeholder="Type a disease to search..."
+									value={diagnosisQuery}
+									onValueChange={setDiagnosisQuery}
+								/>
+								<CommandList ref={diseaseListRef}>
+									<div
+										style={{
+											height:
+												diseaseRowVirtualizer.getTotalSize() > 0
+													? `${diseaseRowVirtualizer.getTotalSize()}px`
+													: "auto",
+										}}
+										className="relative w-full"
+									>
+										<CommandEmpty>No diseases found.</CommandEmpty>
+										<CommandGroup>
+											{diseaseRowVirtualizer
+												.getVirtualItems()
+												.map((virtualItem) => {
+													const disease =
+														filteredDiseases[virtualItem.index].disease;
+													return (
+														<CommandItem
+															key={virtualItem.key}
+															onSelect={() => {
+																handleAddDisease(disease);
+																setDiseasesSearchOpen(false);
+															}}
+															className="flex absolute top-0 left-0 w-full justify-between"
+															style={{
+																height: `${virtualItem.size}px`,
+																transform: `translateY(${virtualItem.start}px)`,
+															}}
+														>
+															<span>
+																{disease.name} (ICD: {disease.icd})
+															</span>
+														</CommandItem>
+													);
+												})}
+										</CommandGroup>
+									</div>
+								</CommandList>
+							</Command>
+						</PopoverContent>
+					</Popover>
+				)}
 			</div>
-			{diagnosisItems.length > 0 &&
+			{diagnosisItems.length > 0 ? (
 				diagnosisItems.map((item) => (
 					<div key={item.id} className="px-2">
 						<div className="w-full flex flex-wrap gap-2">
@@ -181,16 +188,23 @@ const DiagnosisCard = ({
 							<span className="font-medium text-muted-foreground">
 								(ICD: {item.icd})
 							</span>
-							<Button
-								variant="destructive"
-								onClick={() => handleRemoveDiagnosisItem(item.id)}
-								className="h-6 w-6"
-							>
-								<Trash2 />
-							</Button>
+							{!readonly && (
+								<Button
+									variant="destructive"
+									onClick={() => handleRemoveDiagnosisItem(item.id)}
+									className="h-6 w-6"
+								>
+									<Trash2 />
+								</Button>
+							)}
 						</div>
 					</div>
-				))}
+				))
+			) : (
+				<div className="flex items-center justify-center h-full text-muted-foreground">
+					No diagnosis recorded
+				</div>
+			)}
 		</Card>
 	);
 };

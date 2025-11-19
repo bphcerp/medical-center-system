@@ -1,6 +1,7 @@
 import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { CloudCheck, RefreshCw, TriangleAlert } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import DiagnosisCard, { type DiagnosisItem } from "@/components/diagnosis-card";
 import FinalizeCaseCard, {
 	type FinalizeButtonValue,
@@ -14,9 +15,17 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import VitalField from "@/components/vital-field";
+import { useDebounce } from "@/lib/hooks/useDebounce";
 import { client } from "./api/$";
 
+type AutosaveState = {
+	consultationNotes: string;
+	diagnosis: DiagnosisItem[];
+	prescriptions: PrescriptionItem[];
+};
+
 export const Route = createFileRoute("/consultation/$id")({
+	gcTime: 0,
 	loader: async ({ params }: { params: { id: string } }) => {
 		// Check if user is authenticated
 		const res = await client.api.user.$get();
@@ -37,11 +46,31 @@ export const Route = createFileRoute("/consultation/$id")({
 			param: { caseId: params.id },
 		});
 
+		if (consultationRes.status === 403) {
+			throw redirect({
+				to: "/doctor",
+			});
+		}
+
 		if (consultationRes.status !== 200) {
 			throw new Error("Failed to fetch consultation details");
 		}
 
-		const { caseDetail } = await consultationRes.json();
+		const {
+			caseDetail,
+			prescriptions,
+			diseases: diagnosesFromCase,
+		} = await consultationRes.json();
+
+		if (caseDetail.finalizedState !== null) {
+			throw redirect({
+				to: "/history/$patientId/$caseId",
+				params: {
+					patientId: String(caseDetail.patientId),
+					caseId: params.id,
+				},
+			});
+		}
 
 		const medicinesRes = await client.api.doctor.medicines.$get();
 
@@ -50,7 +79,6 @@ export const Route = createFileRoute("/consultation/$id")({
 		}
 
 		const { medicines } = await medicinesRes.json();
-		// console.log(medicines);
 
 		const diseasesRes = await client.api.doctor.diseases.$get();
 
@@ -68,24 +96,160 @@ export const Route = createFileRoute("/consultation/$id")({
 
 		const { tests } = await testsRes.json();
 
-		return { user, caseDetail, medicines, diseases, tests };
+		return {
+			user,
+			caseDetail,
+			medicines,
+			diseases,
+			tests,
+			prescriptions,
+			diagnosesFromCase,
+		};
 	},
 	component: ConsultationPage,
 });
 
 function ConsultationPage() {
-	const { caseDetail, medicines, diseases, tests } = Route.useLoaderData();
+	const {
+		caseDetail,
+		medicines,
+		diseases,
+		tests,
+		prescriptions,
+		diagnosesFromCase,
+	} = Route.useLoaderData();
 	const navigate = useNavigate();
 	const { id } = Route.useParams();
 
 	const [finalizeButtonValue, setFinalizeButtonValue] =
 		useState<FinalizeButtonValue>("Finalize (OPD)");
-	const [diagnosisItems, setDiagnosisItems] = useState<DiagnosisItem[]>([]);
-	const [consultationNotes, setConsultationNotes] = useState<string>("");
+	const [diagnosisItems, setDiagnosisItems] = useState<DiagnosisItem[]>(
+		diagnosesFromCase || [],
+	);
+	const [consultationNotes, setConsultationNotes] = useState<string>(
+		caseDetail?.consultationNotes || "",
+	);
 	const [prescriptionItems, setPrescriptionItems] = useState<
 		PrescriptionItem[]
-	>([]);
+	>(
+		prescriptions?.map((p) => {
+			// TODO: Improve this parsing logic by standardizing categoryData structure in zod
+			const categoryData =
+				typeof p.categoryData === "string"
+					? JSON.parse(p.categoryData)
+					: p.categoryData;
+			return {
+				id: p.medicineId,
+				drug: p.drug,
+				company: p.company,
+				brand: p.brand,
+				strength: p.strength,
+				type: p.type,
+				category: p.category,
+				dosage: p.dosage?.replace(/\s*tablets?$/, "") || "",
+				frequency: p.frequency || "",
+				duration: p.duration?.match(/^\d+/)?.[0] || "",
+				durationUnit: p.duration?.match(/\s+(\w+)$/)?.[1] || "days",
+				comments: p.comments || "",
+				mealTiming: categoryData?.mealTiming,
+				applicationArea: categoryData?.applicationArea,
+				injectionRoute: categoryData?.injectionRoute,
+				liquidTiming: categoryData?.liquidTiming,
+			};
+		}) || [],
+	);
 	const [labTestModalOpen, setLabTestModalOpen] = useState<boolean>(false);
+	const [autosaved, setAutoSaved] = useState<boolean>(false);
+	const [autosaveError, setAutosaveError] = useState<string | null>(null);
+	const debouncedConsultationNotes = useDebounce(consultationNotes, 500);
+	const debouncedPrescriptionItems = useDebounce(prescriptionItems, 500);
+	const prevAutosaveRef = useRef<AutosaveState | null>(null);
+
+	const autosave = useCallback(async () => {
+		if (
+			prevAutosaveRef.current &&
+			prevAutosaveRef.current.consultationNotes ===
+				debouncedConsultationNotes &&
+			prevAutosaveRef.current.diagnosis.length === diagnosisItems.length &&
+			prevAutosaveRef.current.diagnosis.every(
+				(d, i) => d.id === diagnosisItems[i]?.id,
+			) &&
+			JSON.stringify(prevAutosaveRef.current.prescriptions) ===
+				JSON.stringify(debouncedPrescriptionItems)
+		) {
+			// No changes since last autosave
+			return;
+		}
+		setAutoSaved(false);
+		setAutosaveError(null);
+		try {
+			await client.api.doctor.autosave.$post({
+				json: {
+					caseId: Number(id),
+					consultationNotes: debouncedConsultationNotes,
+					diagnosis: diagnosisItems.map((d) => d.id),
+					prescriptions: debouncedPrescriptionItems.map((item) => ({
+						medicineId: item.id,
+						dosage:
+							item.category === "Capsule/Tablet" && item.dosage
+								? `${item.dosage} tablet${item.dosage === "1" ? "" : "s"}`
+								: item.dosage,
+						frequency: item.frequency,
+						duration:
+							(item.category === "Capsule/Tablet" ||
+								item.category === "External Application" ||
+								item.category === "Injection" ||
+								item.category === "Liquids/Syrups") &&
+							item.duration &&
+							item.durationUnit
+								? `${item.duration} ${item.durationUnit}`
+								: item.duration,
+						comment: item.comments,
+						categoryData:
+							item.category === "Capsule/Tablet" && item.mealTiming
+								? { mealTiming: item.mealTiming }
+								: item.category === "External Application" &&
+										item.applicationArea
+									? { applicationArea: item.applicationArea }
+									: item.category === "Injection" && item.injectionRoute
+										? { injectionRoute: item.injectionRoute }
+										: item.category === "Liquids/Syrups" && item.liquidTiming
+											? { liquidTiming: item.liquidTiming }
+											: undefined,
+					})),
+				},
+			});
+		} catch (error) {
+			setAutosaveError("Failed to save");
+			setAutoSaved(false);
+			console.error("Autosave failed:", error);
+			throw error;
+		}
+		setAutoSaved(true);
+		prevAutosaveRef.current = {
+			consultationNotes: debouncedConsultationNotes,
+			diagnosis: diagnosisItems,
+			prescriptions: debouncedPrescriptionItems,
+		};
+	}, [
+		id,
+		diagnosisItems,
+		debouncedConsultationNotes,
+		debouncedPrescriptionItems,
+	]);
+
+	useEffect(() => {
+		autosave().catch(() => {
+			console.error("Autosave failed");
+		});
+		const interval = setInterval(() => {
+			autosave().catch(() => {
+				console.error("Autosave failed");
+			});
+		}, 3000);
+		return () => clearInterval(interval);
+	}, [autosave]);
+
 	if (!caseDetail) {
 		return (
 			<div className="container mx-auto p-6">
@@ -114,48 +278,28 @@ function ConsultationPage() {
 				);
 				return;
 		}
-		const caseRes = await client.api.doctor.finalizeCase.$post({
+
+		// autosave endpoint -> finalize the case
+		try {
+			await autosave();
+		} catch (_error) {
+			alert("Failed to save case data");
+			return;
+		}
+
+		const finalizeRes = await client.api.doctor.finalizeCase.$post({
 			json: {
 				caseId: Number(id),
 				finalizedState: finalizedState,
-				consultationNotes: consultationNotes,
-				diagnosis: diagnosisItems.map((d) => d.id),
-				prescriptions: prescriptionItems.map((item) => ({
-					medicineId: item.id,
-					dosage:
-						item.category === "Capsule/Tablet" && item.dosage
-							? `${item.dosage} tablet${item.dosage === "1" ? "" : "s"}`
-							: item.dosage,
-					frequency: item.frequency,
-					duration:
-						(item.category === "Capsule/Tablet" ||
-							item.category === "External Application" ||
-							item.category === "Injection" ||
-							item.category === "Liquids/Syrups") &&
-						item.duration &&
-						item.durationUnit
-							? `${item.duration} ${item.durationUnit}`
-							: item.duration,
-					comment: item.comments,
-					categoryData:
-						item.category === "Capsule/Tablet" && item.mealTiming
-							? { mealTiming: item.mealTiming }
-							: item.category === "External Application" && item.applicationArea
-								? { applicationArea: item.applicationArea }
-								: item.category === "Injection" && item.injectionRoute
-									? { injectionRoute: item.injectionRoute }
-									: item.category === "Liquids/Syrups" && item.liquidTiming
-										? { liquidTiming: item.liquidTiming }
-										: undefined,
-				})),
 			},
 		});
 
-		if (caseRes.status !== 200) {
-			const error = await caseRes.json();
-			alert("error" in error ? error.error : "Failed to save case data");
+		if (finalizeRes.status !== 200) {
+			const error = await finalizeRes.json();
+			alert("error" in error ? error.error : "Failed to finalize case");
 			return;
 		}
+
 		navigate({
 			to: "/doctor",
 		});
@@ -163,27 +307,56 @@ function ConsultationPage() {
 
 	return (
 		<>
-			<TopBar title={`Consultation for ${caseDetail.patientName}`} />
+			<TopBar title={`Consultation Page`} />
 			<div className="p-6">
 				<div className="flex justify-between items-start mb-4">
 					<div>
 						<h1 className="text-3xl font-bold">
 							Consultation for {caseDetail.patientName}
 						</h1>
-						<p className="text-muted-foreground my-2">
-							Token Number: {caseDetail.token}
-						</p>
+						<div className="flex gap-4 items-center text-muted-foreground ">
+							<p className="my-2">Token Number: {caseDetail.token}</p>
+							<span
+								className={`my-2 flex items-center gap-2 ${autosaveError ? "text-destructive" : ""}`}
+							>
+								{autosaveError ? (
+									<>
+										<TriangleAlert className="size-4" />
+										{autosaveError}
+									</>
+								) : autosaved ? (
+									<CloudCheck className="size-4" />
+								) : (
+									<>
+										<RefreshCw className="animate-spin size-4" />
+										Saving...
+									</>
+								)}
+							</span>
+						</div>
 					</div>
-					<Button
-						onClick={() =>
-							navigate({
-								to: "/history/$patientId",
-								params: { patientId: String(caseDetail.patientId) },
-							})
-						}
-					>
-						View History
-					</Button>
+					<div className="flex gap-2">
+						<Button
+							variant="outline"
+							onClick={() =>
+								navigate({
+									to: "/doctor",
+								})
+							}
+						>
+							Back to Dashboard
+						</Button>
+						<Button
+							onClick={() =>
+								navigate({
+									to: "/history/$patientId",
+									params: { patientId: String(caseDetail.patientId) },
+								})
+							}
+						>
+							View History
+						</Button>
+					</div>
 				</div>
 				<LabRequestModal
 					id={id}
