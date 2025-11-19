@@ -505,7 +505,9 @@ function ConsultationPage() {
 						</h1>
 						<div className="flex gap-4 items-center text-muted-foreground ">
 							<p className="my-2">
-								{isReadOnly ? `Case ID: ${caseDetail.caseId}` : `Token Number: ${caseDetail.token}`}
+								{isReadOnly
+									? `Case ID: ${caseDetail.caseId}`
+									: `Token Number: ${caseDetail.token}`}
 							</p>
 							{!isReadOnly && (
 								<span
@@ -603,7 +605,9 @@ function ConsultationPage() {
 							value={consultationNotes}
 							onChange={(e) => setConsultationNotes(e.target.value)}
 							className="h-full -mt-3.5 resize-none"
-							placeholder={isReadOnly ? "No notes recorded" : "Write notes here..."}
+							placeholder={
+								isReadOnly ? "No notes recorded" : "Write notes here..."
+							}
 							readOnly={isReadOnly}
 						/>
 					</Card>

@@ -1,6 +1,6 @@
 import "dotenv/config";
-import { Hono } from "hono";
 import { desc, eq } from "drizzle-orm";
+import { Hono } from "hono";
 import { usersTable } from "@/db/auth";
 import { casesTable } from "@/db/case";
 import { otpOverrideLogsTable } from "@/db/otp";

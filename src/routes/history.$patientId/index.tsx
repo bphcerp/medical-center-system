@@ -61,11 +61,14 @@ function HistoryPage() {
 	const { patient, cases, patientId } = Route.useLoaderData();
 	const navigate = useNavigate();
 
-	const sortedCases = cases.length > 0 ? [...cases].sort((a, b) => {
-		const dateA = new Date(a.updatedAt).getTime();
-		const dateB = new Date(b.updatedAt).getTime();
-		return dateB - dateA;
-	}) : [];
+	const sortedCases =
+		cases.length > 0
+			? [...cases].sort((a, b) => {
+					const dateA = new Date(a.updatedAt).getTime();
+					const dateB = new Date(b.updatedAt).getTime();
+					return dateB - dateA;
+				})
+			: [];
 
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);

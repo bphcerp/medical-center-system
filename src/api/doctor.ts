@@ -174,10 +174,13 @@ const doctor = new Hono()
 			const hasValidOtp = otpVerification.length > 0;
 
 			if (!hasValidOtp) {
-				return c.json({ 
-					error: "OTP verification required", 
-					requiresOtp: true 
-				}, 403);
+				return c.json(
+					{
+						error: "OTP verification required",
+						requiresOtp: true,
+					},
+					403,
+				);
 			}
 
 			const isAssociatedUser = caseDetail.associatedUsers?.includes(userId);
@@ -576,10 +579,7 @@ const doctor = new Hono()
 	)
 	.post(
 		"/consultation/:caseId/verify-otp",
-		zValidator(
-			"param",
-			z.object({ caseId: z.coerce.number() }),
-		),
+		zValidator("param", z.object({ caseId: z.coerce.number() })),
 		zValidator("json", z.object({ otp: z.coerce.number() })),
 		async (c) => {
 			const { caseId } = c.req.valid("param");
@@ -602,19 +602,21 @@ const doctor = new Hono()
 				return c.json({ error: "Invalid OTP" }, 400);
 			}
 
-			return c.json({ 
-				success: true, 
-				message: "OTP verified successfully" 
+			return c.json({
+				success: true,
+				message: "OTP verified successfully",
 			});
 		},
 	)
 	.post(
 		"/consultation/:caseId/override-otp",
+		zValidator("param", z.object({ caseId: z.coerce.number() })),
 		zValidator(
-			"param",
-			z.object({ caseId: z.coerce.number() }),
+			"json",
+			z.object({
+				reason: z.string().min(10, "Reason must be at least 10 characters"),
+			}),
 		),
-		zValidator("json", z.object({ reason: z.string().min(10, "Reason must be at least 10 characters") })),
 		async (c) => {
 			const { caseId } = c.req.valid("param");
 			const { reason } = c.req.valid("json");
@@ -664,9 +666,9 @@ const doctor = new Hono()
 				otp: overrideOtp,
 			});
 
-			return c.json({ 
-				success: true, 
-				message: "Access override granted and logged" 
+			return c.json({
+				success: true,
+				message: "Access override granted and logged",
 			});
 		},
 	);
