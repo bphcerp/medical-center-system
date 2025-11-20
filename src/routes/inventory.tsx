@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, SquarePlus } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { AddBatchModal } from "@/components/inventory-add-batch-modal";
 import { AddQuantityModal } from "@/components/inventory-add-quantity-modal";
@@ -171,8 +171,12 @@ function InventoryPage() {
 		<>
 			<TopBar title="Inventory Dashboard" />
 			<div className="mx-6 my-2.5 flex items-center justify-between">
-				<h1 className="text-3xl font-bold">Medicine Inventory</h1>
-				<div className="flex items-center w-full max-w-xl">
+				<h1 className="text-3xl font-bold mr-3">Medicine Inventory</h1>
+				<div className="flex items-center w-full max-w-2xl">
+					<Button className="mr-2">
+						<SquarePlus />
+						Add Medicine
+					</Button>
 					<Button className="mr-2">Low Stock</Button>
 					<Button className="mr-2">Near Expiry</Button>
 					<Input
