@@ -4,10 +4,17 @@ import {
 	Outlet,
 	useParams,
 } from "@tanstack/react-router";
-import { Beaker } from "lucide-react";
+import { FlaskConical } from "lucide-react";
 import { LabTestStatusBadge } from "@/components/lab-test-status-badge";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
 import type { statusEnums } from "@/db/lab";
 import { cn, handleUnauthorized } from "@/lib/utils";
 import { client } from "../api/$";
@@ -22,7 +29,7 @@ export const Route = createFileRoute("/lab")({
 	component: LabDashboard,
 	staticData: {
 		requiredPermissions: ["lab"],
-		icon: Beaker,
+		icon: FlaskConical,
 		name: "Lab Dashboard",
 	},
 });
@@ -55,6 +62,7 @@ function LabDashboard() {
 			}
 		>,
 	);
+	const caseList = Object.values(caseGroups);
 
 	const caseId = useParams({
 		from: "/lab/$caseId",
@@ -72,7 +80,20 @@ function LabDashboard() {
 						caseId !== undefined && "hidden lg:flex",
 					)}
 				>
-					{Object.values(caseGroups).map((group) => (
+					{caseList.length === 0 && (
+						<Empty>
+							<EmptyHeader>
+								<EmptyMedia variant="icon">
+									<FlaskConical />
+								</EmptyMedia>
+								<EmptyTitle>No pending lab reports</EmptyTitle>
+								<EmptyDescription>
+									When someone requests lab tests, they will appear here.
+								</EmptyDescription>
+							</EmptyHeader>
+						</Empty>
+					)}
+					{caseList.map((group) => (
 						<Link
 							to="/lab/$caseId"
 							params={{ caseId: group.caseId.toString() }}
