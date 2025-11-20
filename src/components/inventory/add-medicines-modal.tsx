@@ -1,7 +1,7 @@
 import { useRouter } from "@tanstack/react-router";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronsUpDown } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
+import { AutoSizer } from "react-virtualized";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -22,6 +22,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import useVirtualList from "@/lib/hooks/useVirtualList";
 import { client } from "@/routes/api/$";
 import type { Medicine } from "@/routes/inventory";
 
@@ -42,6 +43,7 @@ export function AddMedicinesModal({
 	const [medicinesSearchOpen, setMedicinesSearchOpen] =
 		useState<boolean>(false);
 	const [medicineQuery, setMedicineQuery] = useState<string>("");
+	const { renderList } = useVirtualList<Medicine>(300, 48);
 
 	const filteredMedicines = useMemo(
 		() =>
@@ -84,14 +86,6 @@ export function AddMedicinesModal({
 				.sort((a, b) => b.count - a.count),
 		[medicines, medicineQuery],
 	);
-	const medicationListRef = useRef(null);
-	const medicationRowVirtualizer = useVirtualizer({
-		count: filteredMedicines.length,
-		getScrollElement: () => medicationListRef.current,
-		estimateSize: () => 48,
-		overscan: 15,
-		initialOffset: 0,
-	});
 
 	const [medicineItems, setMedicineItems] = useState<Medicine[]>([]);
 
@@ -171,46 +165,34 @@ export function AddMedicinesModal({
 								value={medicineQuery}
 								onValueChange={setMedicineQuery}
 							/>
-							<CommandList ref={medicationListRef}>
-								<div
-									style={{
-										height:
-											medicationRowVirtualizer.getTotalSize() > 0
-												? `${medicationRowVirtualizer.getTotalSize()}px`
-												: "auto",
-									}}
-									className="relative w-full"
-								>
-									<CommandEmpty>No medicines found.</CommandEmpty>
-									{medicationRowVirtualizer
-										.getVirtualItems()
-										.map((virtualItem) => {
-											const medicine =
-												filteredMedicines[virtualItem.index].medicine;
-											return (
+							<CommandList>
+								<CommandEmpty>No medicines found.</CommandEmpty>
+								<AutoSizer disableHeight>
+									{({ width }) =>
+										renderList(
+											filteredMedicines.map((item) => item.medicine),
+											(key, item, style) => (
 												<CommandItem
-													key={virtualItem.key}
+													key={key}
+													style={style}
 													onSelect={() => {
-														handleAddMedicineItem(medicine);
+														handleAddMedicineItem(item);
 														setMedicinesSearchOpen(false);
 													}}
-													className="flex absolute top-0 left-0 w-full justify-between"
-													style={{
-														height: `${virtualItem.size}px`,
-														transform: `translateY(${virtualItem.start}px)`,
-													}}
+													className="flex w-full justify-between"
 												>
 													<span>
-														{medicine.company} {medicine.brand}
+														{item.company} {item.brand}
 													</span>
 													<span className="mx-1 text-muted-foreground text-right">
-														({medicine.drug}) - {medicine.strength} -{" "}
-														{medicine.type}
+														({item.drug}) - {item.strength} - {item.type}
 													</span>
 												</CommandItem>
-											);
-										})}
-								</div>
+											),
+											width,
+										)
+									}
+								</AutoSizer>
 							</CommandList>
 						</Command>
 					</PopoverContent>

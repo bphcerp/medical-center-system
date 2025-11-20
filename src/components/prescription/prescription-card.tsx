@@ -1,7 +1,7 @@
 import { Label } from "@radix-ui/react-label";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronsUpDown, Trash2 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
+import { AutoSizer } from "react-virtualized";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -17,6 +17,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { injectionRoutes, mealTimings } from "@/db/case";
+import useVirtualList from "@/lib/hooks/useVirtualList";
 import PrescriptionCapsuleFields from "./capsule-fields";
 import PrescriptionExternalFields from "./external-fields";
 import PrescriptionInjectionFields from "./injection-fields";
@@ -35,6 +36,7 @@ const PrescriptionCard = ({
 	const [medicinesSearchOpen, setMedicinesSearchOpen] =
 		useState<boolean>(false);
 	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
+	const { renderList } = useVirtualList<MedicineItem>(300, 48);
 
 	const filteredMedicines = useMemo(
 		() =>
@@ -77,14 +79,6 @@ const PrescriptionCard = ({
 				.sort((a, b) => b.count - a.count),
 		[medicines, prescriptionQuery],
 	);
-	const medicationListRef = useRef(null);
-	const medicationRowVirtualizer = useVirtualizer({
-		count: filteredMedicines.length,
-		getScrollElement: () => medicationListRef.current,
-		estimateSize: () => 48,
-		overscan: 15,
-		initialOffset: 0,
-	});
 
 	const handleUpdatePrescriptionItem = (
 		id: number,
@@ -179,46 +173,34 @@ const PrescriptionCard = ({
 								value={prescriptionQuery}
 								onValueChange={setPrescriptionQuery}
 							/>
-							<CommandList ref={medicationListRef}>
-								<div
-									style={{
-										height:
-											medicationRowVirtualizer.getTotalSize() > 0
-												? `${medicationRowVirtualizer.getTotalSize()}px`
-												: "auto",
-									}}
-									className="relative w-full"
-								>
-									<CommandEmpty>No medicines found.</CommandEmpty>
-									{medicationRowVirtualizer
-										.getVirtualItems()
-										.map((virtualItem) => {
-											const medicine =
-												filteredMedicines[virtualItem.index].medicine;
-											return (
+							<CommandList>
+								<CommandEmpty>No medicines found.</CommandEmpty>
+								<AutoSizer disableHeight>
+									{({ width }) =>
+										renderList(
+											filteredMedicines.map((item) => item.medicine),
+											(key, item, style) => (
 												<CommandItem
-													key={virtualItem.key}
+													key={key}
+													style={style}
 													onSelect={() => {
-														handleAddMedicine(medicine); //check by brand instead of drug name
+														handleAddMedicine(item);
 														setMedicinesSearchOpen(false);
 													}}
-													className="flex absolute top-0 left-0 w-full justify-between"
-													style={{
-														height: `${virtualItem.size}px`,
-														transform: `translateY(${virtualItem.start}px)`,
-													}}
+													className="flex w-full justify-between"
 												>
 													<span>
-														{medicine.company} {medicine.brand}
+														{item.company} {item.brand}
 													</span>
 													<span className="mx-1 text-muted-foreground text-right">
-														({medicine.drug}) - {medicine.strength} -{" "}
-														{medicine.type}
+														({item.drug}) - {item.strength} - {item.type}
 													</span>
 												</CommandItem>
-											);
-										})}
-								</div>
+											),
+											width,
+										)
+									}
+								</AutoSizer>
 							</CommandList>
 						</Command>
 					</PopoverContent>
