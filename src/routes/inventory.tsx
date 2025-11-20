@@ -1,10 +1,10 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight, Package2, SquarePlus } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { AddBatchModal } from "@/components/inventory-add-batch-modal";
-import { AddMedicinesModal } from "@/components/inventory-add-medicines-modal";
-import { AddQuantityModal } from "@/components/inventory-add-quantity-modal";
-import { DispenseModal } from "@/components/inventory-dispense-modal";
+import { AddBatchModal } from "@/components/inventory/add-batch-modal";
+import { AddMedicinesModal } from "@/components/inventory/add-medicines-modal";
+import { AddQuantityModal } from "@/components/inventory/add-quantity-modal";
+import { DispenseModal } from "@/components/inventory/dispense-modal";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
