@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Package2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { AddBatchModal } from "@/components/inventory-add-batch-modal";
 import { AddQuantityModal } from "@/components/inventory-add-quantity-modal";
@@ -53,6 +53,11 @@ export const Route = createFileRoute("/inventory")({
 		// console.log(inventory);
 
 		return { inventory };
+	},
+	staticData: {
+		requiredPermissions: ["inventory"],
+		icon: Package2,
+		name: "Inventory Management",
 	},
 	component: InventoryPage,
 });
