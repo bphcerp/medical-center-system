@@ -1,12 +1,13 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { LabTestStatusBadge } from "@/components/lab-test-status-badge";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import type { statusEnums } from "@/db/lab";
 import { cn, handleUnauthorized } from "@/lib/utils";
 import { client } from "../api/$";
@@ -226,44 +227,34 @@ function TestEntry() {
 
 								{test.status !== "Requested" && (
 									<div className="p-4 flex flex-col gap-2">
-										<Label className="flex flex-col items-start gap-3">
+										<Label className="min-h-6">
 											Upload Report
-											<div className="flex gap-2 w-full">
-												<Input
-													type="file"
-													accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-													className={cn(
-														"transition-colors hover:enabled:cursor-pointer hover:enabled:bg-accent file:mr-4 p-0 h-auto",
-														"file:px-4 file:py-6 file:items-center file:border-r-2 file:border-border file:text-sm file:font-semibold w-full",
-													)}
-													onChange={(e) => {
-														const file = e.target.files?.[0];
-														if (file) {
-															handleFileUpload(test.labTestReportId, file);
-														}
-													}}
-													disabled={
-														uploading[test.labTestReportId] || isSubmitting
-													}
-												/>
-											</div>
+											{uploading[test.labTestReportId] && (
+												<Spinner className="size-4" />
+											)}
+											{test.fileId !== null && (
+												<Check className="text-bits-green size-5" />
+											)}
 										</Label>
-										{(test.fileId !== null ||
-											uploading[test.labTestReportId]) && (
-											<Badge
-												variant="outline"
+										<div className="flex items-center gap-2 w-full">
+											<Input
+												type="file"
+												accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
 												className={cn(
-													test.fileId !== null
-														? "bg-bits-green-foreground text-bits-green"
-														: "bg-bits-yellow-foreground text-bits-yellow",
-													"rounded-lg border-0",
+													"transition-colors hover:enabled:cursor-pointer hover:enabled:bg-accent file:mr-4 p-0 h-auto",
+													"file:px-4 file:py-4 file:items-center file:border-r-2 file:border-border file:text-sm file:font-semibold w-full",
 												)}
-											>
-												{test.fileId !== null
-													? "File uploaded"
-													: "Uploading..."}
-											</Badge>
-										)}
+												onChange={(e) => {
+													const file = e.target.files?.[0];
+													if (file) {
+														handleFileUpload(test.labTestReportId, file);
+													}
+												}}
+												disabled={
+													uploading[test.labTestReportId] || isSubmitting
+												}
+											/>
+										</div>
 									</div>
 								)}
 							</div>
