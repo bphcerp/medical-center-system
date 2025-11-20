@@ -1,7 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { ChevronDown, ChevronRight, Package2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Package2, SquarePlus } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { AddBatchModal } from "@/components/inventory-add-batch-modal";
+import { AddMedicinesModal } from "@/components/inventory-add-medicines-modal";
 import { AddQuantityModal } from "@/components/inventory-add-quantity-modal";
 import { DispenseModal } from "@/components/inventory-dispense-modal";
 import TopBar from "@/components/topbar";
@@ -52,7 +53,15 @@ export const Route = createFileRoute("/inventory")({
 		const { inventory } = await inventoryRes.json();
 		// console.log(inventory);
 
-		return { inventory };
+		const medicinesRes = await client.api.inventory.medicines.$get();
+
+		if (medicinesRes.status !== 200) {
+			throw new Error("Failed to fetch medicines details");
+		}
+
+		const { medicines } = await medicinesRes.json();
+
+		return { inventory, medicines };
 	},
 	staticData: {
 		requiredPermissions: ["inventory"],
@@ -63,7 +72,7 @@ export const Route = createFileRoute("/inventory")({
 });
 
 function InventoryPage() {
-	const { inventory } = Route.useLoaderData();
+	const { inventory, medicines } = Route.useLoaderData();
 
 	const [inventoryQuery, setInventoryQuery] = useState<string>("");
 	const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
@@ -79,6 +88,12 @@ function InventoryPage() {
 			newSet.add(id);
 		}
 		setExpandedRows(newSet);
+	};
+
+	const [isOpenAddMedicines, setIsOpenAddMedicines] = useState<boolean>(false);
+
+	const openAddMedicines = () => {
+		setIsOpenAddMedicines(true);
 	};
 
 	const [isOpenAddQuantity, setIsOpenAddQuantity] = useState<boolean>(false);
@@ -203,6 +218,10 @@ function InventoryPage() {
 			<div className="mx-6 my-2.5 flex items-center justify-between">
 				<h1 className="text-3xl font-bold">Medicine Inventory</h1>
 				<div className="flex items-center w-full max-w-xl">
+					<Button className="mr-2" onClick={() => openAddMedicines()}>
+						<SquarePlus />
+						Add Medicine
+					</Button>
 					<Button
 						className="mr-2"
 						onClick={() =>
@@ -284,52 +303,64 @@ function InventoryPage() {
 										</TableCell>
 									</TableRow>
 
-									{expandedRows.has(item.id) && (
-										<>
-											<TableRow className="bg-gray-100">
-												<TableCell className="font-semibold">
-													Batch ID
-												</TableCell>
-												<TableCell className="font-semibold">
-													Quantity
-												</TableCell>
-												<TableCell className="font-semibold">
-													Quick Actions
+									{expandedRows.has(item.id) &&
+										(item.batches.length === 0 ? (
+											<TableRow>
+												<TableCell colSpan={3} className="text-center italic">
+													This medicine has no batches
 												</TableCell>
 											</TableRow>
-
-											{item.batches.map((batch) => (
-												<TableRow key={batch.id}>
-													<TableCell>{batch.batchNum}</TableCell>
-													<TableCell>{batch.quantity}</TableCell>
-													<TableCell className="flex space-x-2">
-														<Button
-															className="flex-1 w-full"
-															onClick={() =>
-																openDispense(batch.id, batch.batchNum)
-															}
-														>
-															Dispense
-														</Button>
-														<Button
-															className="flex-1 w-full"
-															onClick={() =>
-																openAddQuantity(batch.id, batch.batchNum)
-															}
-														>
-															Add Quantity
-														</Button>
+										) : (
+											<>
+												<TableRow className="bg-gray-100">
+													<TableCell className="font-semibold">
+														Batch ID
+													</TableCell>
+													<TableCell className="font-semibold">
+														Quantity
+													</TableCell>
+													<TableCell className="font-semibold">
+														Quick Actions
 													</TableCell>
 												</TableRow>
-											))}
-										</>
-									)}
+
+												{item.batches.map((batch) => (
+													<TableRow key={batch.id}>
+														<TableCell>{batch.batchNum}</TableCell>
+														<TableCell>{batch.quantity}</TableCell>
+														<TableCell className="flex space-x-2">
+															<Button
+																className="flex-1 w-full"
+																onClick={() =>
+																	openDispense(batch.id, batch.batchNum)
+																}
+															>
+																Dispense
+															</Button>
+															<Button
+																className="flex-1 w-full"
+																onClick={() =>
+																	openAddQuantity(batch.id, batch.batchNum)
+																}
+															>
+																Add Quantity
+															</Button>
+														</TableCell>
+													</TableRow>
+												))}
+											</>
+										))}
 								</React.Fragment>
 							))}
 						</TableBody>
 					</Table>
 				</CardContent>
 			</Card>
+			<AddMedicinesModal
+				open={isOpenAddMedicines}
+				onOpenChange={setIsOpenAddMedicines}
+				medicines={medicines}
+			/>
 			<AddBatchModal
 				open={isOpenAddBatch}
 				onOpenChange={setIsOpenAddBatch}
