@@ -6,6 +6,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { injectionRoutes } from "@/db/case";
 import Comment from "./comment";
 import DurationInput from "./duration-input";
 import PrescriptionFrequencySelector from "./frequency-selector";
@@ -51,12 +52,7 @@ const PrescriptionInjectionFields = ({
 			/>
 			<Select
 				value={item.case_prescriptions.categoryData.injectionRoute}
-				onValueChange={(
-					value:
-						| "Subcutaneous (SC)"
-						| "Intramuscular (IM)"
-						| "Intravenous (IV)",
-				) =>
+				onValueChange={(value: (typeof injectionRoutes)[number]) =>
 					handleUpdatePrescriptionItem(item.medicines.id, "categoryData", {
 						category: "Injection",
 						injectionRoute: value,
@@ -67,9 +63,11 @@ const PrescriptionInjectionFields = ({
 					<SelectValue placeholder="Route" />
 				</SelectTrigger>
 				<SelectContent>
-					<SelectItem value="Subcutaneous (SC)">Subcutaneous (SC)</SelectItem>
-					<SelectItem value="Intramuscular (IM)">Intramuscular (IM)</SelectItem>
-					<SelectItem value="Intravenous (IV)">Intravenous (IV)</SelectItem>
+					{injectionRoutes.map((route) => (
+						<SelectItem key={route} value={route}>
+							{route}
+						</SelectItem>
+					))}
 				</SelectContent>
 			</Select>
 			<Comment

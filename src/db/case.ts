@@ -28,10 +28,17 @@ export const medicineCategories = [
 	"Liquids/Syrups",
 ] as const;
 
+export const injectionRoutes = [
+	"Intramuscular (IM)",
+	"Subcutaneous (SC)",
+	"Intravenous (IV)",
+] as const;
+export const mealTimings = ["Before Meal", "After Meal"] as const;
+
 export const categoryDataSchema = z.union([
 	z.object({
 		category: z.literal(medicineCategories[0]),
-		mealTiming: z.union([z.literal("Before Meal"), z.literal("After Meal")]),
+		mealTiming: z.union(mealTimings.map((timing) => z.literal(timing))),
 	}),
 	z.object({
 		category: z.literal(medicineCategories[1]),
@@ -39,15 +46,11 @@ export const categoryDataSchema = z.union([
 	}),
 	z.object({
 		category: z.literal(medicineCategories[2]),
-		injectionRoute: z.union([
-			z.literal("Intramuscular (IM)"),
-			z.literal("Subcutaneous (SC)"),
-			z.literal("Intravenous (IV)"),
-		]),
+		injectionRoute: z.union(injectionRoutes.map((route) => z.literal(route))),
 	}),
 	z.object({
 		category: z.literal(medicineCategories[3]),
-		liquidTiming: z.union([z.literal("Before Meal"), z.literal("After Meal")]),
+		liquidTiming: z.union(mealTimings.map((timing) => z.literal(timing))),
 	}),
 ]);
 
