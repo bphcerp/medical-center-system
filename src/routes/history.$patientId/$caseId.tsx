@@ -1,5 +1,6 @@
 import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import type { InferResponseType } from "hono/client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import DiagnosisCard from "@/components/diagnosis-card";
 import { OTPVerificationDialog } from "@/components/otp-verification-dialog";
@@ -30,67 +31,35 @@ export const Route = createFileRoute("/history/$patientId/$caseId")({
 			});
 		}
 
-		const historyRes = await client.api.doctor.consultation[":caseId"].$get({
-			param: { caseId: params.caseId },
-		});
-
-		if (historyRes.status === 403) {
-			const errorData = await historyRes.json();
-			// Check if OTP is required
-			if ("requiresOtp" in errorData && errorData.requiresOtp) {
-				// Return special state to indicate OTP is required
-				return {
-					user,
-					requiresOtp: true,
-					caseId: params.caseId,
-					patientId: params.patientId,
-					caseDetail: null,
-					prescriptions: [],
-					diseases: [],
-				};
-			}
-			throw redirect({
-				to: "/doctor",
-			});
-		}
-
-		if (historyRes.status !== 200) {
-			throw new Error("Failed to fetch case details");
-		}
-
-		const { caseDetail, prescriptions, diseases } = await historyRes.json();
-
+		// Return special state to indicate OTP is required
 		return {
 			user,
-			requiresOtp: false,
 			caseId: params.caseId,
 			patientId: params.patientId,
-			caseDetail,
-			prescriptions,
-			diseases,
 		};
 	},
 	component: CaseDetailsPage,
 });
 
 function CaseDetailsPage() {
-	const loaderData = Route.useLoaderData();
-	const {
-		requiresOtp,
-		caseId,
-		patientId,
-		caseDetail,
-		prescriptions,
-		diseases,
-	} = loaderData;
+	const { caseId, patientId } = Route.useLoaderData();
 	const navigate = useNavigate();
 
 	// OTP verification state
-	const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(requiresOtp || false);
+	const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(true);
 	const [isVerifying, setIsVerifying] = useState(false);
 	const [isSendingOtp, setIsSendingOtp] = useState(false);
 	const [otpError, setOtpError] = useState<string | null>(null);
 	const otpSentRef = useRef<boolean>(false);
+	const caseDetailsResponse =
+		client.api.doctor.consultation[":caseId"]["verify-otp"].$post;
+	type CaseDetail = InferResponseType<typeof caseDetailsResponse, 200>;
+	const [caseRecord, setCaseRecord] = useState<CaseDetail | null>(null);
+	const { caseDetail, prescriptions, diseases } = caseRecord || {
+		caseDetail: null,
+		prescriptions: [],
+		diseases: [],
+	};
 
 	const sendOtp = useCallback(async () => {
 		setIsSendingOtp(true);
@@ -130,11 +99,11 @@ function CaseDetailsPage() {
 
 	// Auto-send OTP when OTP is required (only once)
 	useEffect(() => {
-		if (requiresOtp && !otpSentRef.current && !isSendingOtp) {
+		if (!otpSentRef.current && !isSendingOtp) {
 			otpSentRef.current = true;
 			sendOtp();
 		}
-	}, [requiresOtp, isSendingOtp, sendOtp]);
+	}, [isSendingOtp, sendOtp]);
 
 	const handleVerifyOtp = async (otp: string) => {
 		setIsVerifying(true);
@@ -149,8 +118,8 @@ function CaseDetailsPage() {
 
 			if (response.status === 200) {
 				setIsOtpDialogOpen(false);
-				// Reload the page to fetch case details
-				window.location.reload();
+				const data = await response.json();
+				setCaseRecord(data);
 			} else if (response.status === 400) {
 				setOtpError("Invalid OTP. Please try again.");
 			} else {
@@ -176,8 +145,8 @@ function CaseDetailsPage() {
 
 			if (response.status === 200) {
 				setIsOtpDialogOpen(false);
-				// Reload the page to fetch case details
-				window.location.reload();
+				const data = await response.json();
+				setCaseRecord(data);
 			} else {
 				const errorData = await response.json();
 				setOtpError(
@@ -198,46 +167,40 @@ function CaseDetailsPage() {
 				<div className="container mx-auto p-6">
 					<h1 className="text-3xl font-bold">Case Details</h1>
 					<p className="text-muted-foreground mt-2">Case ID: {caseId}</p>
-					{requiresOtp ? (
-						<>
-							<p className="mt-4">
-								{isSendingOtp
-									? "Sending OTP to patient's email..."
-									: "Waiting for OTP verification..."}
-							</p>
-							<OTPVerificationDialog
-								open={isOtpDialogOpen}
-								onOpenChange={(open) => {
-									if (!open) {
-										// If user closes dialog without verifying, redirect back
-										navigate({
-											to: "/history/$patientId",
-											params: { patientId },
-										});
-									}
-									setIsOtpDialogOpen(open);
-								}}
-								onVerify={handleVerifyOtp}
-								onOverride={handleOverride}
-								patientName="the patient"
-								isVerifying={isVerifying}
-								error={otpError}
-							/>
-						</>
-					) : (
-						<p className="mt-4">No case details found.</p>
-					)}
+					<p className="mt-4">
+						{isSendingOtp
+							? "Sending OTP to patient's email..."
+							: "Waiting for OTP verification..."}
+					</p>
+					<OTPVerificationDialog
+						open={isOtpDialogOpen}
+						onOpenChange={(open) => {
+							if (!open) {
+								// If user closes dialog without verifying, redirect back
+								navigate({
+									to: "/history/$patientId",
+									params: { patientId },
+								});
+							}
+							setIsOtpDialogOpen(open);
+						}}
+						onVerify={handleVerifyOtp}
+						onOverride={handleOverride}
+						patientName="the patient"
+						isVerifying={isVerifying}
+						error={otpError}
+					/>
 				</div>
 			</>
 		);
 	}
 
 	const finalizedStateLabel =
-		caseDetail.finalizedState === "opd"
+		caseDetail.cases.finalizedState === "opd"
 			? "OPD"
-			: caseDetail.finalizedState === "admitted"
+			: caseDetail.cases.finalizedState === "admitted"
 				? "Admitted"
-				: caseDetail.finalizedState === "referred"
+				: caseDetail.cases.finalizedState === "referred"
 					? "Referred"
 					: "Unknown";
 
@@ -248,18 +211,18 @@ function CaseDetailsPage() {
 				<div className="flex justify-between items-start mb-4">
 					<div>
 						<h1 className="text-3xl font-bold">
-							Case History - {caseDetail.patientName}
+							Case History - {caseDetail.patient.name}
 						</h1>
 						<p className="text-muted-foreground my-2">
-							Case ID: {caseDetail.caseId}
+							Case ID: {caseDetail.cases.id}
 						</p>
 						<div className="flex gap-2 items-center mt-2">
 							<span className="text-sm font-semibold">Status:</span>
 							<Badge
 								variant={
-									caseDetail.finalizedState === "opd"
+									caseDetail.cases.finalizedState === "opd"
 										? "default"
-										: caseDetail.finalizedState === "admitted"
+										: caseDetail.cases.finalizedState === "admitted"
 											? "secondary"
 											: "outline"
 								}
@@ -272,7 +235,7 @@ function CaseDetailsPage() {
 						onClick={() =>
 							navigate({
 								to: "/history/$patientId",
-								params: { patientId: String(caseDetail.patientId) },
+								params: { patientId: String(caseDetail.patient.id) },
 							})
 						}
 					>
@@ -282,35 +245,44 @@ function CaseDetailsPage() {
 
 				<Card className="mb-2">
 					<div className="flex gap-4 mx-3">
-						<VitalField label="Patient Name" value={caseDetail?.patientName} />
-						<VitalField label="Age" value={caseDetail?.patientAge} />
+						<VitalField label="Patient Name" value={caseDetail?.patient.name} />
+						<VitalField label="Age" value={caseDetail?.patient.age} />
 						<VitalField label="ID/PSRN/Phone" value={caseDetail?.identifier} />
 					</div>
 				</Card>
 
 				<Card className="mb-2">
 					<div className="flex gap-4 mx-3">
-						<VitalField label="Temperature" value={caseDetail?.temperature} />
-						<VitalField label="Heart Rate" value={caseDetail?.heartRate} />
+						<VitalField
+							label="Temperature"
+							value={caseDetail?.cases.temperature}
+						/>
+						<VitalField
+							label="Heart Rate"
+							value={caseDetail?.cases.heartRate}
+						/>
 						<VitalField
 							label="Respiratory Rate"
-							value={caseDetail?.respiratoryRate}
+							value={caseDetail?.cases.respiratoryRate}
 						/>
 					</div>
 					<div className="flex gap-4 mx-3">
 						<VitalField
 							label="Blood Pressure Systolic"
-							value={caseDetail?.bloodPressureSystolic}
+							value={caseDetail?.cases.bloodPressureSystolic}
 						/>
 						<VitalField
 							label="Blood Pressure Diastolic"
-							value={caseDetail?.bloodPressureDiastolic}
+							value={caseDetail?.cases.bloodPressureDiastolic}
 						/>
 					</div>
 					<div className="flex gap-4 mx-3">
-						<VitalField label="Blood Sugar" value={caseDetail?.bloodSugar} />
-						<VitalField label="SpO2" value={caseDetail?.spo2} />
-						<VitalField label="Weight" value={caseDetail?.weight} />
+						<VitalField
+							label="Blood Sugar"
+							value={caseDetail?.cases.bloodSugar}
+						/>
+						<VitalField label="SpO2" value={caseDetail?.cases.spo2} />
+						<VitalField label="Weight" value={caseDetail?.cases.weight} />
 					</div>
 				</Card>
 
@@ -320,7 +292,7 @@ function CaseDetailsPage() {
 							Clinical Examination
 						</Label>
 						<Textarea
-							value={caseDetail.consultationNotes || "No notes recorded"}
+							value={caseDetail?.cases.consultationNotes || "No notes recorded"}
 							readOnly
 							className="h-full -mt-3.5 resize-none bg-muted"
 						/>
@@ -345,117 +317,128 @@ function CaseDetailsPage() {
 							<div className="px-4 pb-4 space-y-4">
 								{prescriptions.map((item) => (
 									<div
-										key={item.id}
+										key={item.medicines.id}
 										className="border rounded-lg p-4 bg-card hover:bg-accent/5 transition-colors"
 									>
 										<div className="flex items-start justify-between gap-3 mb-3">
 											<div className="flex-1">
 												<div className="flex items-center gap-2 flex-wrap mb-1">
 													<span className="font-semibold text-base">
-														{item.company} {item.brand}
+														{item.medicines.company} {item.medicines.brand}
 													</span>
 													<Badge variant="default" className="text-xs">
-														{item.type}
+														{item.medicines.type}
 													</Badge>
 												</div>
 												<div className="text-sm text-muted-foreground">
-													{item.drug} • {item.strength}
+													{item.medicines.drug} • {item.medicines.strength}
 												</div>
 											</div>
 										</div>
 
 										<div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-											{item.dosage && (
+											{item.case_prescriptions.dosage && (
 												<div className="flex items-start gap-2">
 													<span className="font-medium text-muted-foreground min-w-20">
 														Dosage:
 													</span>
-													<span className="flex-1">{item.dosage}</span>
+													<span className="flex-1">
+														{item.case_prescriptions.dosage}
+													</span>
 												</div>
 											)}
-											{item.frequency && (
+											{item.case_prescriptions.frequency && (
 												<div className="flex items-start gap-2">
 													<span className="font-medium text-muted-foreground min-w-20">
 														Frequency:
 													</span>
-													<span className="flex-1">{item.frequency}</span>
-												</div>
-											)}
-											{item.duration && (
-												<div className="flex items-start gap-2">
-													<span className="font-medium text-muted-foreground min-w-20">
-														Duration:
+													<span className="flex-1">
+														{item.case_prescriptions.frequency}
 													</span>
-													<span className="flex-1">{item.duration}</span>
 												</div>
 											)}
-											{item.categoryData &&
-												(() => {
-													try {
-														const categoryData =
-															typeof item.categoryData === "string"
-																? JSON.parse(item.categoryData)
-																: item.categoryData;
-														return (
-															<>
-																{categoryData.mealTiming && (
-																	<div className="flex items-start gap-2">
-																		<span className="font-medium text-muted-foreground min-w-20">
-																			Meal Timing:
-																		</span>
-																		<span className="flex-1">
-																			{categoryData.mealTiming === "before"
-																				? "Before meal"
-																				: "After meal"}
-																		</span>
-																	</div>
-																)}
-																{categoryData.applicationArea && (
-																	<div className="flex items-start gap-2">
-																		<span className="font-medium text-muted-foreground min-w-20">
-																			Application:
-																		</span>
-																		<span className="flex-1">
-																			{categoryData.applicationArea}
-																		</span>
-																	</div>
-																)}
-																{categoryData.injectionRoute && (
-																	<div className="flex items-start gap-2">
-																		<span className="font-medium text-muted-foreground min-w-20">
-																			Route:
-																		</span>
-																		<span className="flex-1">
-																			{categoryData.injectionRoute}
-																		</span>
-																	</div>
-																)}
-																{categoryData.liquidTiming && (
-																	<div className="flex items-start gap-2">
-																		<span className="font-medium text-muted-foreground min-w-20">
-																			Meal Timing:
-																		</span>
-																		<span className="flex-1">
-																			{categoryData.liquidTiming === "before"
-																				? "Before meal"
-																				: "After meal"}
-																		</span>
-																	</div>
-																)}
-															</>
-														);
-													} catch {
-														return null;
-													}
-												})()}
+											{item.case_prescriptions.duration &&
+												item.case_prescriptions.durationUnit && (
+													<div className="flex items-start gap-2">
+														<span className="font-medium text-muted-foreground min-w-20">
+															Duration:
+														</span>
+														<span className="flex-1">
+															{item.case_prescriptions.duration}{" "}
+															{item.case_prescriptions.durationUnit}
+														</span>
+													</div>
+												)}
+
+											{item.case_prescriptions.categoryData &&
+												"mealTiming" in item.case_prescriptions.categoryData &&
+												item.case_prescriptions.categoryData.mealTiming && (
+													<div className="flex items-start gap-2">
+														<span className="font-medium text-muted-foreground min-w-20">
+															Meal Timing:
+														</span>
+														<span className="flex-1">
+															{item.case_prescriptions.categoryData.mealTiming}
+														</span>
+													</div>
+												)}
+											{item.case_prescriptions.categoryData &&
+												"applicationArea" in
+													item.case_prescriptions.categoryData &&
+												item.case_prescriptions.categoryData
+													.applicationArea && (
+													<div className="flex items-start gap-2">
+														<span className="font-medium text-muted-foreground min-w-20">
+															Application:
+														</span>
+														<span className="flex-1">
+															{
+																item.case_prescriptions.categoryData
+																	.applicationArea
+															}
+														</span>
+													</div>
+												)}
+											{item.case_prescriptions.categoryData &&
+												"injectionRoute" in
+													item.case_prescriptions.categoryData && (
+													<div className="flex items-start gap-2">
+														<span className="font-medium text-muted-foreground min-w-20">
+															Route:
+														</span>
+														<span className="flex-1">
+															{
+																item.case_prescriptions.categoryData
+																	.injectionRoute
+															}
+														</span>
+													</div>
+												)}
+											{item.case_prescriptions.categoryData &&
+												"liquidTiming" in
+													item.case_prescriptions.categoryData && (
+													<div className="flex items-start gap-2">
+														<span className="font-medium text-muted-foreground min-w-20">
+															Liquid Timing:
+														</span>
+														<span className="flex-1">
+															{
+																item.case_prescriptions.categoryData
+																	.liquidTiming
+															}
+														</span>
+													</div>
+												)}
 										</div>
 
-										{item.comments && (
+										{item.case_prescriptions.comment && (
 											<div className="mt-3 pt-3 border-t">
 												<span className="font-medium text-sm text-muted-foreground">
 													Notes:{" "}
 												</span>
-												<span className="text-sm">{item.comments}</span>
+												<span className="text-sm">
+													{item.case_prescriptions.comment}
+												</span>
 											</div>
 										)}
 									</div>

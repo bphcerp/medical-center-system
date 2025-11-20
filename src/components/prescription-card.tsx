@@ -24,42 +24,19 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import type { medicineCategories } from "@/db/case";
 import DurationInput from "./duration-input";
-
-export type PrescriptionItem = {
-	id: number;
-	drug: string;
-	brand: string;
-	company: string;
-	strength: string;
-	type: string;
-	category: (typeof medicineCategories)[number];
-	dosage: string;
-	frequency: string;
-	duration: string;
-	durationUnit?: string;
-	comments: string;
-	mealTiming?: string;
-	applicationArea?: string;
-	injectionRoute?: string;
-	liquidTiming?: string;
-};
+import type {
+	MedicineItem,
+	PrescriptionItem,
+} from "./prescription-frequency-selector";
+import PrescriptionFrequencySelector from "./prescription-frequency-selector";
 
 const PrescriptionCard = ({
 	medicines,
 	prescriptionItems,
 	setPrescriptionItems,
 }: {
-	medicines: {
-		id: number;
-		drug: string;
-		brand: string;
-		company: string;
-		strength: string;
-		type: string;
-		category: (typeof medicineCategories)[number];
-	}[];
+	medicines: MedicineItem[];
 	prescriptionItems: PrescriptionItem[];
 	setPrescriptionItems: (items: PrescriptionItem[]) => void;
 }) => {
@@ -119,52 +96,71 @@ const PrescriptionCard = ({
 
 	const handleUpdatePrescriptionItem = (
 		id: number,
-		field: keyof Omit<PrescriptionItem, "id" | "medicine">,
-		value: string,
+		field: keyof Omit<
+			PrescriptionItem["case_prescriptions"],
+			"id" | "medicine"
+		>,
+		value: string | PrescriptionItem["case_prescriptions"]["categoryData"],
 	) => {
 		setPrescriptionItems(
 			prescriptionItems.map((item) =>
-				item.id === id ? { ...item, [field]: value } : item,
+				item.medicines.id === id
+					? {
+							...item,
+							case_prescriptions: {
+								...item.case_prescriptions,
+								[field]: value,
+							},
+						}
+					: item,
 			),
 		);
 	};
 
 	const handleRemovePrescriptionItem = (id: number) => {
-		setPrescriptionItems(prescriptionItems.filter((item) => item.id !== id));
+		setPrescriptionItems(
+			prescriptionItems.filter((item) => item.medicines.id !== id),
+		);
 	};
 
 	const handleAddMedicine = (medicine: (typeof medicines)[0]) => {
 		//heck if medicine already exists in the prescription
-		if (prescriptionItems.some((item) => item.id === medicine.id)) {
+		if (prescriptionItems.some((item) => item.medicines.id === medicine.id)) {
 			alert("This medicine is already in the prescription");
 			return;
 		}
 
 		const newItem: PrescriptionItem = {
-			id: medicine.id,
-			drug: medicine.drug,
-			brand: medicine.brand,
-			company: medicine.company,
-			strength: medicine.strength,
-			type: medicine.type,
-			category: medicine.category,
-
-			dosage: "",
-			frequency: "",
-			duration: "",
-			comments: "",
-			...(medicine.category === "Capsule/Tablet"
-				? { mealTiming: "", durationUnit: "days" }
-				: {}),
-			...(medicine.category === "External Application"
-				? { applicationArea: "", durationUnit: "days" }
-				: {}),
-			...(medicine.category === "Injection"
-				? { injectionRoute: "", durationUnit: "days" }
-				: {}),
-			...(medicine.category === "Liquids/Syrups"
-				? { liquidTiming: "", durationUnit: "days" }
-				: {}),
+			medicines: medicine,
+			case_prescriptions: {
+				dosage: "",
+				frequency: "",
+				duration: "",
+				durationUnit: "days",
+				categoryData:
+					medicine.category === "Capsule/Tablet"
+						? {
+								mealTiming: "Before Meal",
+								category: "Capsule/Tablet",
+							}
+						: medicine.category === "External Application"
+							? {
+									applicationArea: "",
+									category: "External Application",
+								}
+							: medicine.category === "Injection"
+								? {
+										injectionRoute: "Intravenous (IV)",
+										category: "Injection",
+									}
+								: medicine.category === "Liquids/Syrups"
+									? {
+											liquidTiming: "Before Meal",
+											category: "Liquids/Syrups",
+										}
+									: null,
+				comment: "",
+			},
 		};
 		setPrescriptionItems([...prescriptionItems, newItem]);
 		setPrescriptionQuery("");
@@ -242,96 +238,88 @@ const PrescriptionCard = ({
 			</div>
 			{prescriptionItems.length > 0 ? (
 				prescriptionItems.map((item) => (
-					<div key={item.id} className="px-2">
+					<div key={item.medicines.id} className="px-2">
 						<div className="w-full pb-1 flex flex-wrap items-center gap-2">
 							<span className="font-semibold">
-								{item.company} {item.brand}
+								{item.medicines.company} {item.medicines.brand}
 							</span>
 							<span className="text-muted-foreground text-sm">
-								({item.drug}) - {item.strength}
+								({item.medicines.drug}) - {item.medicines.strength}
 							</span>
 							<span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-								{item.type}
+								{item.medicines.type}
 							</span>
 						</div>
 						<div className="gap-0.5 flex">
-							{item.category === "Capsule/Tablet" && (
+							{item.case_prescriptions.categoryData?.category ===
+								"Capsule/Tablet" && (
 								<div className="flex flex-wrap gap-2 items-center w-full">
 									<Select
-										value={item.dosage}
+										value={item.case_prescriptions.dosage}
 										onValueChange={(value) =>
-											handleUpdatePrescriptionItem(item.id, "dosage", value)
+											handleUpdatePrescriptionItem(
+												item.medicines.id,
+												"dosage",
+												value,
+											)
 										}
 									>
 										<SelectTrigger className="h-8 flex-1 min-w-20">
 											<SelectValue placeholder="Dosage" />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="1/4">1/4 tablet</SelectItem>
-											<SelectItem value="1/2">1/2 tablet</SelectItem>
-											<SelectItem value="1">1 tablet</SelectItem>
-											<SelectItem value="2">2 tablets</SelectItem>
+											<SelectItem value="1/4 tablet">1/4 tablet</SelectItem>
+											<SelectItem value="1/2 tablet">1/2 tablet</SelectItem>
+											<SelectItem value="1 tablet">1 tablet</SelectItem>
+											<SelectItem value="2 tablets">2 tablets</SelectItem>
 										</SelectContent>
 									</Select>
+									<PrescriptionFrequencySelector
+										item={item}
+										handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
+									/>
 									<Select
-										value={item.frequency}
-										onValueChange={(value) =>
-											handleUpdatePrescriptionItem(item.id, "frequency", value)
-										}
-									>
-										<SelectTrigger className="h-8 flex-1 min-w-[100px]">
-											<SelectValue placeholder="Frequency" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="1">Once a day</SelectItem>
-											<SelectItem value="2">Twice a day</SelectItem>
-											<SelectItem value="3">3 times a day</SelectItem>
-											<SelectItem value="4">4 times a day</SelectItem>
-											<SelectItem value="5">5 times a day</SelectItem>
-											<SelectItem value="alternate days">
-												Alternate days
-											</SelectItem>
-											<SelectItem value="once a week">Once a week</SelectItem>
-											<SelectItem value="twice a week">Twice a week</SelectItem>
-											<SelectItem value="thrice a week">
-												Thrice a week
-											</SelectItem>
-										</SelectContent>
-									</Select>
-									<Select
-										value={item.mealTiming || ""}
-										onValueChange={(value) =>
-											handleUpdatePrescriptionItem(item.id, "mealTiming", value)
+										value={item.case_prescriptions.categoryData.mealTiming}
+										onValueChange={(value: "Before Meal" | "After Meal") =>
+											handleUpdatePrescriptionItem(
+												item.medicines.id,
+												"categoryData",
+												{ category: "Capsule/Tablet", mealTiming: value },
+											)
 										}
 									>
 										<SelectTrigger className="h-8 flex-1 min-w-[100px]">
 											<SelectValue placeholder="Meal Timing" />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="before">Before meal</SelectItem>
-											<SelectItem value="after">After meal</SelectItem>
+											<SelectItem value="Before Meal">Before meal</SelectItem>
+											<SelectItem value="After Meal">After meal</SelectItem>
 										</SelectContent>
 									</Select>
 									<DurationInput
-										duration={item.duration}
-										durationUnit={item.durationUnit}
+										duration={item.case_prescriptions.duration}
+										durationUnit={item.case_prescriptions.durationUnit}
 										onDurationChange={(value) =>
-											handleUpdatePrescriptionItem(item.id, "duration", value)
+											handleUpdatePrescriptionItem(
+												item.medicines.id,
+												"duration",
+												value,
+											)
 										}
 										onDurationUnitChange={(value) =>
 											handleUpdatePrescriptionItem(
-												item.id,
+												item.medicines.id,
 												"durationUnit",
 												value,
 											)
 										}
 									/>
 									<Input
-										value={item.comments}
+										value={item.case_prescriptions.comment || ""}
 										onChange={(e) =>
 											handleUpdatePrescriptionItem(
-												item.id,
-												"comments",
+												item.medicines.id,
+												"comment",
 												e.target.value,
 											)
 										}
@@ -340,79 +328,73 @@ const PrescriptionCard = ({
 									/>
 								</div>
 							)}
-							{item.category === "External Application" && (
+							{item.case_prescriptions.categoryData?.category ===
+								"External Application" && (
 								<div className="flex flex-wrap gap-2 items-center w-full">
 									<Select
-										value={item.dosage}
+										value={item.case_prescriptions.dosage}
 										onValueChange={(value) =>
-											handleUpdatePrescriptionItem(item.id, "dosage", value)
+											handleUpdatePrescriptionItem(
+												item.medicines.id,
+												"dosage",
+												value,
+											)
 										}
 									>
 										<SelectTrigger className="h-8 flex-1 min-w-[100px]">
 											<SelectValue placeholder="Amount" />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="thin layer">Thin layer</SelectItem>
-											<SelectItem value="thick layer">Thick layer</SelectItem>
-											<SelectItem value="pea-sized">Pea-sized</SelectItem>
-											<SelectItem value="coin-sized">Coin-sized</SelectItem>
-											<SelectItem value="as needed">As needed</SelectItem>
+											<SelectItem value="Thin layer">Thin layer</SelectItem>
+											<SelectItem value="Thick layer">Thick layer</SelectItem>
+											<SelectItem value="Pea-sized">Pea-sized</SelectItem>
+											<SelectItem value="Coin-sized">Coin-sized</SelectItem>
+											<SelectItem value="As needed">As needed</SelectItem>
 										</SelectContent>
 									</Select>
-									<Select
-										value={item.frequency}
-										onValueChange={(value) =>
-											handleUpdatePrescriptionItem(item.id, "frequency", value)
-										}
-									>
-										<SelectTrigger className="h-8 flex-1 min-w-[100px]">
-											<SelectValue placeholder="Frequency" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="1">Once a day</SelectItem>
-											<SelectItem value="2">Twice a day</SelectItem>
-											<SelectItem value="3">3 times a day</SelectItem>
-											<SelectItem value="4">4 times a day</SelectItem>
-											<SelectItem value="alternate days">
-												Alternate days
-											</SelectItem>
-											<SelectItem value="once a week">Once a week</SelectItem>
-											<SelectItem value="twice a week">Twice a week</SelectItem>
-											<SelectItem value="as needed">As needed</SelectItem>
-										</SelectContent>
-									</Select>
+									<PrescriptionFrequencySelector
+										item={item}
+										handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
+									/>
 									<DurationInput
-										duration={item.duration}
-										durationUnit={item.durationUnit}
+										duration={item.case_prescriptions.duration}
+										durationUnit={item.case_prescriptions.durationUnit}
 										onDurationChange={(value) =>
-											handleUpdatePrescriptionItem(item.id, "duration", value)
+											handleUpdatePrescriptionItem(
+												item.medicines.id,
+												"duration",
+												value,
+											)
 										}
 										onDurationUnitChange={(value) =>
 											handleUpdatePrescriptionItem(
-												item.id,
+												item.medicines.id,
 												"durationUnit",
 												value,
 											)
 										}
 									/>
 									<Input
-										value={item.applicationArea || ""}
+										value={item.case_prescriptions.categoryData.applicationArea}
 										onChange={(e) =>
 											handleUpdatePrescriptionItem(
-												item.id,
-												"applicationArea",
-												e.target.value,
+												item.medicines.id,
+												"categoryData",
+												{
+													category: "External Application",
+													applicationArea: e.target.value,
+												},
 											)
 										}
 										placeholder="Application area"
 										className="h-10 flex-1 min-w-[120px]"
 									/>
 									<Input
-										value={item.comments}
+										value={item.case_prescriptions.comment || ""}
 										onChange={(e) =>
 											handleUpdatePrescriptionItem(
-												item.id,
-												"comments",
+												item.medicines.id,
+												"comment",
 												e.target.value,
 											)
 										}
@@ -421,13 +403,14 @@ const PrescriptionCard = ({
 									/>
 								</div>
 							)}
-							{item.category === "Injection" && (
+							{item.case_prescriptions.categoryData?.category ===
+								"Injection" && (
 								<div className="flex flex-wrap gap-2 items-center w-full">
 									<Input
-										value={item.dosage}
+										value={item.case_prescriptions.dosage}
 										onChange={(e) =>
 											handleUpdatePrescriptionItem(
-												item.id,
+												item.medicines.id,
 												"dosage",
 												e.target.value,
 											)
@@ -435,62 +418,40 @@ const PrescriptionCard = ({
 										placeholder="Dosage (mg/mL/units)"
 										className="h-10 flex-1 min-w-[120px]"
 									/>
-									<Select
-										value={item.frequency}
-										onValueChange={(value) =>
-											handleUpdatePrescriptionItem(item.id, "frequency", value)
-										}
-									>
-										<SelectTrigger className="h-8 flex-1 min-w-[100px]">
-											<SelectValue placeholder="Frequency" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="once">Once</SelectItem>
-											<SelectItem value="twice daily">Twice daily</SelectItem>
-											<SelectItem value="three times daily">
-												Three times daily
-											</SelectItem>
-											<SelectItem value="every 6 hours">
-												Every 6 hours
-											</SelectItem>
-											<SelectItem value="every 8 hours">
-												Every 8 hours
-											</SelectItem>
-											<SelectItem value="every 12 hours">
-												Every 12 hours
-											</SelectItem>
-											<SelectItem value="alternate days">
-												Alternate days
-											</SelectItem>
-											<SelectItem value="once a week">Once a week</SelectItem>
-											<SelectItem value="twice a week">Twice a week</SelectItem>
-											<SelectItem value="thrice a week">
-												Thrice a week
-											</SelectItem>
-											<SelectItem value="as needed">As needed</SelectItem>
-										</SelectContent>
-									</Select>
+									<PrescriptionFrequencySelector
+										item={item}
+										handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
+									/>
 									<DurationInput
-										duration={item.duration}
-										durationUnit={item.durationUnit}
+										duration={item.case_prescriptions.duration}
+										durationUnit={item.case_prescriptions.durationUnit}
 										onDurationChange={(value) =>
-											handleUpdatePrescriptionItem(item.id, "duration", value)
+											handleUpdatePrescriptionItem(
+												item.medicines.id,
+												"duration",
+												value,
+											)
 										}
 										onDurationUnitChange={(value) =>
 											handleUpdatePrescriptionItem(
-												item.id,
+												item.medicines.id,
 												"durationUnit",
 												value,
 											)
 										}
 									/>
 									<Select
-										value={item.injectionRoute || ""}
-										onValueChange={(value) =>
+										value={item.case_prescriptions.categoryData.injectionRoute}
+										onValueChange={(
+											value:
+												| "Subcutaneous (SC)"
+												| "Intramuscular (IM)"
+												| "Intravenous (IV)",
+										) =>
 											handleUpdatePrescriptionItem(
-												item.id,
-												"injectionRoute",
-												value,
+												item.medicines.id,
+												"categoryData",
+												{ category: "Injection", injectionRoute: value },
 											)
 										}
 									>
@@ -498,23 +459,23 @@ const PrescriptionCard = ({
 											<SelectValue placeholder="Route" />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="subcutaneous">
+											<SelectItem value="Subcutaneous (SC)">
 												Subcutaneous (SC)
 											</SelectItem>
-											<SelectItem value="intramuscular">
+											<SelectItem value="Intramuscular (IM)">
 												Intramuscular (IM)
 											</SelectItem>
-											<SelectItem value="intravenous">
+											<SelectItem value="Intravenous (IV)">
 												Intravenous (IV)
 											</SelectItem>
 										</SelectContent>
 									</Select>
 									<Input
-										value={item.comments}
+										value={item.case_prescriptions.comment || ""}
 										onChange={(e) =>
 											handleUpdatePrescriptionItem(
-												item.id,
-												"comments",
+												item.medicines.id,
+												"comment",
 												e.target.value,
 											)
 										}
@@ -523,13 +484,14 @@ const PrescriptionCard = ({
 									/>
 								</div>
 							)}
-							{item.category === "Liquids/Syrups" && (
+							{item.case_prescriptions.categoryData?.category ===
+								"Liquids/Syrups" && (
 								<div className="flex flex-wrap gap-2 items-center w-full">
 									<Input
-										value={item.dosage}
+										value={item.case_prescriptions.dosage}
 										onChange={(e) =>
 											handleUpdatePrescriptionItem(
-												item.id,
+												item.medicines.id,
 												"dosage",
 												e.target.value,
 											)
@@ -537,38 +499,17 @@ const PrescriptionCard = ({
 										placeholder="Dosage (mL/teaspoon/mg)"
 										className="h-10 flex-1 min-w-[120px]"
 									/>
+									<PrescriptionFrequencySelector
+										item={item}
+										handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
+									/>
 									<Select
-										value={item.frequency}
-										onValueChange={(value) =>
-											handleUpdatePrescriptionItem(item.id, "frequency", value)
-										}
-									>
-										<SelectTrigger className="h-8 flex-1 min-w-[100px]">
-											<SelectValue placeholder="Frequency" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="1">Once a day</SelectItem>
-											<SelectItem value="2">Twice a day</SelectItem>
-											<SelectItem value="3">3 times a day</SelectItem>
-											<SelectItem value="4">4 times a day</SelectItem>
-											<SelectItem value="5">5 times a day</SelectItem>
-											<SelectItem value="alternate days">
-												Alternate days
-											</SelectItem>
-											<SelectItem value="once a week">Once a week</SelectItem>
-											<SelectItem value="twice a week">Twice a week</SelectItem>
-											<SelectItem value="thrice a week">
-												Thrice a week
-											</SelectItem>
-										</SelectContent>
-									</Select>
-									<Select
-										value={item.liquidTiming || ""}
-										onValueChange={(value) =>
+										value={item.case_prescriptions.categoryData.liquidTiming}
+										onValueChange={(value: "Before Meal" | "After Meal") =>
 											handleUpdatePrescriptionItem(
-												item.id,
-												"liquidTiming",
-												value,
+												item.medicines.id,
+												"categoryData",
+												{ category: "Liquids/Syrups", liquidTiming: value },
 											)
 										}
 									>
@@ -576,30 +517,34 @@ const PrescriptionCard = ({
 											<SelectValue placeholder="Meal Timing" />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="before">Before meal</SelectItem>
-											<SelectItem value="after">After meal</SelectItem>
+											<SelectItem value="Before Meal">Before meal</SelectItem>
+											<SelectItem value="After Meal">After meal</SelectItem>
 										</SelectContent>
 									</Select>
 									<DurationInput
-										duration={item.duration}
-										durationUnit={item.durationUnit}
+										duration={item.case_prescriptions.duration}
+										durationUnit={item.case_prescriptions.durationUnit}
 										onDurationChange={(value) =>
-											handleUpdatePrescriptionItem(item.id, "duration", value)
+											handleUpdatePrescriptionItem(
+												item.medicines.id,
+												"duration",
+												value,
+											)
 										}
 										onDurationUnitChange={(value) =>
 											handleUpdatePrescriptionItem(
-												item.id,
+												item.medicines.id,
 												"durationUnit",
 												value,
 											)
 										}
 									/>
 									<Input
-										value={item.comments}
+										value={item.case_prescriptions.comment || ""}
 										onChange={(e) =>
 											handleUpdatePrescriptionItem(
-												item.id,
-												"comments",
+												item.medicines.id,
+												"comment",
 												e.target.value,
 											)
 										}
@@ -611,7 +556,7 @@ const PrescriptionCard = ({
 							<Button
 								variant="destructive"
 								size="sm"
-								onClick={() => handleRemovePrescriptionItem(item.id)}
+								onClick={() => handleRemovePrescriptionItem(item.medicines.id)}
 								className="h-10 w-10 p-0"
 							>
 								<Trash2 className="h-4 w-4" />
@@ -629,3 +574,4 @@ const PrescriptionCard = ({
 };
 
 export default PrescriptionCard;
+export * from "./prescription-frequency-selector";

@@ -1,6 +1,15 @@
 import "dotenv/config";
 import { zValidator } from "@hono/zod-validator";
-import { and, arrayContains, eq, inArray, isNull, sql } from "drizzle-orm";
+import {
+	and,
+	arrayContains,
+	eq,
+	getTableColumns,
+	inArray,
+	isNull,
+	sql,
+} from "drizzle-orm";
+import { createInsertSchema } from "drizzle-zod";
 import { Hono } from "hono";
 import nodemailer from "nodemailer";
 import z from "zod";
@@ -8,6 +17,7 @@ import env from "@/config/env";
 import {
 	casePrescriptionsTable,
 	casesTable,
+	categoryDataSchema,
 	diseasesTable,
 	medicinesTable,
 } from "@/db/case";
@@ -31,6 +41,76 @@ const transporter = nodemailer.createTransport({
 		pass: env.EMAIL_PASS,
 	},
 });
+
+const getCaseDetail = async (caseId: number) => {
+	const caseDetails = await db
+		.select({
+			cases: casesTable,
+			patient: patientsTable,
+			identifier: sql<string>`
+				COALESCE(${professorsTable.psrn},
+						${studentsTable.studentId},
+						${visitorsTable.phone},
+						${dependentsTable.psrn})`,
+		})
+		.from(casesTable)
+		.innerJoin(patientsTable, eq(casesTable.patient, patientsTable.id))
+		.leftJoin(professorsTable, eq(professorsTable.patientId, patientsTable.id))
+		.leftJoin(studentsTable, eq(studentsTable.patientId, patientsTable.id))
+		.leftJoin(visitorsTable, eq(visitorsTable.patientId, patientsTable.id))
+		.leftJoin(dependentsTable, eq(dependentsTable.patientId, patientsTable.id))
+		.where(eq(casesTable.id, caseId))
+		.orderBy(casesTable.id)
+		.limit(1);
+
+	const caseDetail = caseDetails[0];
+
+	// Fetch prescriptions
+	const {
+		caseId: _caseId,
+		id: _id,
+		medicineId: _medicineId,
+		...prescriptionCols
+	} = getTableColumns(casePrescriptionsTable);
+
+	const unparsedPrescriptions = await db
+		.select({
+			medicines: medicinesTable,
+			case_prescriptions: {
+				...prescriptionCols,
+			},
+		})
+		.from(casePrescriptionsTable)
+		.innerJoin(
+			medicinesTable,
+			eq(casePrescriptionsTable.medicineId, medicinesTable.id),
+		)
+		.where(eq(casePrescriptionsTable.caseId, caseId));
+
+	const prescriptions = unparsedPrescriptions.map((prescription) => ({
+		...prescription,
+		case_prescriptions: {
+			...prescription.case_prescriptions,
+			categoryData: prescription.case_prescriptions.categoryData
+				? categoryDataSchema.parse(prescription.case_prescriptions.categoryData)
+				: null,
+		},
+	}));
+
+	// Fetch diseases if diagnosis exists
+	let diseases: Array<{ id: number; name: string; icd: string }> = [];
+	if (caseDetail.cases.diagnosis && caseDetail.cases.diagnosis.length > 0) {
+		diseases = await db
+			.select({
+				id: diseasesTable.id,
+				name: diseasesTable.name,
+				icd: diseasesTable.icd,
+			})
+			.from(diseasesTable)
+			.where(inArray(diseasesTable.id, caseDetail.cases.diagnosis));
+	}
+	return { caseDetail, prescriptions, diseases };
+};
 
 const doctor = new Hono()
 	.use(rbacCheck({ permissions: ["doctor"] }))
@@ -107,96 +187,23 @@ const doctor = new Hono()
 		const userId = payload.id;
 		const caseId = Number(c.req.param("caseId"));
 
-		const caseDetails = await db
-			.select({
-				caseId: casesTable.id,
-				token: casesTable.token,
-				finalizedState: casesTable.finalizedState,
-				patientId: patientsTable.id,
-				patientName: patientsTable.name,
-				patientAge: patientsTable.age,
-				patientSex: patientsTable.sex,
-				patientType: patientsTable.type,
-				identifier: sql<string>`
-				COALESCE(${professorsTable.psrn},
-						${studentsTable.studentId},
-						${visitorsTable.phone},
-						${dependentsTable.psrn})`,
-				weight: casesTable.weight,
-				temperature: casesTable.temperature,
-				heartRate: casesTable.heartRate,
-				respiratoryRate: casesTable.respiratoryRate,
-				bloodPressureSystolic: casesTable.bloodPressureSystolic,
-				bloodPressureDiastolic: casesTable.bloodPressureDiastolic,
-				bloodSugar: casesTable.bloodSugar,
-				spo2: casesTable.spo2,
-				consultationNotes: casesTable.consultationNotes,
-				diagnosis: casesTable.diagnosis,
-				associatedUsers: casesTable.associatedUsers,
-				createdAt: casesTable.createdAt,
-				updatedAt: casesTable.updatedAt,
-			})
-			.from(casesTable)
-			.innerJoin(patientsTable, eq(casesTable.patient, patientsTable.id))
-			.leftJoin(
-				professorsTable,
-				eq(professorsTable.patientId, patientsTable.id),
-			)
-			.leftJoin(studentsTable, eq(studentsTable.patientId, patientsTable.id))
-			.leftJoin(visitorsTable, eq(visitorsTable.patientId, patientsTable.id))
-			.leftJoin(
-				dependentsTable,
-				eq(dependentsTable.patientId, patientsTable.id),
-			)
-			.where(eq(casesTable.id, caseId))
-			.orderBy(casesTable.id)
-			.limit(1);
-
-		const caseDetail = caseDetails[0];
+		const { caseDetail, prescriptions, diseases } = await getCaseDetail(caseId);
 
 		if (!caseDetail) {
 			return c.json({ error: "Case not found" }, 404);
 		}
 
-		if (!caseDetail.associatedUsers?.includes(userId)) {
+		if (!caseDetail.cases.associatedUsers?.includes(userId)) {
 			return c.json({ error: "Unauthorized" }, 403);
 		}
 
-		// Fetch prescriptions
-		const prescriptions = await db
-			.select({
-				id: casePrescriptionsTable.id,
-				medicineId: medicinesTable.id,
-				drug: medicinesTable.drug,
-				company: medicinesTable.company,
-				brand: medicinesTable.brand,
-				strength: medicinesTable.strength,
-				type: medicinesTable.type,
-				category: medicinesTable.category,
-				dosage: casePrescriptionsTable.dosage,
-				frequency: casePrescriptionsTable.frequency,
-				duration: casePrescriptionsTable.duration,
-				categoryData: casePrescriptionsTable.categoryData,
-				comments: casePrescriptionsTable.comment,
-			})
-			.from(casePrescriptionsTable)
-			.innerJoin(
-				medicinesTable,
-				eq(casePrescriptionsTable.medicineId, medicinesTable.id),
-			)
-			.where(eq(casePrescriptionsTable.caseId, caseId));
-
-		// Fetch diseases if diagnosis exists
-		let diseases: Array<{ id: number; name: string; icd: string }> = [];
-		if (caseDetail.diagnosis && caseDetail.diagnosis.length > 0) {
-			diseases = await db
-				.select({
-					id: diseasesTable.id,
-					name: diseasesTable.name,
-					icd: diseasesTable.icd,
-				})
-				.from(diseasesTable)
-				.where(inArray(diseasesTable.id, caseDetail.diagnosis));
+		if (caseDetail.cases.finalizedState !== null) {
+			return c.json(
+				{
+					error: "Case is finalized. Access via OTP required.",
+				},
+				400,
+			);
 		}
 
 		return c.json({ caseDetail, prescriptions, diseases });
@@ -228,16 +235,7 @@ const doctor = new Hono()
 				consultationNotes: z.string().optional(),
 				diagnosis: z.array(z.number().int()).optional(),
 				prescriptions: z
-					.array(
-						z.object({
-							medicineId: z.number().int(),
-							dosage: z.string(),
-							frequency: z.string(),
-							duration: z.string(),
-							comment: z.string().optional(),
-							categoryData: z.record(z.string(), z.any()).optional(),
-						}),
-					)
+					.array(createInsertSchema(casePrescriptionsTable))
 					.optional(),
 			}),
 		),
@@ -273,17 +271,7 @@ const doctor = new Hono()
 						.where(eq(casePrescriptionsTable.caseId, caseId));
 
 					if (prescriptions.length > 0) {
-						await tx.insert(casePrescriptionsTable).values(
-							prescriptions.map((p) => ({
-								caseId,
-								medicineId: p.medicineId,
-								dosage: p.dosage,
-								frequency: p.frequency,
-								duration: p.duration,
-								comment: p.comment || null,
-								categoryData: p.categoryData || null,
-							})),
-						);
+						await tx.insert(casePrescriptionsTable).values(prescriptions);
 					}
 				}
 			});
@@ -550,10 +538,10 @@ const doctor = new Hono()
 				return c.json({ error: "Invalid OTP" }, 400);
 			}
 
-			return c.json({
-				success: true,
-				message: "OTP verified successfully",
-			});
+			const { caseDetail, prescriptions, diseases } =
+				await getCaseDetail(caseId);
+
+			return c.json({ caseDetail, prescriptions, diseases });
 		},
 	)
 	.post(
@@ -614,10 +602,10 @@ const doctor = new Hono()
 				otp: overrideOtp,
 			});
 
-			return c.json({
-				success: true,
-				message: "Access override granted and logged",
-			});
+			const { caseDetail, prescriptions, diseases } =
+				await getCaseDetail(caseId);
+
+			return c.json({ caseDetail, prescriptions, diseases });
 		},
 	);
 
