@@ -141,22 +141,24 @@ function HistoryPage() {
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{sortedCases.map((caseItem) => (
-										<TableRow
-											key={caseItem.caseId}
-											className="cursor-pointer hover:bg-muted/50"
-											onClick={() =>
-												navigate({
-													to: `/history/${patientId}/${caseItem.caseId}`,
-												})
-											}
-										>
-											<TableCell>{caseItem.caseId}</TableCell>
-											<TableCell>{caseItem.finalizedState || "—"}</TableCell>
-											<TableCell>{formatDate(caseItem.createdAt)}</TableCell>
-											<TableCell>{formatDate(caseItem.updatedAt)}</TableCell>
-										</TableRow>
-									))}
+									{sortedCases
+										.filter((caseItem) => caseItem.finalizedState)
+										.map((caseItem) => (
+											<TableRow
+												key={caseItem.caseId}
+												className="cursor-pointer hover:bg-muted/50"
+												onClick={() =>
+													navigate({
+														to: `/history/${patientId}/${caseItem.caseId}`,
+													})
+												}
+											>
+												<TableCell>{caseItem.caseId}</TableCell>
+												<TableCell>{caseItem.finalizedState || "—"}</TableCell>
+												<TableCell>{formatDate(caseItem.createdAt)}</TableCell>
+												<TableCell>{formatDate(caseItem.updatedAt)}</TableCell>
+											</TableRow>
+										))}
 								</TableBody>
 							</Table>
 						)}

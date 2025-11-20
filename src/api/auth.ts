@@ -17,6 +17,7 @@ import {
 } from "@/db/patient";
 import type { Permission } from "@/lib/types/permissions";
 import { db } from ".";
+import admin from "./admin";
 import doctor from "./doctor";
 import files from "./files";
 import inventory from "./inventory";
@@ -317,4 +318,5 @@ export const authenticated = new Hono()
 	.route("/lab", lab)
 	.route("/files", files)
 	.route("/inventory", inventory)
-	.route("/patientHistory", patientHistory);
+	.route("/patientHistory", patientHistory)
+	.route("/admin", admin);

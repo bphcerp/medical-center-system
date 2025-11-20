@@ -62,11 +62,11 @@ export const Route = createFileRoute("/consultation/$id")({
 			diseases: diagnosesFromCase,
 		} = await consultationRes.json();
 
-		if (caseDetail.finalizedState !== null) {
+		if (caseDetail.cases.finalizedState !== null) {
 			throw redirect({
 				to: "/history/$patientId/$caseId",
 				params: {
-					patientId: String(caseDetail.patientId),
+					patientId: String(caseDetail.patient.id),
 					caseId: params.id,
 				},
 			});
@@ -127,36 +127,10 @@ function ConsultationPage() {
 		diagnosesFromCase || [],
 	);
 	const [consultationNotes, setConsultationNotes] = useState<string>(
-		caseDetail?.consultationNotes || "",
+		caseDetail?.cases.consultationNotes || "",
 	);
-	const [prescriptionItems, setPrescriptionItems] = useState<
-		PrescriptionItem[]
-	>(
-		prescriptions?.map((p) => {
-			// TODO: Improve this parsing logic by standardizing categoryData structure in zod
-			const categoryData =
-				typeof p.categoryData === "string"
-					? JSON.parse(p.categoryData)
-					: p.categoryData;
-			return {
-				id: p.medicineId,
-				drug: p.drug,
-				company: p.company,
-				brand: p.brand,
-				strength: p.strength,
-				type: p.type,
-				category: p.category,
-				dosage: p.dosage?.replace(/\s*tablets?$/, "") || "",
-				frequency: p.frequency || "",
-				duration: p.duration?.match(/^\d+/)?.[0] || "",
-				durationUnit: p.duration?.match(/\s+(\w+)$/)?.[1] || "days",
-				comments: p.comments || "",
-				mealTiming: categoryData?.mealTiming,
-				applicationArea: categoryData?.applicationArea,
-				injectionRoute: categoryData?.injectionRoute,
-				liquidTiming: categoryData?.liquidTiming,
-			};
-		}) || [],
+	const [prescriptionItems, setPrescriptionItems] = useState(
+		prescriptions || [],
 	);
 	const [labTestModalOpen, setLabTestModalOpen] = useState<boolean>(false);
 	const [autosaved, setAutoSaved] = useState<boolean>(false);
@@ -189,33 +163,9 @@ function ConsultationPage() {
 					consultationNotes: debouncedConsultationNotes,
 					diagnosis: diagnosisItems.map((d) => d.id),
 					prescriptions: debouncedPrescriptionItems.map((item) => ({
-						medicineId: item.id,
-						dosage:
-							item.category === "Capsule/Tablet" && item.dosage
-								? `${item.dosage} tablet${item.dosage === "1" ? "" : "s"}`
-								: item.dosage,
-						frequency: item.frequency,
-						duration:
-							(item.category === "Capsule/Tablet" ||
-								item.category === "External Application" ||
-								item.category === "Injection" ||
-								item.category === "Liquids/Syrups") &&
-							item.duration &&
-							item.durationUnit
-								? `${item.duration} ${item.durationUnit}`
-								: item.duration,
-						comment: item.comments,
-						categoryData:
-							item.category === "Capsule/Tablet" && item.mealTiming
-								? { mealTiming: item.mealTiming }
-								: item.category === "External Application" &&
-										item.applicationArea
-									? { applicationArea: item.applicationArea }
-									: item.category === "Injection" && item.injectionRoute
-										? { injectionRoute: item.injectionRoute }
-										: item.category === "Liquids/Syrups" && item.liquidTiming
-											? { liquidTiming: item.liquidTiming }
-											: undefined,
+						...item.case_prescriptions,
+						caseId: Number(id),
+						medicineId: item.medicines.id,
 					})),
 				},
 			});
@@ -312,10 +262,10 @@ function ConsultationPage() {
 				<div className="flex justify-between items-start mb-4">
 					<div>
 						<h1 className="text-3xl font-bold">
-							Consultation for {caseDetail.patientName}
+							Consultation for {caseDetail.patient.name}
 						</h1>
 						<div className="flex gap-4 items-center text-muted-foreground ">
-							<p className="my-2">Token Number: {caseDetail.token}</p>
+							<p className="my-2">Token Number: {caseDetail.cases.token}</p>
 							<span
 								className={`my-2 flex items-center gap-2 ${autosaveError ? "text-destructive" : ""}`}
 							>
@@ -350,7 +300,7 @@ function ConsultationPage() {
 							onClick={() =>
 								navigate({
 									to: "/history/$patientId",
-									params: { patientId: String(caseDetail.patientId) },
+									params: { patientId: String(caseDetail.patient.id) },
 								})
 							}
 						>
@@ -367,34 +317,43 @@ function ConsultationPage() {
 				{/* TODO: Standardize this vitals layout and make it a component also used in the vitals page */}
 				<Card className="mb-2">
 					<div className="flex gap-4 mx-3">
-						<VitalField label="Patient Name" value={caseDetail?.patientName} />
-						<VitalField label="Age" value={caseDetail?.patientAge} />
+						<VitalField label="Patient Name" value={caseDetail?.patient.name} />
+						<VitalField label="Age" value={caseDetail?.patient.age} />
 						<VitalField label="ID/PSRN/Phone" value={caseDetail?.identifier} />
 					</div>
 				</Card>
 				<Card className="mb-2">
 					<div className="flex gap-4 mx-3">
-						<VitalField label="Temperature" value={caseDetail?.temperature} />
-						<VitalField label="Heart Rate" value={caseDetail?.heartRate} />
+						<VitalField
+							label="Temperature"
+							value={caseDetail?.cases.temperature}
+						/>
+						<VitalField
+							label="Heart Rate"
+							value={caseDetail?.cases.heartRate}
+						/>
 						<VitalField
 							label="Respiratory Rate"
-							value={caseDetail?.respiratoryRate}
+							value={caseDetail?.cases.respiratoryRate}
 						/>
 					</div>
 					<div className="flex gap-4 mx-3">
 						<VitalField
 							label="Blood Pressure Systolic"
-							value={caseDetail?.bloodPressureSystolic}
+							value={caseDetail?.cases.bloodPressureSystolic}
 						/>
 						<VitalField
 							label="Blood Pressure Diastolic"
-							value={caseDetail?.bloodPressureDiastolic}
+							value={caseDetail?.cases.bloodPressureDiastolic}
 						/>
 					</div>
 					<div className="flex gap-4 mx-3">
-						<VitalField label="Blood Sugar" value={caseDetail?.bloodSugar} />
-						<VitalField label="SpO2" value={caseDetail?.spo2} />
-						<VitalField label="Weight" value={caseDetail?.weight} />
+						<VitalField
+							label="Blood Sugar"
+							value={caseDetail?.cases.bloodSugar}
+						/>
+						<VitalField label="SpO2" value={caseDetail?.cases.spo2} />
+						<VitalField label="Weight" value={caseDetail?.cases.weight} />
 					</div>
 				</Card>
 				<div className="grid grid-cols-3 mb-2">
