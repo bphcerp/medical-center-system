@@ -316,9 +316,19 @@ function ConsultationPage() {
 				{/* TODO: Standardize this vitals layout and make it a component also used in the vitals page */}
 				<Card className="mb-2">
 					<div className="flex gap-4 mx-3">
-						<VitalField label="Patient Name" value={caseDetail?.patient.name} />
-						<VitalField label="Age" value={caseDetail?.patient.age} />
-						<VitalField label="ID/PSRN/Phone" value={caseDetail?.identifier} />
+						<VitalField
+							label="Patient Name"
+							type="text"
+							value={caseDetail?.patient.name}
+							readonly
+						/>
+						<VitalField label="Age" value={caseDetail?.patient.age} readonly />
+						<VitalField
+							label="ID/PSRN/Phone"
+							type="text"
+							value={caseDetail?.identifier}
+							readonly
+						/>
 					</div>
 				</Card>
 				<Card className="mb-2">
@@ -326,33 +336,43 @@ function ConsultationPage() {
 						<VitalField
 							label="Temperature"
 							value={caseDetail?.cases.temperature}
+							readonly
 						/>
 						<VitalField
 							label="Heart Rate"
 							value={caseDetail?.cases.heartRate}
+							readonly
 						/>
 						<VitalField
 							label="Respiratory Rate"
 							value={caseDetail?.cases.respiratoryRate}
+							readonly
 						/>
 					</div>
 					<div className="flex gap-4 mx-3">
 						<VitalField
 							label="Blood Pressure Systolic"
 							value={caseDetail?.cases.bloodPressureSystolic}
+							readonly
 						/>
 						<VitalField
 							label="Blood Pressure Diastolic"
 							value={caseDetail?.cases.bloodPressureDiastolic}
+							readonly
 						/>
 					</div>
 					<div className="flex gap-4 mx-3">
 						<VitalField
 							label="Blood Sugar"
 							value={caseDetail?.cases.bloodSugar}
+							readonly
 						/>
-						<VitalField label="SpO2" value={caseDetail?.cases.spo2} />
-						<VitalField label="Weight" value={caseDetail?.cases.weight} />
+						<VitalField label="SpO2" value={caseDetail?.cases.spo2} readonly />
+						<VitalField
+							label="Weight"
+							value={caseDetail?.cases.weight}
+							readonly
+						/>
 					</div>
 				</Card>
 				<div className="grid grid-cols-3 mb-2">

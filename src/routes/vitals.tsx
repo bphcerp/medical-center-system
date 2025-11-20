@@ -243,42 +243,42 @@ function Vitals() {
 										<div className="flex flex-col gap-4 p-4 rounded-lg bg-pink-700/5 max-w-140">
 											<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-2">
 												<VitalField
-													label="Body Temperature"
+													label="Body Temperature (optional)"
 													unit="° F"
 													name="bodyTemperature"
-													placeholder="Body Temperature (optional)"
+													placeholder="Body Temperature"
 												/>
 												<VitalField
-													label="Heart Rate"
+													label="Heart Rate (optional)"
 													unit="bpm"
 													name="heartRate"
-													placeholder="Heart Rate (optional)"
+													placeholder="Heart Rate"
 												/>
 												<VitalField
-													label="Respiratory Rate"
+													label="Respiratory Rate (optional)"
 													unit="per minute"
 													name="respiratoryRate"
-													placeholder="Respiratory Rate (optional)"
+													placeholder="Respiratory Rate"
 												/>
 												<VitalField
-													label="SpO2"
+													label="SpO2 (optional)"
 													unit="%"
 													name="spo2"
-													placeholder="SpO2 (optional)"
+													placeholder="SpO2"
 												/>
 											</div>
 											<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-4 border-t border-pink-700/40">
 												<VitalField
-													label="Blood Pressure (Systolic)"
+													label="Blood Pressure (Systolic) (optional)"
 													unit="mm Hg"
 													name="bloodPressureSystolic"
-													placeholder="Blood Pressure (Systolic) (optional)"
+													placeholder="Blood Pressure (Systolic)"
 												/>
 												<VitalField
-													label="Blood Pressure (Diastolic)"
+													label="Blood Pressure (Diastolic) (optional)"
 													unit="mm Hg"
 													name="bloodPressureDiastolic"
-													placeholder="Blood Pressure (Diastolic) (optional)"
+													placeholder="Blood Pressure (Diastolic)"
 												/>
 											</div>
 										</div>

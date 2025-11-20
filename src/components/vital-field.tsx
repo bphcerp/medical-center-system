@@ -28,13 +28,13 @@ const VitalField = ({
 			<InputGroup>
 				<InputGroupInput
 					id={fieldId}
-					type={type}
+					type={value === null ? "text" : type}
 					placeholder={placeholder}
 					name={name}
-					value={value ?? "—"}
+					value={value === null ? "—" : value}
 					disabled={readonly}
 				/>
-				<InputGroupAddon align="inline-end">{unit}</InputGroupAddon>
+				{unit && <InputGroupAddon align="inline-end">{unit}</InputGroupAddon>}
 			</InputGroup>
 		</Field>
 	);
