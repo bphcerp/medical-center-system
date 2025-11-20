@@ -14,7 +14,7 @@ interface MealTimeSelectorProps extends PrescriptionItemProps {
 
 const MealTimeSelector = ({
 	item,
-	handleUpdatePrescriptionItem,
+	handleUpdate: handleUpdatePrescriptionItem,
 	category,
 }: MealTimeSelectorProps) => {
 	if (

@@ -7,7 +7,7 @@ import type { PrescriptionItemProps } from "./types";
 
 const PrescriptionSyrupFields = ({
 	item,
-	handleUpdatePrescriptionItem,
+	handleUpdate: handleUpdatePrescriptionItem,
 }: PrescriptionItemProps) => {
 	if (
 		!item.case_prescriptions.categoryData ||
@@ -32,11 +32,11 @@ const PrescriptionSyrupFields = ({
 			/>
 			<PrescriptionFrequencySelector
 				item={item}
-				handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
+				handleUpdate={handleUpdatePrescriptionItem}
 			/>
 			<MealTimeSelector
 				item={item}
-				handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
+				handleUpdate={handleUpdatePrescriptionItem}
 				category="Liquids/Syrups"
 			/>
 			<DurationInput
@@ -49,10 +49,7 @@ const PrescriptionSyrupFields = ({
 					handleUpdatePrescriptionItem(item.medicines.id, "durationUnit", value)
 				}
 			/>
-			<Comment
-				item={item}
-				handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
-			/>
+			<Comment item={item} handleUpdate={handleUpdatePrescriptionItem} />
 		</div>
 	);
 };

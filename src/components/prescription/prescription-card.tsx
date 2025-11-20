@@ -130,10 +130,11 @@ const PrescriptionCard = ({
 				duration: "",
 				durationUnit: "days",
 				categoryData:
-					medicine.category === "Capsule/Tablet"
+					medicine.category === "Capsule/Tablet" ||
+					medicine.category === "Liquids/Syrups"
 						? {
 								mealTiming: mealTimings[0],
-								category: "Capsule/Tablet",
+								category: medicine.category,
 							}
 						: medicine.category === "External Application"
 							? {
@@ -145,12 +146,7 @@ const PrescriptionCard = ({
 										injectionRoute: injectionRoutes[0],
 										category: "Injection",
 									}
-								: medicine.category === "Liquids/Syrups"
-									? {
-											mealTiming: mealTimings[0],
-											category: "Liquids/Syrups",
-										}
-									: null,
+								: null,
 				comment: "",
 			},
 		};
@@ -243,34 +239,22 @@ const PrescriptionCard = ({
 							</span>
 						</div>
 						<div className="gap-0.5 flex">
-							{item.case_prescriptions.categoryData?.category ===
-								"Capsule/Tablet" && (
-								<PrescriptionCapsuleFields
-									item={item}
-									handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
-								/>
-							)}
-							{item.case_prescriptions.categoryData?.category ===
-								"External Application" && (
-								<PrescriptionExternalFields
-									item={item}
-									handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
-								/>
-							)}
-							{item.case_prescriptions.categoryData?.category ===
-								"Injection" && (
-								<PrescriptionInjectionFields
-									item={item}
-									handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
-								/>
-							)}
-							{item.case_prescriptions.categoryData?.category ===
-								"Liquids/Syrups" && (
-								<PrescriptionSyrupFields
-									item={item}
-									handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
-								/>
-							)}
+							<PrescriptionCapsuleFields
+								item={item}
+								handleUpdate={handleUpdatePrescriptionItem}
+							/>
+							<PrescriptionExternalFields
+								item={item}
+								handleUpdate={handleUpdatePrescriptionItem}
+							/>
+							<PrescriptionInjectionFields
+								item={item}
+								handleUpdate={handleUpdatePrescriptionItem}
+							/>
+							<PrescriptionSyrupFields
+								item={item}
+								handleUpdate={handleUpdatePrescriptionItem}
+							/>
 							<Button
 								variant="destructive"
 								size="sm"

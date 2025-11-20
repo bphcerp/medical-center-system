@@ -9,7 +9,7 @@ import type { PrescriptionItemProps } from "./types";
 
 const PrescriptionFrequencySelector = ({
 	item,
-	handleUpdatePrescriptionItem,
+	handleUpdate: handleUpdatePrescriptionItem,
 }: PrescriptionItemProps) => {
 	return (
 		<Select

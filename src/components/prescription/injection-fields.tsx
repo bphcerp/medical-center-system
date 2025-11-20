@@ -14,7 +14,7 @@ import type { PrescriptionItemProps } from "./types";
 
 const PrescriptionInjectionFields = ({
 	item,
-	handleUpdatePrescriptionItem,
+	handleUpdate: handleUpdatePrescriptionItem,
 }: PrescriptionItemProps) => {
 	if (
 		!item.case_prescriptions.categoryData ||
@@ -38,7 +38,7 @@ const PrescriptionInjectionFields = ({
 			/>
 			<PrescriptionFrequencySelector
 				item={item}
-				handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
+				handleUpdate={handleUpdatePrescriptionItem}
 			/>
 			<DurationInput
 				duration={item.case_prescriptions.duration}
@@ -70,10 +70,7 @@ const PrescriptionInjectionFields = ({
 					))}
 				</SelectContent>
 			</Select>
-			<Comment
-				item={item}
-				handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
-			/>
+			<Comment item={item} handleUpdate={handleUpdatePrescriptionItem} />
 		</div>
 	);
 };

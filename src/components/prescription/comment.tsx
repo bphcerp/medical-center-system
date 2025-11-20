@@ -3,7 +3,7 @@ import type { PrescriptionItemProps } from "./types";
 
 const Comment = ({
 	item,
-	handleUpdatePrescriptionItem,
+	handleUpdate: handleUpdatePrescriptionItem,
 }: PrescriptionItemProps) => {
 	return (
 		<Input

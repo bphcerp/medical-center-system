@@ -13,7 +13,7 @@ import type { PrescriptionItemProps } from "./types";
 
 const PrescriptionCapsuleFields = ({
 	item,
-	handleUpdatePrescriptionItem,
+	handleUpdate: handleUpdatePrescriptionItem,
 }: PrescriptionItemProps) => {
 	if (
 		!item.case_prescriptions.categoryData ||
@@ -42,11 +42,11 @@ const PrescriptionCapsuleFields = ({
 			</Select>
 			<PrescriptionFrequencySelector
 				item={item}
-				handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
+				handleUpdate={handleUpdatePrescriptionItem}
 			/>
 			<MealTimeSelector
 				item={item}
-				handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
+				handleUpdate={handleUpdatePrescriptionItem}
 				category="Capsule/Tablet"
 			/>
 			<DurationInput
@@ -59,10 +59,7 @@ const PrescriptionCapsuleFields = ({
 					handleUpdatePrescriptionItem(item.medicines.id, "durationUnit", value)
 				}
 			/>
-			<Comment
-				item={item}
-				handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
-			/>
+			<Comment item={item} handleUpdate={handleUpdatePrescriptionItem} />
 		</div>
 	);
 };

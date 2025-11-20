@@ -13,7 +13,7 @@ import type { PrescriptionItemProps } from "./types";
 
 const PrescriptionExternalFields = ({
 	item,
-	handleUpdatePrescriptionItem,
+	handleUpdate: handleUpdatePrescriptionItem,
 }: PrescriptionItemProps) => {
 	if (
 		!item.case_prescriptions.categoryData ||
@@ -43,7 +43,7 @@ const PrescriptionExternalFields = ({
 			</Select>
 			<PrescriptionFrequencySelector
 				item={item}
-				handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
+				handleUpdate={handleUpdatePrescriptionItem}
 			/>
 			<DurationInput
 				duration={item.case_prescriptions.duration}
@@ -66,10 +66,7 @@ const PrescriptionExternalFields = ({
 				placeholder="Application area"
 				className="h-10 flex-1 min-w-[120px]"
 			/>
-			<Comment
-				item={item}
-				handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
-			/>
+			<Comment item={item} handleUpdate={handleUpdatePrescriptionItem} />
 		</div>
 	);
 };

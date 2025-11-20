@@ -15,7 +15,7 @@ export type MedicineItem = InferResponseType<
 
 export interface PrescriptionItemProps {
 	item: PrescriptionItem;
-	handleUpdatePrescriptionItem: (
+	handleUpdate: (
 		id: number,
 		field: keyof Omit<
 			PrescriptionItem["case_prescriptions"],
