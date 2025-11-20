@@ -2,7 +2,7 @@ import "dotenv/config";
 import { Hono } from "hono";
 import "dotenv/config";
 import { drizzle } from "drizzle-orm/node-postgres";
-import env from "@/config/env";
+import env from "@/lib/env";
 import { authenticated, unauthenticated } from "./auth";
 // You can specify any property from the node-postgres connection options
 export const db = drizzle({

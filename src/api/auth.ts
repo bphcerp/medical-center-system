@@ -5,7 +5,6 @@ import { Hono } from "hono";
 import { deleteCookie, setCookie } from "hono/cookie";
 import { jwt, sign } from "hono/jwt";
 import z from "zod";
-import env from "@/config/env";
 import { rolesTable, usersTable } from "@/db/auth";
 import { identifierTypes, unprocessedTable } from "@/db/case";
 import {
@@ -15,6 +14,7 @@ import {
 	studentsTable,
 	visitorsTable,
 } from "@/db/patient";
+import env from "@/lib/env";
 import type { Permission } from "@/lib/types/permissions";
 import { db } from ".";
 import admin from "./admin";

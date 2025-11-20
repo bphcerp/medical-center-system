@@ -4,7 +4,6 @@ import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import nodemailer from "nodemailer";
 import z from "zod";
-import env from "@/config/env";
 import { casesTable } from "@/db/case";
 import { doctorCaseHistoryOtpsTable, otpOverrideLogsTable } from "@/db/otp";
 import {
@@ -14,6 +13,7 @@ import {
 	studentsTable,
 	visitorsTable,
 } from "@/db/patient";
+import env from "@/lib/env";
 import { db } from ".";
 import type { JWTPayload } from "./auth";
 import { getCaseDetail } from "./doctor";

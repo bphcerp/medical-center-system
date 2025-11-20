@@ -12,7 +12,7 @@ import {
 	statusEnums,
 } from "@/db/lab";
 import { patientsTable } from "@/db/patient";
-import { uploadFileService } from "./fileupload.service";
+import { uploadFileService } from "./files";
 import { db } from "./index";
 import { rbacCheck } from "./rbac";
 
