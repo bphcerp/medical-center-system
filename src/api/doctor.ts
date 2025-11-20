@@ -368,6 +368,7 @@ const doctor = new Hono()
 		const activeTests = await db
 			.select({
 				id: labTestsMasterTable.id,
+				testCode: labTestsMasterTable.testCode,
 				name: labTestsMasterTable.name,
 				category: labTestsMasterTable.category,
 			})
