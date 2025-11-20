@@ -276,4 +276,4 @@ const PrescriptionCard = ({
 };
 
 export default PrescriptionCard;
-export * from "./frequency-selector";
+export * from "./selectors";

@@ -1,8 +1,10 @@
 import { Input } from "@/components/ui/input";
 import Comment from "./comment";
-import DurationInput from "./duration-input";
-import PrescriptionFrequencySelector from "./frequency-selector";
-import MealTimeSelector from "./meal-time";
+import {
+	DurationInput,
+	MealTimeSelector,
+	PrescriptionFrequencySelector,
+} from "./selectors";
 import type { PrescriptionItemProps } from "./types";
 
 const PrescriptionSyrupFields = ({
