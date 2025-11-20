@@ -158,60 +158,8 @@ const doctor = new Hono()
 			return c.json({ error: "Case not found" }, 404);
 		}
 
-		if (caseDetail.finalizedState !== null) {
-			// check if there's a valid OTP verification for this doctor and case
-			const otpVerification = await db
-				.select()
-				.from(doctorCaseHistoryOtpsTable)
-				.where(
-					and(
-						eq(doctorCaseHistoryOtpsTable.doctorId, userId),
-						eq(doctorCaseHistoryOtpsTable.caseId, caseId),
-					),
-				)
-				.limit(1);
-
-			const hasValidOtp = otpVerification.length > 0;
-
-			if (!hasValidOtp) {
-				return c.json(
-					{
-						error: "OTP verification required",
-						requiresOtp: true,
-					},
-					403,
-				);
-			}
-
-			const isAssociatedUser = caseDetail.associatedUsers?.includes(userId);
-			if (!isAssociatedUser) {
-				await db
-					.update(casesTable)
-					.set({
-						associatedUsers: sql`array_append(${casesTable.associatedUsers}, ${userId})`,
-					})
-					.where(eq(casesTable.id, caseId));
-
-				caseDetail.associatedUsers = [
-					...(caseDetail.associatedUsers || []),
-					userId,
-				];
-			}
-
-			// del the OTP record after successful verification
-			await db
-				.delete(doctorCaseHistoryOtpsTable)
-				.where(
-					and(
-						eq(doctorCaseHistoryOtpsTable.doctorId, userId),
-						eq(doctorCaseHistoryOtpsTable.caseId, caseId),
-					),
-				);
-		} else {
-			// for non-finalized cases, doctor must be in associated users
-			if (!caseDetail.associatedUsers?.includes(userId)) {
-				return c.json({ error: "Unauthorized" }, 403);
-			}
+		if (!caseDetail.associatedUsers?.includes(userId)) {
+			return c.json({ error: "Unauthorized" }, 403);
 		}
 
 		// Fetch prescriptions

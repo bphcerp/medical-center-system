@@ -7,7 +7,6 @@ import FinalizeCaseCard, {
 	type FinalizeButtonValue,
 } from "@/components/finalize-case-card";
 import LabRequestModal from "@/components/lab-request-modal";
-import { OTPVerificationDialog } from "@/components/otp-verification-dialog";
 import PrescriptionCard, {
 	type PrescriptionItem,
 } from "@/components/prescription-card";
@@ -48,22 +47,6 @@ export const Route = createFileRoute("/consultation/$id")({
 		});
 
 		if (consultationRes.status === 403) {
-			const errorData = await consultationRes.json();
-			// Check if OTP is required
-			if ("requiresOtp" in errorData && errorData.requiresOtp) {
-				// Return special state to indicate OTP is required
-				return {
-					user,
-					requiresOtp: true,
-					caseId: params.id,
-					caseDetail: null,
-					medicines: [],
-					diseases: [],
-					tests: [],
-					prescriptions: [],
-					diagnosesFromCase: [],
-				};
-			}
 			throw redirect({
 				to: "/doctor",
 			});
@@ -80,34 +63,13 @@ export const Route = createFileRoute("/consultation/$id")({
 		} = await consultationRes.json();
 
 		if (caseDetail.finalizedState !== null) {
-			// Case is finalized, show it in readonly mode
-			const medicinesRes = await client.api.doctor.medicines.$get();
-
-			if (medicinesRes.status !== 200) {
-				throw new Error("Failed to fetch medicines details");
-			}
-
-			const { medicines } = await medicinesRes.json();
-
-			const diseasesRes = await client.api.doctor.diseases.$get();
-
-			if (diseasesRes.status !== 200) {
-				throw new Error("Failed to fetch diseases details");
-			}
-
-			const { diseases } = await diseasesRes.json();
-
-			return {
-				user,
-				requiresOtp: false,
-				caseId: params.id,
-				caseDetail,
-				medicines,
-				diseases,
-				tests: [],
-				prescriptions,
-				diagnosesFromCase,
-			};
+			throw redirect({
+				to: "/history/$patientId/$caseId",
+				params: {
+					patientId: String(caseDetail.patientId),
+					caseId: params.id,
+				},
+			});
 		}
 
 		const medicinesRes = await client.api.doctor.medicines.$get();
@@ -136,8 +98,6 @@ export const Route = createFileRoute("/consultation/$id")({
 
 		return {
 			user,
-			requiresOtp: false,
-			caseId: params.id,
 			caseDetail,
 			medicines,
 			diseases,
@@ -150,24 +110,16 @@ export const Route = createFileRoute("/consultation/$id")({
 });
 
 function ConsultationPage() {
-	const loaderData = Route.useLoaderData();
 	const {
-		requiresOtp,
 		caseDetail,
 		medicines,
 		diseases,
 		tests,
 		prescriptions,
 		diagnosesFromCase,
-	} = loaderData;
+	} = Route.useLoaderData();
 	const navigate = useNavigate();
 	const { id } = Route.useParams();
-
-	// OTP verification state
-	const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(requiresOtp || false);
-	const [isVerifying, setIsVerifying] = useState(false);
-	const [isSendingOtp, setIsSendingOtp] = useState(false);
-	const [otpError, setOtpError] = useState<string | null>(null);
 
 	const [finalizeButtonValue, setFinalizeButtonValue] =
 		useState<FinalizeButtonValue>("Finalize (OPD)");
@@ -212,113 +164,8 @@ function ConsultationPage() {
 	const debouncedConsultationNotes = useDebounce(consultationNotes, 500);
 	const debouncedPrescriptionItems = useDebounce(prescriptionItems, 500);
 	const prevAutosaveRef = useRef<AutosaveState | null>(null);
-	const otpSentRef = useRef<boolean>(false);
-
-	const sendOtp = useCallback(async () => {
-		setIsSendingOtp(true);
-		setOtpError(null);
-		try {
-			const response = await client.api.doctor.consultation[":caseId"][
-				"send-otp"
-			].$post({
-				param: { caseId: id },
-			});
-
-			if (response.status === 200) {
-				setIsOtpDialogOpen(true);
-				setOtpError(null);
-			} else if (response.status === 404) {
-				setOtpError(
-					"Patient email not found. Use emergency override to access this case.",
-				);
-				setIsOtpDialogOpen(true);
-			} else {
-				const errorData = await response.json();
-				setOtpError(
-					`Failed to send OTP: ${(errorData as { error?: string })?.error || "Unknown error"}. Use emergency override if needed.`,
-				);
-				setIsOtpDialogOpen(true);
-			}
-		} catch (error) {
-			console.error("Failed to send OTP:", error);
-			setOtpError(
-				"Failed to send OTP due to network error. Use emergency override if needed.",
-			);
-			setIsOtpDialogOpen(true);
-		} finally {
-			setIsSendingOtp(false);
-		}
-	}, [id]);
-
-	// Auto-send OTP when OTP is required (only once)
-	useEffect(() => {
-		if (requiresOtp && !otpSentRef.current && !isSendingOtp) {
-			otpSentRef.current = true;
-			sendOtp();
-		}
-	}, [requiresOtp, isSendingOtp, sendOtp]);
-
-	const handleVerifyOtp = async (otp: string) => {
-		setIsVerifying(true);
-		setOtpError(null);
-		try {
-			const response = await client.api.doctor.consultation[":caseId"][
-				"verify-otp"
-			].$post({
-				param: { caseId: id },
-				json: { otp: Number(otp) },
-			});
-
-			if (response.status === 200) {
-				setIsOtpDialogOpen(false);
-				// Reload the page to fetch case details
-				window.location.reload();
-			} else if (response.status === 400) {
-				setOtpError("Invalid OTP. Please try again.");
-			} else {
-				setOtpError("Failed to verify OTP. Please try again.");
-			}
-		} catch (error) {
-			console.error("Failed to verify OTP:", error);
-			setOtpError("Failed to verify OTP. Please try again.");
-		} finally {
-			setIsVerifying(false);
-		}
-	};
-
-	const handleOverride = async (reason: string) => {
-		setOtpError(null);
-		try {
-			const response = await client.api.doctor.consultation[":caseId"][
-				"override-otp"
-			].$post({
-				param: { caseId: id },
-				json: { reason },
-			});
-
-			if (response.status === 200) {
-				setIsOtpDialogOpen(false);
-				// Reload the page to fetch case details
-				window.location.reload();
-			} else {
-				const errorData = await response.json();
-				setOtpError(
-					(errorData as { error?: string })?.error ||
-						"Failed to process override",
-				);
-			}
-		} catch (error) {
-			console.error("Failed to override:", error);
-			setOtpError("Failed to process override. Please try again.");
-		}
-	};
 
 	const autosave = useCallback(async () => {
-		// Don't autosave if case is finalized (readonly mode)
-		if (caseDetail?.finalizedState !== null) {
-			return;
-		}
-
 		if (
 			prevAutosaveRef.current &&
 			prevAutosaveRef.current.consultationNotes ===
@@ -389,15 +236,9 @@ function ConsultationPage() {
 		diagnosisItems,
 		debouncedConsultationNotes,
 		debouncedPrescriptionItems,
-		caseDetail?.finalizedState,
 	]);
 
 	useEffect(() => {
-		// Skip autosave for finalized cases
-		if (caseDetail?.finalizedState !== null) {
-			return;
-		}
-
 		autosave().catch(() => {
 			console.error("Autosave failed");
 		});
@@ -407,47 +248,17 @@ function ConsultationPage() {
 			});
 		}, 3000);
 		return () => clearInterval(interval);
-	}, [autosave, caseDetail]);
+	}, [autosave]);
 
 	if (!caseDetail) {
 		return (
-			<>
-				<TopBar title="Consultation Page" />
-				<div className="container mx-auto p-6">
-					<h1 className="text-3xl font-bold">Consultation Page</h1>
-					<p className="text-muted-foreground mt-2">Case ID: {id}</p>
-					{requiresOtp ? (
-						<>
-							<p className="mt-4">
-								{isSendingOtp
-									? "Sending OTP to patient's email..."
-									: "Waiting for OTP verification..."}
-							</p>
-							<OTPVerificationDialog
-								open={isOtpDialogOpen}
-								onOpenChange={(open) => {
-									if (!open) {
-										// If user closes dialog without verifying, redirect back
-										navigate({ to: "/doctor" });
-									}
-									setIsOtpDialogOpen(open);
-								}}
-								onVerify={handleVerifyOtp}
-								onOverride={handleOverride}
-								patientName="the patient"
-								isVerifying={isVerifying}
-								error={otpError}
-							/>
-						</>
-					) : (
-						<p className="mt-4">No consultation details found for this case.</p>
-					)}
-				</div>
-			</>
+			<div className="container mx-auto p-6">
+				<h1 className="text-3xl font-bold">Consultation Page</h1>
+				<p className="text-muted-foreground mt-2">Case ID: {id}</p>
+				<p className="mt-4">No consultation details found for this case.</p>
+			</div>
 		);
 	}
-
-	const isReadOnly = caseDetail.finalizedState !== null;
 
 	async function handleFinalize() {
 		let finalizedState: "opd" | "admitted" | "referred";
@@ -496,39 +307,32 @@ function ConsultationPage() {
 
 	return (
 		<>
-			<TopBar title={`Consultation ${isReadOnly ? "History" : "Page"}`} />
+			<TopBar title={`Consultation Page`} />
 			<div className="p-6">
 				<div className="flex justify-between items-start mb-4">
 					<div>
 						<h1 className="text-3xl font-bold">
-							{isReadOnly ? "Case History - " : "Consultation for "}
-							{caseDetail.patientName}
+							Consultation for {caseDetail.patientName}
 						</h1>
 						<div className="flex gap-4 items-center text-muted-foreground ">
-							<p className="my-2">
-								{isReadOnly
-									? `Case ID: ${caseDetail.caseId}`
-									: `Token Number: ${caseDetail.token}`}
-							</p>
-							{!isReadOnly && (
-								<span
-									className={`my-2 flex items-center gap-2 ${autosaveError ? "text-destructive" : ""}`}
-								>
-									{autosaveError ? (
-										<>
-											<TriangleAlert className="size-4" />
-											{autosaveError}
-										</>
-									) : autosaved ? (
-										<CloudCheck className="size-4" />
-									) : (
-										<>
-											<RefreshCw className="animate-spin size-4" />
-											Saving...
-										</>
-									)}
-								</span>
-							)}
+							<p className="my-2">Token Number: {caseDetail.token}</p>
+							<span
+								className={`my-2 flex items-center gap-2 ${autosaveError ? "text-destructive" : ""}`}
+							>
+								{autosaveError ? (
+									<>
+										<TriangleAlert className="size-4" />
+										{autosaveError}
+									</>
+								) : autosaved ? (
+									<CloudCheck className="size-4" />
+								) : (
+									<>
+										<RefreshCw className="animate-spin size-4" />
+										Saving...
+									</>
+								)}
+							</span>
 						</div>
 					</div>
 					<div className="flex gap-2">
@@ -542,28 +346,24 @@ function ConsultationPage() {
 						>
 							Back to Dashboard
 						</Button>
-						{!isReadOnly && (
-							<Button
-								onClick={() =>
-									navigate({
-										to: "/history/$patientId",
-										params: { patientId: String(caseDetail.patientId) },
-									})
-								}
-							>
-								View History
-							</Button>
-						)}
+						<Button
+							onClick={() =>
+								navigate({
+									to: "/history/$patientId",
+									params: { patientId: String(caseDetail.patientId) },
+								})
+							}
+						>
+							View History
+						</Button>
 					</div>
 				</div>
-				{!isReadOnly && (
-					<LabRequestModal
-						id={id}
-						labTestModalOpen={labTestModalOpen}
-						setLabTestModalOpen={setLabTestModalOpen}
-						tests={tests}
-					/>
-				)}
+				<LabRequestModal
+					id={id}
+					labTestModalOpen={labTestModalOpen}
+					setLabTestModalOpen={setLabTestModalOpen}
+					tests={tests}
+				/>
 				{/* TODO: Standardize this vitals layout and make it a component also used in the vitals page */}
 				<Card className="mb-2">
 					<div className="flex gap-4 mx-3">
@@ -606,31 +406,25 @@ function ConsultationPage() {
 							value={consultationNotes}
 							onChange={(e) => setConsultationNotes(e.target.value)}
 							className="h-full -mt-3.5 resize-none"
-							placeholder={
-								isReadOnly ? "No notes recorded" : "Write notes here..."
-							}
-							readOnly={isReadOnly}
+							placeholder="Write notes here..."
 						/>
 					</Card>
 					<DiagnosisCard
 						diseases={diseases}
 						diagnosisItems={diagnosisItems}
 						setDiagnosisItems={setDiagnosisItems}
-						readonly={isReadOnly}
 					/>
 					<PrescriptionCard
 						medicines={medicines}
 						prescriptionItems={prescriptionItems}
 						setPrescriptionItems={setPrescriptionItems}
 					/>
-					{!isReadOnly && (
-						<FinalizeCaseCard
-							setLabTestModalOpen={setLabTestModalOpen}
-							handleFinalize={handleFinalize}
-							finalizeButtonValue={finalizeButtonValue}
-							setFinalizeButtonValue={setFinalizeButtonValue}
-						/>
-					)}
+					<FinalizeCaseCard
+						setLabTestModalOpen={setLabTestModalOpen}
+						handleFinalize={handleFinalize}
+						finalizeButtonValue={finalizeButtonValue}
+						setFinalizeButtonValue={setFinalizeButtonValue}
+					/>
 				</div>
 			</div>
 		</>

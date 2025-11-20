@@ -1,6 +1,8 @@
 import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import DiagnosisCard from "@/components/diagnosis-card";
+import { OTPVerificationDialog } from "@/components/otp-verification-dialog";
 import TopBar from "@/components/topbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,6 +35,20 @@ export const Route = createFileRoute("/history/$patientId/$caseId")({
 		});
 
 		if (historyRes.status === 403) {
+			const errorData = await historyRes.json();
+			// Check if OTP is required
+			if ("requiresOtp" in errorData && errorData.requiresOtp) {
+				// Return special state to indicate OTP is required
+				return {
+					user,
+					requiresOtp: true,
+					caseId: params.caseId,
+					patientId: params.patientId,
+					caseDetail: null,
+					prescriptions: [],
+					diseases: [],
+				};
+			}
 			throw redirect({
 				to: "/doctor",
 			});
@@ -46,6 +62,9 @@ export const Route = createFileRoute("/history/$patientId/$caseId")({
 
 		return {
 			user,
+			requiresOtp: false,
+			caseId: params.caseId,
+			patientId: params.patientId,
 			caseDetail,
 			prescriptions,
 			diseases,
@@ -55,8 +74,122 @@ export const Route = createFileRoute("/history/$patientId/$caseId")({
 });
 
 function CaseDetailsPage() {
-	const { caseDetail, prescriptions, diseases } = Route.useLoaderData();
+	const loaderData = Route.useLoaderData();
+	const {
+		requiresOtp,
+		caseId,
+		patientId,
+		caseDetail,
+		prescriptions,
+		diseases,
+	} = loaderData;
 	const navigate = useNavigate();
+
+	// OTP verification state
+	const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(requiresOtp || false);
+	const [isVerifying, setIsVerifying] = useState(false);
+	const [isSendingOtp, setIsSendingOtp] = useState(false);
+	const [otpError, setOtpError] = useState<string | null>(null);
+	const otpSentRef = useRef<boolean>(false);
+
+	const sendOtp = useCallback(async () => {
+		setIsSendingOtp(true);
+		setOtpError(null);
+		try {
+			const response = await client.api.doctor.consultation[":caseId"][
+				"send-otp"
+			].$post({
+				param: { caseId },
+			});
+
+			if (response.status === 200) {
+				setIsOtpDialogOpen(true);
+				setOtpError(null);
+			} else if (response.status === 404) {
+				setOtpError(
+					"Patient email not found. Use emergency override to access this case.",
+				);
+				setIsOtpDialogOpen(true);
+			} else {
+				const errorData = await response.json();
+				setOtpError(
+					`Failed to send OTP: ${(errorData as { error?: string })?.error || "Unknown error"}. Use emergency override if needed.`,
+				);
+				setIsOtpDialogOpen(true);
+			}
+		} catch (error) {
+			console.error("Failed to send OTP:", error);
+			setOtpError(
+				"Failed to send OTP due to network error. Use emergency override if needed.",
+			);
+			setIsOtpDialogOpen(true);
+		} finally {
+			setIsSendingOtp(false);
+		}
+	}, [caseId]);
+
+	// Auto-send OTP when OTP is required (only once)
+	useEffect(() => {
+		if (requiresOtp && !otpSentRef.current && !isSendingOtp) {
+			otpSentRef.current = true;
+			sendOtp();
+		}
+	}, [requiresOtp, isSendingOtp, sendOtp]);
+
+	const handleVerifyOtp = async (otp: string) => {
+		setIsVerifying(true);
+		setOtpError(null);
+		try {
+			const response = await client.api.doctor.consultation[":caseId"][
+				"verify-otp"
+			].$post({
+				param: { caseId },
+				json: { otp: Number(otp) },
+			});
+
+			if (response.status === 200) {
+				setIsOtpDialogOpen(false);
+				// Reload the page to fetch case details
+				window.location.reload();
+			} else if (response.status === 400) {
+				setOtpError("Invalid OTP. Please try again.");
+			} else {
+				setOtpError("Failed to verify OTP. Please try again.");
+			}
+		} catch (error) {
+			console.error("Failed to verify OTP:", error);
+			setOtpError("Failed to verify OTP. Please try again.");
+		} finally {
+			setIsVerifying(false);
+		}
+	};
+
+	const handleOverride = async (reason: string) => {
+		setOtpError(null);
+		try {
+			const response = await client.api.doctor.consultation[":caseId"][
+				"override-otp"
+			].$post({
+				param: { caseId },
+				json: { reason },
+			});
+
+			if (response.status === 200) {
+				setIsOtpDialogOpen(false);
+				// Reload the page to fetch case details
+				window.location.reload();
+			} else {
+				const errorData = await response.json();
+				setOtpError(
+					(errorData as { error?: string })?.error ||
+						"Failed to process override",
+				);
+			}
+		} catch (error) {
+			console.error("Failed to override:", error);
+			setOtpError("Failed to process override. Please try again.");
+		}
+	};
 
 	if (!caseDetail) {
 		return (
@@ -64,7 +197,36 @@ function CaseDetailsPage() {
 				<TopBar title="Case Details" />
 				<div className="container mx-auto p-6">
 					<h1 className="text-3xl font-bold">Case Details</h1>
-					<p className="mt-4">No case details found.</p>
+					<p className="text-muted-foreground mt-2">Case ID: {caseId}</p>
+					{requiresOtp ? (
+						<>
+							<p className="mt-4">
+								{isSendingOtp
+									? "Sending OTP to patient's email..."
+									: "Waiting for OTP verification..."}
+							</p>
+							<OTPVerificationDialog
+								open={isOtpDialogOpen}
+								onOpenChange={(open) => {
+									if (!open) {
+										// If user closes dialog without verifying, redirect back
+										navigate({
+											to: "/history/$patientId",
+											params: { patientId },
+										});
+									}
+									setIsOtpDialogOpen(open);
+								}}
+								onVerify={handleVerifyOtp}
+								onOverride={handleOverride}
+								patientName="the patient"
+								isVerifying={isVerifying}
+								error={otpError}
+							/>
+						</>
+					) : (
+						<p className="mt-4">No case details found.</p>
+					)}
 				</div>
 			</>
 		);
