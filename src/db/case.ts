@@ -10,6 +10,7 @@ import {
 	uniqueIndex,
 	varchar,
 } from "drizzle-orm/pg-core";
+import z from "zod";
 import { patientsTable } from "./patient";
 
 export const finalizedStateEnum = pgEnum("finalized_state", [
@@ -26,6 +27,30 @@ export const medicineCategories = [
 	"Injection",
 	"Liquids/Syrups",
 ] as const;
+
+export const categoryDataSchema = z.union([
+	z.object({
+		category: z.literal(medicineCategories[0]),
+		mealTiming: z.union([z.literal("Before Meal"), z.literal("After Meal")]),
+	}),
+	z.object({
+		category: z.literal(medicineCategories[1]),
+		applicationArea: z.string(),
+	}),
+	z.object({
+		category: z.literal(medicineCategories[2]),
+		injectionRoute: z.union([
+			z.literal("Intramuscular (IM)"),
+			z.literal("Subcutaneous (SC)"),
+			z.literal("Intravenous (IV)"),
+		]),
+	}),
+	z.object({
+		category: z.literal(medicineCategories[3]),
+		liquidTiming: z.union([z.literal("Before Meal"), z.literal("After Meal")]),
+	}),
+]);
+
 export const medicineCategoryEnum = pgEnum(
 	"medicine_category",
 	medicineCategories,
@@ -63,6 +88,7 @@ export const casePrescriptionsTable = pgTable("case_prescriptions", {
 	dosage: varchar({ length: 255 }).notNull(),
 	frequency: varchar({ length: 255 }).notNull(),
 	duration: varchar({ length: 255 }).notNull(),
+	durationUnit: varchar({ length: 255 }).notNull(),
 	categoryData: jsonb(),
 	comment: text(),
 });
