@@ -170,6 +170,13 @@ export function RegistrationForm({
 		setDisableForm(true);
 		const data = await res.json();
 		if ("dependents" in data) {
+			if (data.dependents.length === 0) {
+				setPatientId(data.professor.id);
+				setName(data.professor.name);
+				setAge(data.professor.age);
+				setSex(data.professor.sex);
+				return;
+			}
 			setOptions(
 				[
 					{
