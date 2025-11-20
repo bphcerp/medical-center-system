@@ -52,7 +52,7 @@ function CaseDetailsPage() {
 	const [otpError, setOtpError] = useState<string | null>(null);
 	const otpSentRef = useRef<boolean>(false);
 	const caseDetailsResponse =
-		client.api.doctor.consultation[":caseId"]["verify-otp"].$post;
+		client.api.patientHistory.otp[":caseId"].verify.$post;
 	type CaseDetail = InferResponseType<typeof caseDetailsResponse, 200>;
 	const [caseRecord, setCaseRecord] = useState<CaseDetail | null>(null);
 	const { caseDetail, prescriptions, diseases } = caseRecord || {
@@ -65,9 +65,9 @@ function CaseDetailsPage() {
 		setIsSendingOtp(true);
 		setOtpError(null);
 		try {
-			const response = await client.api.doctor.consultation[":caseId"][
-				"send-otp"
-			].$post({
+			const response = await client.api.patientHistory.otp[
+				":caseId"
+			].send.$post({
 				param: { caseId },
 			});
 
@@ -109,9 +109,9 @@ function CaseDetailsPage() {
 		setIsVerifying(true);
 		setOtpError(null);
 		try {
-			const response = await client.api.doctor.consultation[":caseId"][
-				"verify-otp"
-			].$post({
+			const response = await client.api.patientHistory.otp[
+				":caseId"
+			].verify.$post({
 				param: { caseId },
 				json: { otp: Number(otp) },
 			});
@@ -136,9 +136,9 @@ function CaseDetailsPage() {
 	const handleOverride = async (reason: string) => {
 		setOtpError(null);
 		try {
-			const response = await client.api.doctor.consultation[":caseId"][
-				"override-otp"
-			].$post({
+			const response = await client.api.patientHistory.otp[
+				":caseId"
+			].override.$post({
 				param: { caseId },
 				json: { reason },
 			});

@@ -1,11 +1,31 @@
 import "dotenv/config";
-import { eq } from "drizzle-orm";
+import { zValidator } from "@hono/zod-validator";
+import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
+import nodemailer from "nodemailer";
+import z from "zod";
+import env from "@/config/env";
 import { casesTable } from "@/db/case";
-import { patientsTable } from "@/db/patient";
+import { doctorCaseHistoryOtpsTable, otpOverrideLogsTable } from "@/db/otp";
+import {
+	dependentsTable,
+	patientsTable,
+	professorsTable,
+	studentsTable,
+	visitorsTable,
+} from "@/db/patient";
 import { db } from ".";
-// import type { JWTPayload } from "./auth"; // might need this later
+import type { JWTPayload } from "./auth";
+import { getCaseDetail } from "./doctor";
 import { rbacCheck } from "./rbac";
+
+const transporter = nodemailer.createTransport({
+	service: "gmail",
+	auth: {
+		user: env.EMAIL_USER,
+		pass: env.EMAIL_PASS,
+	},
+});
 
 const patientHistory = new Hono()
 	.use(rbacCheck({ permissions: ["doctor"] }))
@@ -43,6 +63,226 @@ const patientHistory = new Hono()
 			patient,
 			cases,
 		});
-	});
+	})
+	.post(
+		"/otp/:caseId/send",
+		zValidator("param", z.object({ caseId: z.coerce.number() })),
+		async (c) => {
+			const { caseId } = c.req.valid("param");
+			const payload = c.get("jwtPayload") as JWTPayload;
+			const doctorId = payload.id;
+
+			// Get case details
+			const [caseData] = await db
+				.select({
+					id: casesTable.id,
+					patientId: casesTable.patient,
+					finalizedState: casesTable.finalizedState,
+				})
+				.from(casesTable)
+				.where(eq(casesTable.id, caseId))
+				.limit(1);
+
+			if (!caseData) {
+				return c.json({ error: "Case not found" }, 404);
+			}
+
+			// only allow OTP for finalized cases
+			if (caseData.finalizedState === null) {
+				return c.json({ error: "OTP not required for active cases" }, 400);
+			}
+
+			const patientId = caseData.patientId;
+
+			const [patient] = await db
+				.select({
+					id: patientsTable.id,
+					type: patientsTable.type,
+				})
+				.from(patientsTable)
+				.where(eq(patientsTable.id, patientId))
+				.limit(1);
+
+			if (!patient) {
+				return c.json({ error: "Patient not found" }, 404);
+			}
+
+			let patientEmail: string | null = null;
+
+			switch (patient.type) {
+				case "student": {
+					const [student] = await db
+						.select({ email: studentsTable.email })
+						.from(studentsTable)
+						.where(eq(studentsTable.patientId, patientId))
+						.limit(1);
+					patientEmail = student?.email || null;
+					break;
+				}
+				case "professor": {
+					const [professor] = await db
+						.select({ email: professorsTable.email })
+						.from(professorsTable)
+						.where(eq(professorsTable.patientId, patientId))
+						.limit(1);
+					patientEmail = professor?.email || null;
+					break;
+				}
+				case "dependent": {
+					// For dependents, get the professor's email via PSRN
+					const [dependent] = await db
+						.select({ psrn: dependentsTable.psrn })
+						.from(dependentsTable)
+						.where(eq(dependentsTable.patientId, patientId))
+						.limit(1);
+
+					if (dependent?.psrn) {
+						const [professor] = await db
+							.select({ email: professorsTable.email })
+							.from(professorsTable)
+							.where(eq(professorsTable.psrn, dependent.psrn))
+							.limit(1);
+						patientEmail = professor?.email || null;
+					}
+					break;
+				}
+				case "visitor": {
+					const [visitor] = await db
+						.select({ email: visitorsTable.email })
+						.from(visitorsTable)
+						.where(eq(visitorsTable.patientId, patientId))
+						.limit(1);
+					patientEmail = visitor?.email || null;
+					break;
+				}
+			}
+
+			if (!patientEmail) {
+				return c.json({ error: "Patient email not found" }, 404);
+			}
+
+			// gen 6 digit OTP
+			const otp = Math.floor(100000 + Math.random() * 900000);
+
+			await db
+				.delete(doctorCaseHistoryOtpsTable)
+				.where(
+					and(
+						eq(doctorCaseHistoryOtpsTable.doctorId, doctorId),
+						eq(doctorCaseHistoryOtpsTable.caseId, caseId),
+					),
+				);
+
+			await db.insert(doctorCaseHistoryOtpsTable).values({
+				doctorId,
+				caseId,
+				otp,
+			});
+
+			await transporter.sendMail({
+				from: env.EMAIL_USER,
+				to: patientEmail,
+				subject: "OTP for Accessing Case History",
+				text: `A doctor is requesting access to view case history. Your OTP is: ${otp}. It is valid for a limited time.`,
+			});
+
+			return c.json({ message: "OTP sent successfully" });
+		},
+	)
+	.post(
+		"/otp/:caseId/verify",
+		zValidator("param", z.object({ caseId: z.coerce.number() })),
+		zValidator("json", z.object({ otp: z.coerce.number() })),
+		async (c) => {
+			const { caseId } = c.req.valid("param");
+			const { otp } = c.req.valid("json");
+			const payload = c.get("jwtPayload") as JWTPayload;
+			const doctorId = payload.id;
+			const otpRecord = await db
+				.select()
+				.from(doctorCaseHistoryOtpsTable)
+				.where(
+					and(
+						eq(doctorCaseHistoryOtpsTable.doctorId, doctorId),
+						eq(doctorCaseHistoryOtpsTable.caseId, caseId),
+						eq(doctorCaseHistoryOtpsTable.otp, otp),
+					),
+				)
+				.limit(1);
+
+			if (otpRecord.length === 0) {
+				return c.json({ error: "Invalid OTP" }, 400);
+			}
+
+			const { caseDetail, prescriptions, diseases } =
+				await getCaseDetail(caseId);
+
+			return c.json({ caseDetail, prescriptions, diseases });
+		},
+	)
+	.post(
+		"/otp/:caseId/override",
+		zValidator("param", z.object({ caseId: z.coerce.number() })),
+		zValidator(
+			"json",
+			z.object({
+				reason: z.string().min(10, "Reason must be at least 10 characters"),
+			}),
+		),
+		async (c) => {
+			const { caseId } = c.req.valid("param");
+			const { reason } = c.req.valid("json");
+			const payload = c.get("jwtPayload") as JWTPayload;
+			const doctorId = payload.id;
+
+			// Get case details to verify it exists and is finalized
+			const [caseData] = await db
+				.select({
+					id: casesTable.id,
+					finalizedState: casesTable.finalizedState,
+				})
+				.from(casesTable)
+				.where(eq(casesTable.id, caseId))
+				.limit(1);
+
+			if (!caseData) {
+				return c.json({ error: "Case not found" }, 404);
+			}
+
+			if (caseData.finalizedState === null) {
+				return c.json({ error: "Override not required for active cases" }, 400);
+			}
+
+			// log the override to audit table
+			await db.insert(otpOverrideLogsTable).values({
+				doctorId,
+				caseId,
+				reason,
+			});
+
+			const overrideOtp = 999999; // Special value to indicate override
+
+			// del any existing OTPs for this doctor-case pair
+			await db
+				.delete(doctorCaseHistoryOtpsTable)
+				.where(
+					and(
+						eq(doctorCaseHistoryOtpsTable.doctorId, doctorId),
+						eq(doctorCaseHistoryOtpsTable.caseId, caseId),
+					),
+				);
+
+			await db.insert(doctorCaseHistoryOtpsTable).values({
+				doctorId,
+				caseId,
+				otp: overrideOtp,
+			});
+
+			const { caseDetail, prescriptions, diseases } =
+				await getCaseDetail(caseId);
+
+			return c.json({ caseDetail, prescriptions, diseases });
+		},
+	);
 
 export default patientHistory;
