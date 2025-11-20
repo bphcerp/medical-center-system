@@ -50,7 +50,7 @@ export const categoryDataSchema = z.union([
 	}),
 	z.object({
 		category: z.literal(medicineCategories[3]),
-		liquidTiming: z.union(mealTimings.map((timing) => z.literal(timing))),
+		mealTiming: z.union(mealTimings.map((timing) => z.literal(timing))),
 	}),
 ]);
 

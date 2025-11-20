@@ -415,17 +415,14 @@ function CaseDetailsPage() {
 													</div>
 												)}
 											{item.case_prescriptions.categoryData &&
-												"liquidTiming" in
+												"mealTiming" in
 													item.case_prescriptions.categoryData && (
 													<div className="flex items-start gap-2">
 														<span className="font-medium text-muted-foreground min-w-20">
 															Liquid Timing:
 														</span>
 														<span className="flex-1">
-															{
-																item.case_prescriptions.categoryData
-																	.liquidTiming
-															}
+															{item.case_prescriptions.categoryData.mealTiming}
 														</span>
 													</div>
 												)}

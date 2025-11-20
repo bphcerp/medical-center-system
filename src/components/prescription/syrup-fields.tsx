@@ -1,14 +1,8 @@
 import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import Comment from "./comment";
 import DurationInput from "./duration-input";
 import PrescriptionFrequencySelector from "./frequency-selector";
+import MealTimeSelector from "./meal-time";
 import type { PrescriptionItemProps } from "./types";
 
 const PrescriptionSyrupFields = ({
@@ -40,23 +34,11 @@ const PrescriptionSyrupFields = ({
 				item={item}
 				handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
 			/>
-			<Select
-				value={item.case_prescriptions.categoryData.liquidTiming}
-				onValueChange={(value: "Before Meal" | "After Meal") =>
-					handleUpdatePrescriptionItem(item.medicines.id, "categoryData", {
-						category: "Liquids/Syrups",
-						liquidTiming: value,
-					})
-				}
-			>
-				<SelectTrigger className="h-8 flex-1 min-w-[100px]">
-					<SelectValue placeholder="Meal Timing" />
-				</SelectTrigger>
-				<SelectContent>
-					<SelectItem value="Before Meal">Before meal</SelectItem>
-					<SelectItem value="After Meal">After meal</SelectItem>
-				</SelectContent>
-			</Select>
+			<MealTimeSelector
+				item={item}
+				handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
+				category="Liquids/Syrups"
+			/>
 			<DurationInput
 				duration={item.case_prescriptions.duration}
 				durationUnit={item.case_prescriptions.durationUnit}

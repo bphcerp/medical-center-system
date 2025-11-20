@@ -16,6 +16,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { injectionRoutes, mealTimings } from "@/db/case";
 import PrescriptionCapsuleFields from "./capsule-fields";
 import PrescriptionExternalFields from "./external-fields";
 import PrescriptionInjectionFields from "./injection-fields";
@@ -131,7 +132,7 @@ const PrescriptionCard = ({
 				categoryData:
 					medicine.category === "Capsule/Tablet"
 						? {
-								mealTiming: "Before Meal",
+								mealTiming: mealTimings[0],
 								category: "Capsule/Tablet",
 							}
 						: medicine.category === "External Application"
@@ -141,12 +142,12 @@ const PrescriptionCard = ({
 								}
 							: medicine.category === "Injection"
 								? {
-										injectionRoute: "Intravenous (IV)",
+										injectionRoute: injectionRoutes[0],
 										category: "Injection",
 									}
 								: medicine.category === "Liquids/Syrups"
 									? {
-											liquidTiming: "Before Meal",
+											mealTiming: mealTimings[0],
 											category: "Liquids/Syrups",
 										}
 									: null,

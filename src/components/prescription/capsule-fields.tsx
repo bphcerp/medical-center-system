@@ -8,6 +8,7 @@ import {
 import Comment from "./comment";
 import DurationInput from "./duration-input";
 import PrescriptionFrequencySelector from "./frequency-selector";
+import MealTimeSelector from "./meal-time";
 import type { PrescriptionItemProps } from "./types";
 
 const PrescriptionCapsuleFields = ({
@@ -43,23 +44,11 @@ const PrescriptionCapsuleFields = ({
 				item={item}
 				handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
 			/>
-			<Select
-				value={item.case_prescriptions.categoryData.mealTiming}
-				onValueChange={(value: "Before Meal" | "After Meal") =>
-					handleUpdatePrescriptionItem(item.medicines.id, "categoryData", {
-						category: "Capsule/Tablet",
-						mealTiming: value,
-					})
-				}
-			>
-				<SelectTrigger className="h-8 flex-1 min-w-[100px]">
-					<SelectValue placeholder="Meal Timing" />
-				</SelectTrigger>
-				<SelectContent>
-					<SelectItem value="Before Meal">Before meal</SelectItem>
-					<SelectItem value="After Meal">After meal</SelectItem>
-				</SelectContent>
-			</Select>
+			<MealTimeSelector
+				item={item}
+				handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
+				category="Capsule/Tablet"
+			/>
 			<DurationInput
 				duration={item.case_prescriptions.duration}
 				durationUnit={item.case_prescriptions.durationUnit}
