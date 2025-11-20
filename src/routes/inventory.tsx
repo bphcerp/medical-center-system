@@ -248,46 +248,53 @@ function InventoryPage() {
 										</TableCell>
 									</TableRow>
 
-									{expandedRows.has(item.id) && (
-										<>
-											<TableRow className="bg-gray-100">
-												<TableCell className="font-semibold">
-													Batch ID
-												</TableCell>
-												<TableCell className="font-semibold">
-													Quantity
-												</TableCell>
-												<TableCell className="font-semibold">
-													Quick Actions
+									{expandedRows.has(item.id) &&
+										(item.batches.length === 0 ? (
+											<TableRow>
+												<TableCell colSpan={3} className="text-center italic">
+													This medicine has no batches
 												</TableCell>
 											</TableRow>
-
-											{item.batches.map((batch) => (
-												<TableRow key={batch.id}>
-													<TableCell>{batch.batchNum}</TableCell>
-													<TableCell>{batch.quantity}</TableCell>
-													<TableCell className="flex space-x-2">
-														<Button
-															className="flex-1 w-full"
-															onClick={() =>
-																openDispense(batch.id, batch.batchNum)
-															}
-														>
-															Dispense
-														</Button>
-														<Button
-															className="flex-1 w-full"
-															onClick={() =>
-																openAddQuantity(batch.id, batch.batchNum)
-															}
-														>
-															Add Quantity
-														</Button>
+										) : (
+											<>
+												<TableRow className="bg-gray-100">
+													<TableCell className="font-semibold">
+														Batch ID
+													</TableCell>
+													<TableCell className="font-semibold">
+														Quantity
+													</TableCell>
+													<TableCell className="font-semibold">
+														Quick Actions
 													</TableCell>
 												</TableRow>
-											))}
-										</>
-									)}
+
+												{item.batches.map((batch) => (
+													<TableRow key={batch.id}>
+														<TableCell>{batch.batchNum}</TableCell>
+														<TableCell>{batch.quantity}</TableCell>
+														<TableCell className="flex space-x-2">
+															<Button
+																className="flex-1 w-full"
+																onClick={() =>
+																	openDispense(batch.id, batch.batchNum)
+																}
+															>
+																Dispense
+															</Button>
+															<Button
+																className="flex-1 w-full"
+																onClick={() =>
+																	openAddQuantity(batch.id, batch.batchNum)
+																}
+															>
+																Add Quantity
+															</Button>
+														</TableCell>
+													</TableRow>
+												))}
+											</>
+										))}
 								</React.Fragment>
 							))}
 						</TableBody>
