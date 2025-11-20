@@ -8,64 +8,74 @@ const caseDetailsResponse =
 export type CaseDetail = InferResponseType<typeof caseDetailsResponse, 200>;
 
 const VitalsCard = ({
-	caseDetail,
+	vitals,
 }: {
-	caseDetail: CaseDetail["caseDetail"];
+	vitals?: CaseDetail["caseDetail"]["cases"];
 }) => {
 	return (
-		<Card className="mb-2">
-			<div className="flex gap-4 mx-3">
-				<VitalField
-					label="Temperature"
-					value={caseDetail?.cases.temperature}
-					unit="° F"
-					readonly
-				/>
-				<VitalField
-					label="Heart Rate"
-					value={caseDetail?.cases.heartRate}
-					unit="bpm"
-					readonly
-				/>
-				<VitalField
-					label="Respiratory Rate"
-					value={caseDetail?.cases.respiratoryRate}
-					unit="per min"
-					readonly
-				/>
+		<Card className="mb-2 flex flex-row gap-4 px-6">
+			<div className="flex flex-col gap-4 p-4 rounded-lg bg-pink-700/5 max-w-140">
+				<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-2">
+					<VitalField
+						label="Body Temperature"
+						unit="° F"
+						name="bodyTemperature"
+						placeholder="Body Temperature"
+						value={vitals?.temperature}
+					/>
+					<VitalField
+						label="Heart Rate"
+						unit="bpm"
+						name="heartRate"
+						placeholder="Heart Rate"
+						value={vitals?.heartRate}
+					/>
+					<VitalField
+						label="Respiratory Rate"
+						unit="per minute"
+						name="respiratoryRate"
+						placeholder="Respiratory Rate"
+						value={vitals?.respiratoryRate}
+					/>
+					<VitalField
+						label="SpO2"
+						unit="%"
+						name="spo2"
+						placeholder="SpO2"
+						value={vitals?.spo2}
+					/>
+				</div>
+				<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-4 border-t border-pink-700/40">
+					<VitalField
+						label="Blood Pressure (Systolic)"
+						unit="mm Hg"
+						name="bloodPressureSystolic"
+						placeholder="Blood Pressure (Systolic)"
+						value={vitals?.bloodPressureSystolic}
+					/>
+					<VitalField
+						label="Blood Pressure (Diastolic)"
+						unit="mm Hg"
+						name="bloodPressureDiastolic"
+						placeholder="Blood Pressure (Diastolic)"
+						value={vitals?.bloodPressureDiastolic}
+					/>
+				</div>
 			</div>
-			<div className="flex gap-4 mx-3">
-				<VitalField
-					label="Blood Pressure Systolic"
-					value={caseDetail?.cases.bloodPressureSystolic}
-					unit="mm Hg"
-					readonly
-				/>
-				<VitalField
-					label="Blood Pressure Diastolic"
-					value={caseDetail?.cases.bloodPressureDiastolic}
-					unit="mm Hg"
-					readonly
-				/>
-			</div>
-			<div className="flex gap-4 mx-3">
-				<VitalField
-					label="Blood Sugar"
-					value={caseDetail?.cases.bloodSugar}
-					unit="mg/dL"
-					readonly
-				/>
-				<VitalField
-					label="SpO2"
-					value={caseDetail?.cases.spo2}
-					unit="%"
-					readonly
-				/>
+			<div className="grid grid-cols-1 gap-4 p-4 rounded-lg bg-purple-700/5 max-w-70">
 				<VitalField
 					label="Weight"
-					value={caseDetail?.cases.weight}
 					unit="kg"
-					readonly
+					name="weight"
+					placeholder="Weight"
+					value={vitals?.weight}
+				/>
+				<VitalField
+					label="Blood Sugar"
+					unit="mg/dL"
+					name="bloodSugar"
+					placeholder="Blood Sugar"
+					value={vitals?.bloodSugar}
 				/>
 			</div>
 		</Card>

@@ -16,7 +16,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import VitalField from "@/components/vital-field";
+import VitalsCard from "@/components/vitals-card";
 import { cn, titleCase } from "@/lib/utils";
 import { client } from "./api/$";
 
@@ -239,64 +239,7 @@ function Vitals() {
 							</div>
 							<FieldSet>
 								<FieldGroup>
-									<div className="flex flex-wrap items-start gap-4">
-										<div className="flex flex-col gap-4 p-4 rounded-lg bg-pink-700/5 max-w-140">
-											<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-2">
-												<VitalField
-													label="Body Temperature (optional)"
-													unit="° F"
-													name="bodyTemperature"
-													placeholder="Body Temperature"
-												/>
-												<VitalField
-													label="Heart Rate (optional)"
-													unit="bpm"
-													name="heartRate"
-													placeholder="Heart Rate"
-												/>
-												<VitalField
-													label="Respiratory Rate (optional)"
-													unit="per minute"
-													name="respiratoryRate"
-													placeholder="Respiratory Rate"
-												/>
-												<VitalField
-													label="SpO2 (optional)"
-													unit="%"
-													name="spo2"
-													placeholder="SpO2"
-												/>
-											</div>
-											<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-4 border-t border-pink-700/40">
-												<VitalField
-													label="Blood Pressure (Systolic) (optional)"
-													unit="mm Hg"
-													name="bloodPressureSystolic"
-													placeholder="Blood Pressure (Systolic)"
-												/>
-												<VitalField
-													label="Blood Pressure (Diastolic) (optional)"
-													unit="mm Hg"
-													name="bloodPressureDiastolic"
-													placeholder="Blood Pressure (Diastolic)"
-												/>
-											</div>
-										</div>
-										<div className="grid grid-cols-1 gap-4 p-4 rounded-lg bg-purple-700/5 max-w-70">
-											<VitalField
-												label="Weight"
-												unit="kg"
-												name="weight"
-												placeholder="Weight (optional)"
-											/>
-											<VitalField
-												label="Blood Sugar"
-												unit="mg/dL"
-												name="bloodSugar"
-												placeholder="Blood Sugar (optional)"
-											/>
-										</div>
-									</div>
+									<VitalsCard />
 									<Separator className="hidden lg:inline my-2" />
 									<div className="flex items-end gap-4">
 										<Field>

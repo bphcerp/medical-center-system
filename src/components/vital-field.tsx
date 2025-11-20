@@ -19,12 +19,13 @@ const VitalField = ({
 	name,
 	value,
 	unit = null,
-	readonly = false,
 }: VitalFieldProps) => {
 	const fieldId = useId();
 	return (
 		<Field>
-			<FieldLabel htmlFor={fieldId}>{label}</FieldLabel>
+			<FieldLabel htmlFor={fieldId}>
+				{label} {value === undefined ? "(optional)" : null}
+			</FieldLabel>
 			<InputGroup>
 				<InputGroupInput
 					id={fieldId}
@@ -32,7 +33,7 @@ const VitalField = ({
 					placeholder={placeholder}
 					name={name}
 					value={value === null ? "—" : value}
-					disabled={readonly}
+					disabled={value !== undefined}
 				/>
 				{unit && <InputGroupAddon align="inline-end">{unit}</InputGroupAddon>}
 			</InputGroup>

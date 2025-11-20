@@ -155,7 +155,7 @@ function CaseDetailsPage() {
 					</div>
 				</Card>
 
-				<VitalsCard caseDetail={caseDetail} />
+				<VitalsCard vitals={caseDetail.cases} />
 
 				<div className="grid grid-cols-3 mb-2">
 					<Card className="col-span-1 row-span-2 rounded-r-none rounded-bl-none px-2 pt-4 pb-2">
