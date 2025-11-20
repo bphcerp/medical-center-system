@@ -1,28 +1,21 @@
 import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { CloudCheck, RefreshCw, TriangleAlert } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import DiagnosisCard, { type DiagnosisItem } from "@/components/diagnosis-card";
+import { useState } from "react";
+import DiagnosisCard from "@/components/diagnosis-card";
 import FinalizeCaseCard, {
 	type FinalizeButtonValue,
 } from "@/components/finalize-case-card";
 import LabRequestModal from "@/components/lab-request-modal";
 import PrescriptionCard from "@/components/prescription/prescription-card";
-import type { PrescriptionItem } from "@/components/prescription/types";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import VitalField from "@/components/vital-field";
 import VitalsCard from "@/components/vitals-card";
-import { useDebounce } from "@/lib/hooks/useDebounce";
+import { useAutosave } from "@/lib/hooks/useAutosave";
 import { client } from "./api/$";
-
-type AutosaveState = {
-	consultationNotes: string;
-	diagnosis: DiagnosisItem[];
-	prescriptions: PrescriptionItem[];
-};
 
 export const Route = createFileRoute("/consultation/$id")({
 	gcTime: 0,
@@ -123,82 +116,23 @@ function ConsultationPage() {
 
 	const [finalizeButtonValue, setFinalizeButtonValue] =
 		useState<FinalizeButtonValue>("Finalize (OPD)");
-	const [diagnosisItems, setDiagnosisItems] = useState<DiagnosisItem[]>(
-		diagnosesFromCase || [],
-	);
-	const [consultationNotes, setConsultationNotes] = useState<string>(
-		caseDetail?.cases.consultationNotes || "",
-	);
-	const [prescriptionItems, setPrescriptionItems] = useState(
-		prescriptions || [],
-	);
 	const [labTestModalOpen, setLabTestModalOpen] = useState<boolean>(false);
-	const [autosaved, setAutoSaved] = useState<boolean>(false);
-	const [autosaveError, setAutosaveError] = useState<string | null>(null);
-	const debouncedConsultationNotes = useDebounce(consultationNotes, 500);
-	const debouncedPrescriptionItems = useDebounce(prescriptionItems, 500);
-	const prevAutosaveRef = useRef<AutosaveState | null>(null);
-
-	const autosave = useCallback(async () => {
-		if (
-			prevAutosaveRef.current &&
-			prevAutosaveRef.current.consultationNotes ===
-				debouncedConsultationNotes &&
-			prevAutosaveRef.current.diagnosis.length === diagnosisItems.length &&
-			prevAutosaveRef.current.diagnosis.every(
-				(d, i) => d.id === diagnosisItems[i]?.id,
-			) &&
-			JSON.stringify(prevAutosaveRef.current.prescriptions) ===
-				JSON.stringify(debouncedPrescriptionItems)
-		) {
-			// No changes since last autosave
-			return;
-		}
-		setAutoSaved(false);
-		setAutosaveError(null);
-		try {
-			await client.api.doctor.autosave.$post({
-				json: {
-					caseId: Number(id),
-					consultationNotes: debouncedConsultationNotes,
-					diagnosis: diagnosisItems.map((d) => d.id),
-					prescriptions: debouncedPrescriptionItems.map((item) => ({
-						...item.case_prescriptions,
-						caseId: Number(id),
-						medicineId: item.medicines.id,
-					})),
-				},
-			});
-		} catch (error) {
-			setAutosaveError("Failed to save");
-			setAutoSaved(false);
-			console.error("Autosave failed:", error);
-			throw error;
-		}
-		setAutoSaved(true);
-		prevAutosaveRef.current = {
-			consultationNotes: debouncedConsultationNotes,
-			diagnosis: diagnosisItems,
-			prescriptions: debouncedPrescriptionItems,
-		};
-	}, [
-		id,
+	const {
+		consultationNotes,
 		diagnosisItems,
-		debouncedConsultationNotes,
-		debouncedPrescriptionItems,
-	]);
-
-	useEffect(() => {
-		autosave().catch(() => {
-			console.error("Autosave failed");
-		});
-		const interval = setInterval(() => {
-			autosave().catch(() => {
-				console.error("Autosave failed");
-			});
-		}, 3000);
-		return () => clearInterval(interval);
-	}, [autosave]);
+		prescriptionItems,
+		setConsultationNotes,
+		setDiagnosisItems,
+		setPrescriptionItems,
+		autosaved,
+		autosaveError,
+		autosave,
+	} = useAutosave({
+		id,
+		diagnosesFromCase,
+		caseDetail,
+		prescriptions,
+	});
 
 	if (!caseDetail) {
 		return (
