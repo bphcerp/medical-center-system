@@ -6,7 +6,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import DurationInput from "../duration-input";
+import DurationInput from "./duration-input";
 import PrescriptionFrequencySelector, {
 	type PrescriptionItemProps,
 } from "./frequency-selector";
