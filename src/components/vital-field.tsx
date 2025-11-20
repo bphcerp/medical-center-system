@@ -32,7 +32,7 @@ const VitalField = ({
 					placeholder={placeholder}
 					name={name}
 					value={value ?? "—"}
-					readOnly={readonly}
+					disabled={readonly}
 				/>
 				<InputGroupAddon align="inline-end">{unit}</InputGroupAddon>
 			</InputGroup>
