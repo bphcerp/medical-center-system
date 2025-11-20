@@ -62,6 +62,9 @@ function InventoryPage() {
 
 	const [inventoryQuery, setInventoryQuery] = useState<string>("");
 	const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+	const [filterMode, setFilterMode] = useState<
+		"all" | "lowStock" | "nearExpiry" | "expired"
+	>("all");
 
 	const toggleRow = (id: number) => {
 		const newSet = new Set(expandedRows);
@@ -103,7 +106,29 @@ function InventoryPage() {
 
 	const terms = inventoryQuery.trim().toLowerCase().split(/\s+/);
 
-	const filteredInventory = inventory
+	const getFilteredByMode = (items: typeof inventory) => {
+		const now = new Date();
+		const threshold = new Date();
+		threshold.setDate(now.getDate() + 30);
+
+		return items.filter((item) => {
+			if (filterMode === "lowStock") {
+				return item.criticalQty !== null && item.quantity <= item.criticalQty;
+			}
+			if (filterMode === "nearExpiry") {
+				return item.batches.some((b) => {
+					const expiry = new Date(b.expiry);
+					return expiry > now && expiry <= threshold;
+				});
+			}
+			if (filterMode === "expired") {
+				return item.batches.some((b) => new Date(b.expiry) <= now);
+			}
+			return true;
+		});
+	};
+
+	const filteredInventory = getFilteredByMode(inventory)
 		.reduce(
 			(acc, inventoryItem) => {
 				if (inventoryQuery === "") {
@@ -173,8 +198,33 @@ function InventoryPage() {
 			<div className="mx-6 my-2.5 flex items-center justify-between">
 				<h1 className="text-3xl font-bold">Medicine Inventory</h1>
 				<div className="flex items-center w-full max-w-xl">
-					<Button className="mr-2">Low Stock</Button>
-					<Button className="mr-2">Near Expiry</Button>
+					<Button
+						className="mr-2"
+						onClick={() =>
+							setFilterMode(filterMode === "lowStock" ? "all" : "lowStock")
+						}
+						variant={filterMode === "lowStock" ? "default" : "outline"}
+					>
+						Low Stock
+					</Button>
+					<Button
+						className="mr-2"
+						onClick={() =>
+							setFilterMode(filterMode === "nearExpiry" ? "all" : "nearExpiry")
+						}
+						variant={filterMode === "nearExpiry" ? "default" : "outline"}
+					>
+						Near Expiry
+					</Button>
+					<Button
+						className="mr-2"
+						onClick={() =>
+							setFilterMode(filterMode === "expired" ? "all" : "expired")
+						}
+						variant={filterMode === "expired" ? "default" : "outline"}
+					>
+						Expired
+					</Button>
 					<Input
 						type="text"
 						placeholder="Search for inventory medicines here..."
