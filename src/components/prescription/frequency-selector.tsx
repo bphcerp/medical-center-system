@@ -20,17 +20,22 @@ export type MedicineItem = InferResponseType<
 	200
 >["medicines"][number];
 
-const PrescriptionFrequencySelector = ({
-	item,
-	handleUpdatePrescriptionItem,
-}: {
+export interface PrescriptionItemProps {
 	item: PrescriptionItem;
 	handleUpdatePrescriptionItem: (
 		id: number,
-		field: "frequency",
-		value: string,
+		field: keyof Omit<
+			PrescriptionItem["case_prescriptions"],
+			"id" | "medicine"
+		>,
+		value: string | PrescriptionItem["case_prescriptions"]["categoryData"],
 	) => void;
-}) => {
+}
+
+const PrescriptionFrequencySelector = ({
+	item,
+	handleUpdatePrescriptionItem,
+}: PrescriptionItemProps) => {
 	return (
 		<Select
 			value={item.case_prescriptions.frequency}

@@ -9,7 +9,7 @@ import FinalizeCaseCard, {
 import LabRequestModal from "@/components/lab-request-modal";
 import PrescriptionCard, {
 	type PrescriptionItem,
-} from "@/components/prescription-card";
+} from "@/components/prescription/prescription-card";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
