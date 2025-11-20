@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight, SquarePlus } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { AddBatchModal } from "@/components/inventory-add-batch-modal";
+import { AddMedicinesModal } from "@/components/inventory-add-medicines-modal";
 import { AddQuantityModal } from "@/components/inventory-add-quantity-modal";
 import { DispenseModal } from "@/components/inventory-dispense-modal";
 import TopBar from "@/components/topbar";
@@ -52,13 +53,21 @@ export const Route = createFileRoute("/inventory")({
 		const { inventory } = await inventoryRes.json();
 		// console.log(inventory);
 
-		return { inventory };
+		const medicinesRes = await client.api.inventory.medicines.$get();
+
+		if (medicinesRes.status !== 200) {
+			throw new Error("Failed to fetch medicines details");
+		}
+
+		const { medicines } = await medicinesRes.json();
+
+		return { inventory, medicines };
 	},
 	component: InventoryPage,
 });
 
 function InventoryPage() {
-	const { inventory } = Route.useLoaderData();
+	const { inventory, medicines } = Route.useLoaderData();
 
 	const [inventoryQuery, setInventoryQuery] = useState<string>("");
 	const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
@@ -71,6 +80,12 @@ function InventoryPage() {
 			newSet.add(id);
 		}
 		setExpandedRows(newSet);
+	};
+
+	const [isOpenAddMedicines, setIsOpenAddMedicines] = useState<boolean>(false);
+
+	const openAddMedicines = () => {
+		setIsOpenAddMedicines(true);
 	};
 
 	const [isOpenAddQuantity, setIsOpenAddQuantity] = useState<boolean>(false);
@@ -173,7 +188,7 @@ function InventoryPage() {
 			<div className="mx-6 my-2.5 flex items-center justify-between">
 				<h1 className="text-3xl font-bold mr-3">Medicine Inventory</h1>
 				<div className="flex items-center w-full max-w-2xl">
-					<Button className="mr-2">
+					<Button className="mr-2" onClick={() => openAddMedicines()}>
 						<SquarePlus />
 						Add Medicine
 					</Button>
@@ -279,6 +294,11 @@ function InventoryPage() {
 					</Table>
 				</CardContent>
 			</Card>
+			<AddMedicinesModal
+				open={isOpenAddMedicines}
+				onOpenChange={setIsOpenAddMedicines}
+				medicines={medicines}
+			/>
 			<AddBatchModal
 				open={isOpenAddBatch}
 				onOpenChange={setIsOpenAddBatch}
