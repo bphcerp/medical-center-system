@@ -98,6 +98,15 @@ const inventory = new Hono()
 
 		return c.json({ inventory: Array.from(inventoryMap.values()) });
 	})
+	.get("/medicines", async (c) => {
+		const medicines = await db.select().from(medicinesTable);
+
+		if (medicines.length === 0) {
+			return c.json({ error: "Medicines data not found" }, 404);
+		}
+
+		return c.json({ medicines });
+	})
 	.post(
 		"addQuantity",
 		zValidator(
