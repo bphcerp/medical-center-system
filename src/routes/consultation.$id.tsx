@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import VitalField from "@/components/vital-field";
+import VitalsCard from "@/components/vitals-card";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { client } from "./api/$";
 
@@ -331,50 +332,7 @@ function ConsultationPage() {
 						/>
 					</div>
 				</Card>
-				<Card className="mb-2">
-					<div className="flex gap-4 mx-3">
-						<VitalField
-							label="Temperature"
-							value={caseDetail?.cases.temperature}
-							readonly
-						/>
-						<VitalField
-							label="Heart Rate"
-							value={caseDetail?.cases.heartRate}
-							readonly
-						/>
-						<VitalField
-							label="Respiratory Rate"
-							value={caseDetail?.cases.respiratoryRate}
-							readonly
-						/>
-					</div>
-					<div className="flex gap-4 mx-3">
-						<VitalField
-							label="Blood Pressure Systolic"
-							value={caseDetail?.cases.bloodPressureSystolic}
-							readonly
-						/>
-						<VitalField
-							label="Blood Pressure Diastolic"
-							value={caseDetail?.cases.bloodPressureDiastolic}
-							readonly
-						/>
-					</div>
-					<div className="flex gap-4 mx-3">
-						<VitalField
-							label="Blood Sugar"
-							value={caseDetail?.cases.bloodSugar}
-							readonly
-						/>
-						<VitalField label="SpO2" value={caseDetail?.cases.spo2} readonly />
-						<VitalField
-							label="Weight"
-							value={caseDetail?.cases.weight}
-							readonly
-						/>
-					</div>
-				</Card>
+				<VitalsCard caseDetail={caseDetail} />
 				<div className="grid grid-cols-3 mb-2">
 					<Card className="col-span-1 row-span-2 rounded-r-none rounded-bl-none px-2 pt-4 pb-2">
 						<Label className="font-semibold text-lg">

@@ -1,6 +1,5 @@
 import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import type { InferResponseType } from "hono/client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import DiagnosisCard from "@/components/diagnosis-card";
 import { OTPVerificationDialog } from "@/components/otp-verification-dialog";
@@ -10,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import VitalField from "@/components/vital-field";
+import VitalsCard, { type CaseDetail } from "@/components/vitals-card";
 import { client } from "../api/$";
 
 export const Route = createFileRoute("/history/$patientId/$caseId")({
@@ -51,9 +51,6 @@ function CaseDetailsPage() {
 	const [isSendingOtp, setIsSendingOtp] = useState(false);
 	const [otpError, setOtpError] = useState<string | null>(null);
 	const otpSentRef = useRef<boolean>(false);
-	const caseDetailsResponse =
-		client.api.patientHistory.otp[":caseId"].verify.$post;
-	type CaseDetail = InferResponseType<typeof caseDetailsResponse, 200>;
 	const [caseRecord, setCaseRecord] = useState<CaseDetail | null>(null);
 	const { caseDetail, prescriptions, diseases } = caseRecord || {
 		caseDetail: null,
@@ -251,40 +248,7 @@ function CaseDetailsPage() {
 					</div>
 				</Card>
 
-				<Card className="mb-2">
-					<div className="flex gap-4 mx-3">
-						<VitalField
-							label="Temperature"
-							value={caseDetail?.cases.temperature}
-						/>
-						<VitalField
-							label="Heart Rate"
-							value={caseDetail?.cases.heartRate}
-						/>
-						<VitalField
-							label="Respiratory Rate"
-							value={caseDetail?.cases.respiratoryRate}
-						/>
-					</div>
-					<div className="flex gap-4 mx-3">
-						<VitalField
-							label="Blood Pressure Systolic"
-							value={caseDetail?.cases.bloodPressureSystolic}
-						/>
-						<VitalField
-							label="Blood Pressure Diastolic"
-							value={caseDetail?.cases.bloodPressureDiastolic}
-						/>
-					</div>
-					<div className="flex gap-4 mx-3">
-						<VitalField
-							label="Blood Sugar"
-							value={caseDetail?.cases.bloodSugar}
-						/>
-						<VitalField label="SpO2" value={caseDetail?.cases.spo2} />
-						<VitalField label="Weight" value={caseDetail?.cases.weight} />
-					</div>
-				</Card>
+				<VitalsCard caseDetail={caseDetail} />
 
 				<div className="grid grid-cols-3 mb-2">
 					<Card className="col-span-1 row-span-2 rounded-r-none rounded-bl-none px-2 pt-4 pb-2">
