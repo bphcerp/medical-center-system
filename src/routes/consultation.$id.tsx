@@ -7,9 +7,8 @@ import FinalizeCaseCard, {
 	type FinalizeButtonValue,
 } from "@/components/finalize-case-card";
 import LabRequestModal from "@/components/lab-request-modal";
-import PrescriptionCard, {
-	type PrescriptionItem,
-} from "@/components/prescription/prescription-card";
+import PrescriptionCard from "@/components/prescription/prescription-card";
+import type { PrescriptionItem } from "@/components/prescription/types";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

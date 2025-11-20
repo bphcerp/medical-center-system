@@ -18,9 +18,9 @@ import {
 } from "@/components/ui/popover";
 import PrescriptionCapsuleFields from "./capsule-fields";
 import PrescriptionExternalFields from "./external-fields";
-import type { MedicineItem, PrescriptionItem } from "./frequency-selector";
 import PrescriptionInjectionFields from "./injection-fields";
 import PrescriptionSyrupFields from "./syrup-fields";
+import type { MedicineItem, PrescriptionItem } from "./types";
 
 const PrescriptionCard = ({
 	medicines,

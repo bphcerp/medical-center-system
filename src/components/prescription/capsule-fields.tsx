@@ -1,4 +1,3 @@
-import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -6,10 +5,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import Comment from "./comment";
 import DurationInput from "./duration-input";
-import PrescriptionFrequencySelector, {
-	type PrescriptionItemProps,
-} from "./frequency-selector";
+import PrescriptionFrequencySelector from "./frequency-selector";
+import type { PrescriptionItemProps } from "./types";
 
 const PrescriptionCapsuleFields = ({
 	item,
@@ -71,17 +70,9 @@ const PrescriptionCapsuleFields = ({
 					handleUpdatePrescriptionItem(item.medicines.id, "durationUnit", value)
 				}
 			/>
-			<Input
-				value={item.case_prescriptions.comment || ""}
-				onChange={(e) =>
-					handleUpdatePrescriptionItem(
-						item.medicines.id,
-						"comment",
-						e.target.value,
-					)
-				}
-				placeholder="Notes"
-				className="h-10 flex-1 min-w-[120px]"
+			<Comment
+				item={item}
+				handleUpdatePrescriptionItem={handleUpdatePrescriptionItem}
 			/>
 		</div>
 	);
