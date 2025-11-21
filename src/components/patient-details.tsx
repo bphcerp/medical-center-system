@@ -1,4 +1,3 @@
-import type React from "react";
 import type { Patient } from "@/lib/types/patient";
 import { ageSexString, cn } from "@/lib/utils";
 import { PatientTypeBadge } from "./patient-type-badge";

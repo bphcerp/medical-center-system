@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { PatientDetails } from "@/components/patient-details";
 import { PatientTypeBadge } from "@/components/patient-type-badge";
 import { RegistrationForm } from "@/components/registration-card";
+import { TokenButton, TokenButtonTitle } from "@/components/token-button";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -184,30 +185,15 @@ function Vitals() {
 								focusedPatient?.unprocessed.id === patient.unprocessed.id;
 							const sex = titleCase(patient.patients.sex);
 							return (
-								<Button
+								<TokenButton
 									variant="ghost"
 									key={patient.unprocessed.id}
-									className={cn(
-										"flex gap-3 p-0 rounded-lg border-2 items-center overflow-clip bg-card h-auto",
-										isSelected && "border-primary",
-									)}
+									token={patient.unprocessed.id.toString()}
+									selected={isSelected}
 									onClick={() => setFocusedPatient(patient)}
 								>
-									<span
-										className={cn(
-											"h-full content-center min-w-13 px-2 text-center",
-											"font-semibold tabular-nums tracking-tight text-lg transition-colors",
-											isSelected
-												? "bg-primary text-primary-foreground"
-												: "bg-accent text-accent-foreground",
-										)}
-									>
-										{patient.unprocessed.id}
-									</span>
-									<div className="flex grow flex-col items-start text-base py-2 pr-2">
-										<span className="whitespace-normal text-left">
-											{patient.patients.name}
-										</span>
+									<div className="flex flex-col items-start">
+										<TokenButtonTitle>{patient.patients.name}</TokenButtonTitle>
 										<div className="flex justify-between w-full items-end">
 											<span className="text-muted-foreground font-medium text-left text-sm">
 												{sex}, {patient.patients.age} y.o.
@@ -215,7 +201,7 @@ function Vitals() {
 											<PatientTypeBadge type={patient.patients.type} />
 										</div>
 									</div>
-								</Button>
+								</TokenButton>
 							);
 						})}
 					</div>

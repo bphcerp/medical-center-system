@@ -179,7 +179,7 @@ function TestEntry() {
 	});
 
 	return (
-		<div className="p-4 flex flex-col gap-4">
+		<div className="p-4 lg:p-12 flex flex-col gap-4">
 			<PatientDetails
 				patient={patient}
 				token={token}

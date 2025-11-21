@@ -6,8 +6,8 @@ import {
 } from "@tanstack/react-router";
 import { FlaskConical } from "lucide-react";
 import { LabTestStatusBadge } from "@/components/lab-test-status-badge";
+import { TokenButton, TokenButtonTitle } from "@/components/token-button";
 import TopBar from "@/components/topbar";
-import { Button } from "@/components/ui/button";
 import {
 	Empty,
 	EmptyDescription,
@@ -99,34 +99,18 @@ function LabDashboard() {
 							params={{ caseId: group.caseId.toString() }}
 							key={group.caseId}
 						>
-							<Button
-								variant="ghost"
-								key={group.caseId}
-								className={cn(
-									"flex gap-3 p-0 rounded-lg border-2 items-stretch overflow-clip bg-card h-auto w-full group",
-									caseId === group.caseId && "border-primary",
-								)}
+							<TokenButton
+								token={group.token.toString()}
+								selected={caseId === group.caseId}
 							>
-								<span
-									className={cn(
-										"content-center min-w-13 px-2 text-center",
-										"font-semibold tabular-nums tracking-tight text-lg transition-colors",
-										caseId === group.caseId
-											? "bg-primary text-primary-foreground"
-											: "bg-accent text-accent-foreground",
-									)}
-								>
-									{group.token}{" "}
-								</span>
-								<div className="flex grow flex-col items-stretch text-base py-2 pr-2 gap-1.5 whitespace-normal text-left">
-									<span className="whitespace-normal text-lg font-semibold">
-										{group.patientName}
-									</span>
+								<div className="flex flex-col items-stretch text-base gap-1.5">
+									<TokenButtonTitle>{group.patientName}</TokenButtonTitle>
 									<div className="text-muted-foreground text-left text-xs italic">
 										<span className="text-base/1 font-semibold not-italic mr-1.5">
 											{group.doctorName}
 										</span>
-										requested these tests:
+										requested{" "}
+										{group.tests.length === 1 ? "this test:" : "these tests:"}
 									</div>
 									<div className="flex flex-col gap-1 pl-2">
 										{group.tests.map((test) => (
@@ -146,7 +130,7 @@ function LabDashboard() {
 										))}
 									</div>
 								</div>
-							</Button>
+							</TokenButton>
 						</Link>
 					))}
 				</div>
