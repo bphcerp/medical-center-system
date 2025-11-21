@@ -131,7 +131,11 @@ export function AddBatchModal({
 							onChange={(e) => setQuantity(parseInt(e.target.value, 10))}
 						/>
 					</div>
-					<Button className="my-2 mr-2" onClick={handleCancel}>
+					<Button
+						className="my-2 mr-2"
+						onClick={handleCancel}
+						variant="outline"
+					>
 						Cancel
 					</Button>
 					<Button onClick={handleSubmit}>Submit</Button>

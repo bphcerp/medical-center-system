@@ -2,11 +2,38 @@ import { zValidator } from "@hono/zod-validator";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
-import env from "@/config/env";
 import { filesTable } from "@/db/files";
+import env from "@/lib/env";
 import { SeaweedFSClient } from "@/lib/seaweedfs";
 import { db } from "./index";
 import { rbacCheck } from "./rbac";
+
+export async function uploadFileService(file: File, allowed: number[] = []) {
+	const { fid, url } = await seaweedfs.uploadFile(file);
+
+	try {
+		const [fileRecord] = await db
+			.insert(filesTable)
+			.values({
+				url: url,
+				allowed: allowed,
+			})
+			.returning({
+				id: filesTable.id,
+				url: filesTable.url,
+			});
+
+		if (!fileRecord) {
+			throw new Error("Failed to insert file record");
+		}
+
+		return { ...fileRecord, fid, filename: file.name };
+	} catch (error) {
+		// Clean up orphaned file in SeaweedFS
+		await seaweedfs.deleteFile(fid).catch(console.error);
+		throw error;
+	}
+}
 
 export const seaweedfs = new SeaweedFSClient(env.SEAWEEDFS_MASTER);
 

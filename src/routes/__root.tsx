@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { CookiesProvider } from "react-cookie";
 import appCss from "@/styles/app.css?url";
 
 export const Route = createRootRoute({
@@ -35,7 +36,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<HeadContent />
 			</head>
 			<body className="bg-background">
-				{children}
+				<CookiesProvider>{children}</CookiesProvider>
 				<Scripts />
 			</body>
 		</html>

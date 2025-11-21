@@ -1,62 +1,44 @@
 import { Label } from "@radix-ui/react-label";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import DiagnosisCard from "@/components/diagnosis-card";
+import {
+	OTPVerificationDialog,
+	useOTP,
+} from "@/components/otp-verification-dialog";
 import TopBar from "@/components/topbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import VitalField from "@/components/vital-field";
-import { client } from "../api/$";
+import VitalsCard from "@/components/vitals-card";
+import useAuth from "@/lib/hooks/useAuth";
 
 export const Route = createFileRoute("/history/$patientId/$caseId")({
-	loader: async ({
-		params,
-	}: {
-		params: { patientId: string; caseId: string };
-	}) => {
-		const res = await client.api.user.$get();
-		if (res.status !== 200) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-		const user = await res.json();
-		if ("error" in user) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-
-		const historyRes = await client.api.doctor.consultation[":caseId"].$get({
-			param: { caseId: params.caseId },
-		});
-
-		if (historyRes.status === 403) {
-			throw redirect({
-				to: "/doctor",
-			});
-		}
-
-		if (historyRes.status !== 200) {
-			throw new Error("Failed to fetch case details");
-		}
-
-		const { caseDetail, prescriptions, diseases } = await historyRes.json();
-
-		return {
-			user,
-			caseDetail,
-			prescriptions,
-			diseases,
-		};
-	},
 	component: CaseDetailsPage,
 });
 
 function CaseDetailsPage() {
-	const { caseDetail, prescriptions, diseases } = Route.useLoaderData();
+	useAuth(["doctor"]);
+	const { caseId, patientId } = Route.useParams();
 	const navigate = useNavigate();
+	const {
+		caseRecord,
+		isSendingOtp,
+		isOtpDialogOpen,
+		handleVerifyOtp,
+		handleOverride,
+		isVerifying,
+		setIsOtpDialogOpen,
+		otpError,
+	} = useOTP(caseId);
+
+	// OTP verification state
+	const { caseDetail, prescriptions, diseases } = caseRecord || {
+		caseDetail: null,
+		prescriptions: [],
+		diseases: [],
+	};
 
 	if (!caseDetail) {
 		return (
@@ -64,18 +46,41 @@ function CaseDetailsPage() {
 				<TopBar title="Case Details" />
 				<div className="container mx-auto p-6">
 					<h1 className="text-3xl font-bold">Case Details</h1>
-					<p className="mt-4">No case details found.</p>
+					<p className="text-muted-foreground mt-2">Case ID: {caseId}</p>
+					<p className="mt-4">
+						{isSendingOtp
+							? "Sending OTP to patient's email..."
+							: "Waiting for OTP verification..."}
+					</p>
+					<OTPVerificationDialog
+						open={isOtpDialogOpen}
+						onOpenChange={(open) => {
+							if (!open) {
+								// If user closes dialog without verifying, redirect back
+								navigate({
+									to: "/history/$patientId",
+									params: { patientId },
+								});
+							}
+							setIsOtpDialogOpen(open);
+						}}
+						onVerify={handleVerifyOtp}
+						onOverride={handleOverride}
+						patientName="the patient"
+						isVerifying={isVerifying}
+						error={otpError}
+					/>
 				</div>
 			</>
 		);
 	}
 
 	const finalizedStateLabel =
-		caseDetail.finalizedState === "opd"
+		caseDetail.cases.finalizedState === "opd"
 			? "OPD"
-			: caseDetail.finalizedState === "admitted"
+			: caseDetail.cases.finalizedState === "admitted"
 				? "Admitted"
-				: caseDetail.finalizedState === "referred"
+				: caseDetail.cases.finalizedState === "referred"
 					? "Referred"
 					: "Unknown";
 
@@ -86,18 +91,18 @@ function CaseDetailsPage() {
 				<div className="flex justify-between items-start mb-4">
 					<div>
 						<h1 className="text-3xl font-bold">
-							Case History - {caseDetail.patientName}
+							Case History - {caseDetail.patient.name}
 						</h1>
 						<p className="text-muted-foreground my-2">
-							Case ID: {caseDetail.caseId}
+							Case ID: {caseDetail.cases.id}
 						</p>
 						<div className="flex gap-2 items-center mt-2">
 							<span className="text-sm font-semibold">Status:</span>
 							<Badge
 								variant={
-									caseDetail.finalizedState === "opd"
+									caseDetail.cases.finalizedState === "opd"
 										? "default"
-										: caseDetail.finalizedState === "admitted"
+										: caseDetail.cases.finalizedState === "admitted"
 											? "secondary"
 											: "outline"
 								}
@@ -110,7 +115,7 @@ function CaseDetailsPage() {
 						onClick={() =>
 							navigate({
 								to: "/history/$patientId",
-								params: { patientId: String(caseDetail.patientId) },
+								params: { patientId: String(caseDetail.patient.id) },
 							})
 						}
 					>
@@ -120,37 +125,13 @@ function CaseDetailsPage() {
 
 				<Card className="mb-2">
 					<div className="flex gap-4 mx-3">
-						<VitalField label="Patient Name" value={caseDetail?.patientName} />
-						<VitalField label="Age" value={caseDetail?.patientAge} />
+						<VitalField label="Patient Name" value={caseDetail?.patient.name} />
+						<VitalField label="Age" value={caseDetail?.patient.age} />
 						<VitalField label="ID/PSRN/Phone" value={caseDetail?.identifier} />
 					</div>
 				</Card>
 
-				<Card className="mb-2">
-					<div className="flex gap-4 mx-3">
-						<VitalField label="Temperature" value={caseDetail?.temperature} />
-						<VitalField label="Heart Rate" value={caseDetail?.heartRate} />
-						<VitalField
-							label="Respiratory Rate"
-							value={caseDetail?.respiratoryRate}
-						/>
-					</div>
-					<div className="flex gap-4 mx-3">
-						<VitalField
-							label="Blood Pressure Systolic"
-							value={caseDetail?.bloodPressureSystolic}
-						/>
-						<VitalField
-							label="Blood Pressure Diastolic"
-							value={caseDetail?.bloodPressureDiastolic}
-						/>
-					</div>
-					<div className="flex gap-4 mx-3">
-						<VitalField label="Blood Sugar" value={caseDetail?.bloodSugar} />
-						<VitalField label="SpO2" value={caseDetail?.spo2} />
-						<VitalField label="Weight" value={caseDetail?.weight} />
-					</div>
-				</Card>
+				<VitalsCard vitals={caseDetail.cases} />
 
 				<div className="grid grid-cols-3 mb-2">
 					<Card className="col-span-1 row-span-2 rounded-r-none rounded-bl-none px-2 pt-4 pb-2">
@@ -158,7 +139,7 @@ function CaseDetailsPage() {
 							Clinical Examination
 						</Label>
 						<Textarea
-							value={caseDetail.consultationNotes || "No notes recorded"}
+							value={caseDetail?.cases.consultationNotes || "No notes recorded"}
 							readOnly
 							className="h-full -mt-3.5 resize-none bg-muted"
 						/>
@@ -183,117 +164,125 @@ function CaseDetailsPage() {
 							<div className="px-4 pb-4 space-y-4">
 								{prescriptions.map((item) => (
 									<div
-										key={item.id}
+										key={item.medicines.id}
 										className="border rounded-lg p-4 bg-card hover:bg-accent/5 transition-colors"
 									>
 										<div className="flex items-start justify-between gap-3 mb-3">
 											<div className="flex-1">
 												<div className="flex items-center gap-2 flex-wrap mb-1">
 													<span className="font-semibold text-base">
-														{item.company} {item.brand}
+														{item.medicines.company} {item.medicines.brand}
 													</span>
 													<Badge variant="default" className="text-xs">
-														{item.type}
+														{item.medicines.type}
 													</Badge>
 												</div>
 												<div className="text-sm text-muted-foreground">
-													{item.drug} • {item.strength}
+													{item.medicines.drug} • {item.medicines.strength}
 												</div>
 											</div>
 										</div>
 
 										<div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-											{item.dosage && (
+											{item.case_prescriptions.dosage && (
 												<div className="flex items-start gap-2">
 													<span className="font-medium text-muted-foreground min-w-20">
 														Dosage:
 													</span>
-													<span className="flex-1">{item.dosage}</span>
+													<span className="flex-1">
+														{item.case_prescriptions.dosage}
+													</span>
 												</div>
 											)}
-											{item.frequency && (
+											{item.case_prescriptions.frequency && (
 												<div className="flex items-start gap-2">
 													<span className="font-medium text-muted-foreground min-w-20">
 														Frequency:
 													</span>
-													<span className="flex-1">{item.frequency}</span>
-												</div>
-											)}
-											{item.duration && (
-												<div className="flex items-start gap-2">
-													<span className="font-medium text-muted-foreground min-w-20">
-														Duration:
+													<span className="flex-1">
+														{item.case_prescriptions.frequency}
 													</span>
-													<span className="flex-1">{item.duration}</span>
 												</div>
 											)}
-											{item.categoryData &&
-												(() => {
-													try {
-														const categoryData =
-															typeof item.categoryData === "string"
-																? JSON.parse(item.categoryData)
-																: item.categoryData;
-														return (
-															<>
-																{categoryData.mealTiming && (
-																	<div className="flex items-start gap-2">
-																		<span className="font-medium text-muted-foreground min-w-20">
-																			Meal Timing:
-																		</span>
-																		<span className="flex-1">
-																			{categoryData.mealTiming === "before"
-																				? "Before meal"
-																				: "After meal"}
-																		</span>
-																	</div>
-																)}
-																{categoryData.applicationArea && (
-																	<div className="flex items-start gap-2">
-																		<span className="font-medium text-muted-foreground min-w-20">
-																			Application:
-																		</span>
-																		<span className="flex-1">
-																			{categoryData.applicationArea}
-																		</span>
-																	</div>
-																)}
-																{categoryData.injectionRoute && (
-																	<div className="flex items-start gap-2">
-																		<span className="font-medium text-muted-foreground min-w-20">
-																			Route:
-																		</span>
-																		<span className="flex-1">
-																			{categoryData.injectionRoute}
-																		</span>
-																	</div>
-																)}
-																{categoryData.liquidTiming && (
-																	<div className="flex items-start gap-2">
-																		<span className="font-medium text-muted-foreground min-w-20">
-																			Meal Timing:
-																		</span>
-																		<span className="flex-1">
-																			{categoryData.liquidTiming === "before"
-																				? "Before meal"
-																				: "After meal"}
-																		</span>
-																	</div>
-																)}
-															</>
-														);
-													} catch {
-														return null;
-													}
-												})()}
+											{item.case_prescriptions.duration &&
+												item.case_prescriptions.durationUnit && (
+													<div className="flex items-start gap-2">
+														<span className="font-medium text-muted-foreground min-w-20">
+															Duration:
+														</span>
+														<span className="flex-1">
+															{item.case_prescriptions.duration}{" "}
+															{item.case_prescriptions.durationUnit}
+														</span>
+													</div>
+												)}
+
+											{item.case_prescriptions.categoryData &&
+												"mealTiming" in item.case_prescriptions.categoryData &&
+												item.case_prescriptions.categoryData.mealTiming && (
+													<div className="flex items-start gap-2">
+														<span className="font-medium text-muted-foreground min-w-20">
+															Meal Timing:
+														</span>
+														<span className="flex-1">
+															{item.case_prescriptions.categoryData.mealTiming}
+														</span>
+													</div>
+												)}
+											{item.case_prescriptions.categoryData &&
+												"applicationArea" in
+													item.case_prescriptions.categoryData &&
+												item.case_prescriptions.categoryData
+													.applicationArea && (
+													<div className="flex items-start gap-2">
+														<span className="font-medium text-muted-foreground min-w-20">
+															Application:
+														</span>
+														<span className="flex-1">
+															{
+																item.case_prescriptions.categoryData
+																	.applicationArea
+															}
+														</span>
+													</div>
+												)}
+											{item.case_prescriptions.categoryData &&
+												"injectionRoute" in
+													item.case_prescriptions.categoryData && (
+													<div className="flex items-start gap-2">
+														<span className="font-medium text-muted-foreground min-w-20">
+															Route:
+														</span>
+														<span className="flex-1">
+															{
+																item.case_prescriptions.categoryData
+																	.injectionRoute
+															}
+														</span>
+													</div>
+												)}
+											{item.case_prescriptions.categoryData &&
+												"mealTiming" in
+													item.case_prescriptions.categoryData && (
+													<div className="flex items-start gap-2">
+														<span className="font-medium text-muted-foreground min-w-20">
+															Liquid Timing:
+														</span>
+														<span className="flex-1">
+															{item.case_prescriptions.categoryData.mealTiming}
+														</span>
+													</div>
+												)}
 										</div>
 
-										{item.comments && (
+										{item.case_prescriptions.comment && (
 											<div className="mt-3 pt-3 border-t">
 												<span className="font-medium text-sm text-muted-foreground">
 													Notes:{" "}
 												</span>
-												<span className="text-sm">{item.comments}</span>
+												<span className="text-sm">
+													{item.case_prescriptions.comment}
+												</span>
 											</div>
 										)}
 									</div>

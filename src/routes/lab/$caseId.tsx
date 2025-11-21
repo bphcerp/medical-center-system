@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import type { statusEnums } from "@/db/lab";
+import useAuth from "@/lib/hooks/useAuth";
 import { cn, handleUnauthorized } from "@/lib/utils";
 import { client } from "../api/$";
 
@@ -34,6 +35,7 @@ export const Route = createFileRoute("/lab/$caseId")({
 });
 
 function TestEntry() {
+	useAuth(["lab"]);
 	const navigate = useNavigate();
 	const {
 		caseId,

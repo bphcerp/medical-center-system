@@ -1,45 +1,26 @@
 import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { CloudCheck, RefreshCw, TriangleAlert } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import DiagnosisCard, { type DiagnosisItem } from "@/components/diagnosis-card";
+import { useState } from "react";
+import DiagnosisCard from "@/components/diagnosis-card";
 import FinalizeCaseCard, {
 	type FinalizeButtonValue,
 } from "@/components/finalize-case-card";
 import LabRequestModal from "@/components/lab-request-modal";
-import PrescriptionCard, {
-	type PrescriptionItem,
-} from "@/components/prescription-card";
+import PrescriptionCard from "@/components/prescription/prescription-card";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import VitalField from "@/components/vital-field";
-import { useDebounce } from "@/lib/hooks/useDebounce";
+import VitalsCard from "@/components/vitals-card";
+import useAuth from "@/lib/hooks/useAuth";
+import { useAutosave } from "@/lib/hooks/useAutosave";
 import { client } from "./api/$";
-
-type AutosaveState = {
-	consultationNotes: string;
-	diagnosis: DiagnosisItem[];
-	prescriptions: PrescriptionItem[];
-};
 
 export const Route = createFileRoute("/consultation/$id")({
 	gcTime: 0,
 	loader: async ({ params }: { params: { id: string } }) => {
-		// Check if user is authenticated
-		const res = await client.api.user.$get();
-		if (res.status !== 200) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-		const user = await res.json();
-		if ("error" in user) {
-			throw redirect({
-				to: "/login",
-			});
-		}
 		const consultationRes = await client.api.doctor.consultation[
 			":caseId"
 		].$get({
@@ -62,11 +43,11 @@ export const Route = createFileRoute("/consultation/$id")({
 			diseases: diagnosesFromCase,
 		} = await consultationRes.json();
 
-		if (caseDetail.finalizedState !== null) {
+		if (caseDetail.cases.finalizedState !== null) {
 			throw redirect({
 				to: "/history/$patientId/$caseId",
 				params: {
-					patientId: String(caseDetail.patientId),
+					patientId: String(caseDetail.patient.id),
 					caseId: params.id,
 				},
 			});
@@ -97,7 +78,6 @@ export const Route = createFileRoute("/consultation/$id")({
 		const { tests } = await testsRes.json();
 
 		return {
-			user,
 			caseDetail,
 			medicines,
 			diseases,
@@ -110,6 +90,7 @@ export const Route = createFileRoute("/consultation/$id")({
 });
 
 function ConsultationPage() {
+	useAuth(["doctor"]);
 	const {
 		caseDetail,
 		medicines,
@@ -123,132 +104,23 @@ function ConsultationPage() {
 
 	const [finalizeButtonValue, setFinalizeButtonValue] =
 		useState<FinalizeButtonValue>("Finalize (OPD)");
-	const [diagnosisItems, setDiagnosisItems] = useState<DiagnosisItem[]>(
-		diagnosesFromCase || [],
-	);
-	const [consultationNotes, setConsultationNotes] = useState<string>(
-		caseDetail?.consultationNotes || "",
-	);
-	const [prescriptionItems, setPrescriptionItems] = useState<
-		PrescriptionItem[]
-	>(
-		prescriptions?.map((p) => {
-			// TODO: Improve this parsing logic by standardizing categoryData structure in zod
-			const categoryData =
-				typeof p.categoryData === "string"
-					? JSON.parse(p.categoryData)
-					: p.categoryData;
-			return {
-				id: p.medicineId,
-				drug: p.drug,
-				company: p.company,
-				brand: p.brand,
-				strength: p.strength,
-				type: p.type,
-				category: p.category,
-				dosage: p.dosage?.replace(/\s*tablets?$/, "") || "",
-				frequency: p.frequency || "",
-				duration: p.duration?.match(/^\d+/)?.[0] || "",
-				durationUnit: p.duration?.match(/\s+(\w+)$/)?.[1] || "days",
-				comments: p.comments || "",
-				mealTiming: categoryData?.mealTiming,
-				applicationArea: categoryData?.applicationArea,
-				injectionRoute: categoryData?.injectionRoute,
-				liquidTiming: categoryData?.liquidTiming,
-			};
-		}) || [],
-	);
 	const [labTestModalOpen, setLabTestModalOpen] = useState<boolean>(false);
-	const [autosaved, setAutoSaved] = useState<boolean>(false);
-	const [autosaveError, setAutosaveError] = useState<string | null>(null);
-	const debouncedConsultationNotes = useDebounce(consultationNotes, 500);
-	const debouncedPrescriptionItems = useDebounce(prescriptionItems, 500);
-	const prevAutosaveRef = useRef<AutosaveState | null>(null);
-
-	const autosave = useCallback(async () => {
-		if (
-			prevAutosaveRef.current &&
-			prevAutosaveRef.current.consultationNotes ===
-				debouncedConsultationNotes &&
-			prevAutosaveRef.current.diagnosis.length === diagnosisItems.length &&
-			prevAutosaveRef.current.diagnosis.every(
-				(d, i) => d.id === diagnosisItems[i]?.id,
-			) &&
-			JSON.stringify(prevAutosaveRef.current.prescriptions) ===
-				JSON.stringify(debouncedPrescriptionItems)
-		) {
-			// No changes since last autosave
-			return;
-		}
-		setAutoSaved(false);
-		setAutosaveError(null);
-		try {
-			await client.api.doctor.autosave.$post({
-				json: {
-					caseId: Number(id),
-					consultationNotes: debouncedConsultationNotes,
-					diagnosis: diagnosisItems.map((d) => d.id),
-					prescriptions: debouncedPrescriptionItems.map((item) => ({
-						medicineId: item.id,
-						dosage:
-							item.category === "Capsule/Tablet" && item.dosage
-								? `${item.dosage} tablet${item.dosage === "1" ? "" : "s"}`
-								: item.dosage,
-						frequency: item.frequency,
-						duration:
-							(item.category === "Capsule/Tablet" ||
-								item.category === "External Application" ||
-								item.category === "Injection" ||
-								item.category === "Liquids/Syrups") &&
-							item.duration &&
-							item.durationUnit
-								? `${item.duration} ${item.durationUnit}`
-								: item.duration,
-						comment: item.comments,
-						categoryData:
-							item.category === "Capsule/Tablet" && item.mealTiming
-								? { mealTiming: item.mealTiming }
-								: item.category === "External Application" &&
-										item.applicationArea
-									? { applicationArea: item.applicationArea }
-									: item.category === "Injection" && item.injectionRoute
-										? { injectionRoute: item.injectionRoute }
-										: item.category === "Liquids/Syrups" && item.liquidTiming
-											? { liquidTiming: item.liquidTiming }
-											: undefined,
-					})),
-				},
-			});
-		} catch (error) {
-			setAutosaveError("Failed to save");
-			setAutoSaved(false);
-			console.error("Autosave failed:", error);
-			throw error;
-		}
-		setAutoSaved(true);
-		prevAutosaveRef.current = {
-			consultationNotes: debouncedConsultationNotes,
-			diagnosis: diagnosisItems,
-			prescriptions: debouncedPrescriptionItems,
-		};
-	}, [
-		id,
+	const {
+		consultationNotes,
 		diagnosisItems,
-		debouncedConsultationNotes,
-		debouncedPrescriptionItems,
-	]);
-
-	useEffect(() => {
-		autosave().catch(() => {
-			console.error("Autosave failed");
-		});
-		const interval = setInterval(() => {
-			autosave().catch(() => {
-				console.error("Autosave failed");
-			});
-		}, 3000);
-		return () => clearInterval(interval);
-	}, [autosave]);
+		prescriptionItems,
+		setConsultationNotes,
+		setDiagnosisItems,
+		setPrescriptionItems,
+		autosaved,
+		autosaveError,
+		autosave,
+	} = useAutosave({
+		id,
+		diagnosesFromCase,
+		caseDetail,
+		prescriptions,
+	});
 
 	if (!caseDetail) {
 		return (
@@ -312,10 +184,10 @@ function ConsultationPage() {
 				<div className="flex justify-between items-start mb-4">
 					<div>
 						<h1 className="text-3xl font-bold">
-							Consultation for {caseDetail.patientName}
+							Consultation for {caseDetail.patient.name}
 						</h1>
 						<div className="flex gap-4 items-center text-muted-foreground ">
-							<p className="my-2">Token Number: {caseDetail.token}</p>
+							<p className="my-2">Token Number: {caseDetail.cases.token}</p>
 							<span
 								className={`my-2 flex items-center gap-2 ${autosaveError ? "text-destructive" : ""}`}
 							>
@@ -350,7 +222,7 @@ function ConsultationPage() {
 							onClick={() =>
 								navigate({
 									to: "/history/$patientId",
-									params: { patientId: String(caseDetail.patientId) },
+									params: { patientId: String(caseDetail.patient.id) },
 								})
 							}
 						>
@@ -367,36 +239,22 @@ function ConsultationPage() {
 				{/* TODO: Standardize this vitals layout and make it a component also used in the vitals page */}
 				<Card className="mb-2">
 					<div className="flex gap-4 mx-3">
-						<VitalField label="Patient Name" value={caseDetail?.patientName} />
-						<VitalField label="Age" value={caseDetail?.patientAge} />
-						<VitalField label="ID/PSRN/Phone" value={caseDetail?.identifier} />
+						<VitalField
+							label="Patient Name"
+							type="text"
+							value={caseDetail?.patient.name}
+							readonly
+						/>
+						<VitalField label="Age" value={caseDetail?.patient.age} readonly />
+						<VitalField
+							label="ID/PSRN/Phone"
+							type="text"
+							value={caseDetail?.identifier}
+							readonly
+						/>
 					</div>
 				</Card>
-				<Card className="mb-2">
-					<div className="flex gap-4 mx-3">
-						<VitalField label="Temperature" value={caseDetail?.temperature} />
-						<VitalField label="Heart Rate" value={caseDetail?.heartRate} />
-						<VitalField
-							label="Respiratory Rate"
-							value={caseDetail?.respiratoryRate}
-						/>
-					</div>
-					<div className="flex gap-4 mx-3">
-						<VitalField
-							label="Blood Pressure Systolic"
-							value={caseDetail?.bloodPressureSystolic}
-						/>
-						<VitalField
-							label="Blood Pressure Diastolic"
-							value={caseDetail?.bloodPressureDiastolic}
-						/>
-					</div>
-					<div className="flex gap-4 mx-3">
-						<VitalField label="Blood Sugar" value={caseDetail?.bloodSugar} />
-						<VitalField label="SpO2" value={caseDetail?.spo2} />
-						<VitalField label="Weight" value={caseDetail?.weight} />
-					</div>
-				</Card>
+				<VitalsCard vitals={caseDetail.cases} />
 				<div className="grid grid-cols-3 mb-2">
 					<Card className="col-span-1 row-span-2 rounded-r-none rounded-bl-none px-2 pt-4 pb-2">
 						<Label className="font-semibold text-lg">

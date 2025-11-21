@@ -16,23 +16,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import useAuth from "@/lib/hooks/useAuth";
 import { client } from "../api/$";
 
 export const Route = createFileRoute("/history/$patientId/")({
 	loader: async ({ params }: { params: { patientId: string } }) => {
-		const res = await client.api.user.$get();
-		if (res.status !== 200) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-		const user = await res.json();
-		if ("error" in user) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-
 		const historyRes = await client.api.patientHistory[":patientId"].$get({
 			param: { patientId: params.patientId },
 		});
@@ -58,7 +46,6 @@ export const Route = createFileRoute("/history/$patientId/")({
 		const historyData = await historyRes.json();
 
 		return {
-			user,
 			patientId: params.patientId,
 			patient: historyData.patient,
 			cases: historyData.cases,
@@ -68,6 +55,7 @@ export const Route = createFileRoute("/history/$patientId/")({
 });
 
 function HistoryPage() {
+	useAuth(["doctor"]);
 	const { patient, cases, patientId } = Route.useLoaderData();
 	const navigate = useNavigate();
 
@@ -132,22 +120,24 @@ function HistoryPage() {
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{sortedCases.map((caseItem) => (
-										<TableRow
-											key={caseItem.caseId}
-											className="cursor-pointer hover:bg-muted/50"
-											onClick={() =>
-												navigate({
-													to: `/history/${patientId}/${caseItem.caseId}`,
-												})
-											}
-										>
-											<TableCell>{caseItem.caseId}</TableCell>
-											<TableCell>{caseItem.finalizedState || "—"}</TableCell>
-											<TableCell>{formatDate(caseItem.createdAt)}</TableCell>
-											<TableCell>{formatDate(caseItem.updatedAt)}</TableCell>
-										</TableRow>
-									))}
+									{sortedCases
+										.filter((caseItem) => caseItem.finalizedState)
+										.map((caseItem) => (
+											<TableRow
+												key={caseItem.caseId}
+												className="cursor-pointer hover:bg-muted/50"
+												onClick={() =>
+													navigate({
+														to: `/history/${patientId}/${caseItem.caseId}`,
+													})
+												}
+											>
+												<TableCell>{caseItem.caseId}</TableCell>
+												<TableCell>{caseItem.finalizedState || "—"}</TableCell>
+												<TableCell>{formatDate(caseItem.createdAt)}</TableCell>
+												<TableCell>{formatDate(caseItem.updatedAt)}</TableCell>
+											</TableRow>
+										))}
 								</TableBody>
 							</Table>
 						)}

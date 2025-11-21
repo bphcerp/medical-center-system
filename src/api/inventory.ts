@@ -52,7 +52,7 @@ const inventory = new Hono()
 				batchQuantity: batchesTable.quantity,
 			})
 			.from(inventoryMedicinesTable)
-			.innerJoin(
+			.leftJoin(
 				batchesTable,
 				eq(batchesTable.medicineId, inventoryMedicinesTable.id),
 			)
@@ -80,7 +80,12 @@ const inventory = new Hono()
 				});
 			}
 
-			if (r.batchId !== null) {
+			if (
+				r.batchId !== null &&
+				r.batchNum !== null &&
+				r.batchExpiry !== null &&
+				r.batchQuantity !== null
+			) {
 				const item = acc.get(r.inventoryId);
 				if (item) {
 					item.batches.push({
@@ -97,6 +102,15 @@ const inventory = new Hono()
 		}, new Map<number, InventoryItem>());
 
 		return c.json({ inventory: Array.from(inventoryMap.values()) });
+	})
+	.get("/medicines", async (c) => {
+		const medicines = await db.select().from(medicinesTable);
+
+		if (medicines.length === 0) {
+			return c.json({ error: "Medicines data not found" }, 404);
+		}
+
+		return c.json({ medicines });
 	})
 	.post(
 		"addQuantity",
@@ -200,6 +214,39 @@ const inventory = new Hono()
 			return c.json({
 				success: true,
 				message: "Batch added successfully",
+			});
+		},
+	)
+	.post(
+		"addMedicines",
+		zValidator(
+			"json",
+			z.object({
+				medicines: z.array(
+					z.object({
+						id: z.number().int().positive(),
+					}),
+				),
+			}),
+		),
+		async (c) => {
+			const { medicines } = c.req.valid("json");
+
+			await db.transaction(async (tx) => {
+				for (const item of medicines) {
+					await tx
+						.insert(inventoryMedicinesTable)
+						.values({
+							medicine: item.id,
+							criticalQty: 0,
+						})
+						.onConflictDoNothing();
+				}
+			});
+
+			return c.json({
+				success: true,
+				message: "Medicines added successfully",
 			});
 		},
 	);

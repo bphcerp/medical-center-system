@@ -1,5 +1,15 @@
-import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { ChevronsUpDown, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { AutoSizer } from "react-virtualized";
 import { Button } from "@/components/ui/button";
+import {
+	Command,
+	CommandEmpty,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
 import {
 	Dialog,
 	DialogContent,
@@ -7,7 +17,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import useVirtualList from "@/lib/hooks/useVirtualList";
 import { client } from "@/routes/api/$";
+import { Label } from "./ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 const LabRequestModal = ({
 	id,
@@ -18,19 +31,65 @@ const LabRequestModal = ({
 	id: string;
 	labTestModalOpen: boolean;
 	setLabTestModalOpen: (open: boolean) => void;
-	tests: { id: number; name: string }[];
+	tests: {
+		id: number;
+		name: string;
+		category: string;
+	}[];
 }) => {
-	const [selectedLabTests, setSelectedLabTests] = useState<Set<number>>(
-		new Set(),
+	const navigate = useNavigate();
+	const [selectedLabTests, setSelectedLabTests] = useState<typeof tests>([]);
+	const [searchOpen, setSearchOpen] = useState(false);
+	const [searchQuery, setSearchQuery] = useState("");
+	const { renderList } = useVirtualList<(typeof tests)[number]>(300, 48);
+
+	const filteredTests = useMemo(
+		() =>
+			tests
+				.reduce(
+					(acc, test) => {
+						if (searchQuery === "") {
+							acc.push({
+								test,
+								count: 0,
+							});
+							return acc;
+						}
+
+						const count = searchQuery
+							.trim()
+							.split(/\s+/)
+							.reduce((count, term) => {
+								return (
+									count +
+									(test.name.toLowerCase().includes(term.toLowerCase()) ||
+									test.category.toLowerCase().includes(term.toLowerCase())
+										? 1
+										: 0)
+								);
+							}, 0);
+
+						if (count > 0) {
+							acc.push({
+								test,
+								count,
+							});
+						}
+						return acc;
+					},
+					[] as { test: (typeof tests)[0]; count: number }[],
+				)
+				.sort((a, b) => b.count - a.count),
+		[tests, searchQuery],
 	);
 
 	const handleRequestLabTests = async () => {
-		if (selectedLabTests.size === 0) {
+		if (selectedLabTests.length === 0) {
 			alert("Please select at least one lab test");
 			return;
 		}
 
-		const testIds = Array.from(selectedLabTests);
+		const testIds = selectedLabTests.map((test) => test.id);
 		const res = await client.api.doctor.requestLabTests.$post({
 			json: {
 				caseId: Number(id),
@@ -46,22 +105,26 @@ const LabRequestModal = ({
 
 		alert("Lab tests requested successfully");
 		setLabTestModalOpen(false);
-		setSelectedLabTests(new Set());
+		setSelectedLabTests([]);
+		navigate({ to: "/doctor" });
 	};
 
-	const handleToggleLabTest = (testId: number) => {
-		const newSelected = new Set(selectedLabTests);
-		if (newSelected.has(testId)) {
-			newSelected.delete(testId);
-		} else {
-			newSelected.add(testId);
+	const handleAddTest = (test: (typeof tests)[number]) => {
+		if (selectedLabTests.some((t) => t.id === test.id)) {
+			alert("Lab test already selected");
+			return;
 		}
-		setSelectedLabTests(newSelected);
+		setSelectedLabTests([...selectedLabTests, test]);
+		setSearchQuery("");
+	};
+
+	const handleRemoveTest = (testId: number) => {
+		setSelectedLabTests(selectedLabTests.filter((test) => test.id !== testId));
 	};
 
 	return (
 		<Dialog open={labTestModalOpen} onOpenChange={setLabTestModalOpen}>
-			<DialogContent>
+			<DialogContent className="lg:max-w-3xl lg:w-3xl">
 				<DialogHeader>
 					<DialogTitle>Request Lab Tests</DialogTitle>
 				</DialogHeader>
@@ -69,26 +132,80 @@ const LabRequestModal = ({
 					<p className="text-sm text-muted-foreground">
 						Select the lab tests to request:
 					</p>
-					{tests.map((test) => (
-						// biome-ignore lint/a11y/noStaticElementInteractions: TODO: replace this with a checkbox-like element to improve accessibility
-						// biome-ignore lint/a11y/useKeyWithClickEvents: see above TODO
+
+					<Label className="font-semibold">Prescription: </Label>
+					<Popover open={searchOpen} onOpenChange={setSearchOpen}>
+						<PopoverTrigger asChild>
+							<Button
+								variant="outline"
+								role="combobox"
+								className="justify-between w-full"
+							>
+								Select a test...
+								<ChevronsUpDown className="ml-2 h-4 w-4" />
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent
+							className="p-0 sm:w-md lg:w-2xl w-sm"
+							align="start"
+							side="top"
+						>
+							<Command shouldFilter={false}>
+								<CommandInput
+									placeholder="Type to search..."
+									value={searchQuery}
+									onValueChange={setSearchQuery}
+								/>
+								<CommandList>
+									<CommandEmpty>No tests found.</CommandEmpty>
+									<AutoSizer disableHeight>
+										{({ width }) =>
+											renderList(
+												filteredTests.map((item) => item.test),
+												(key, item, style) => (
+													<CommandItem
+														key={key}
+														style={style}
+														onSelect={() => {
+															handleAddTest(item);
+															setSearchOpen(false);
+														}}
+														className="flex w-full justify-between"
+													>
+														<span>{item.name}</span>
+														<span className="mx-1 text-muted-foreground text-right">
+															({item.category})
+														</span>
+													</CommandItem>
+												),
+												width,
+											)
+										}
+									</AutoSizer>
+								</CommandList>
+							</Command>
+						</PopoverContent>
+					</Popover>
+					{selectedLabTests.map((test) => (
 						<div
 							key={test.id}
-							className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-accent"
-							onClick={() => handleToggleLabTest(test.id)}
+							className="flex items-center justify-between space-x-2 border rounded-md p-3"
 						>
-							<div
-								className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-									selectedLabTests.has(test.id)
-										? "bg-primary border-primary"
-										: "border-muted-foreground"
-								}`}
-							>
-								{selectedLabTests.has(test.id) && (
-									<div className="w-2.5 h-2.5 rounded-full bg-primary-foreground" />
-								)}
-							</div>
 							<span>{test.name}</span>
+							<div className="flex items-center gap-2">
+								<span className="text-muted-foreground">
+									{" "}
+									({test.category})
+								</span>
+								<Button
+									variant="destructive"
+									size="sm"
+									onClick={() => handleRemoveTest(test.id)}
+									className="h-10 w-10 p-0"
+								>
+									<Trash2 className="h-4 w-4" />
+								</Button>
+							</div>
 						</div>
 					))}
 				</div>

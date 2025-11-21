@@ -1,43 +1,15 @@
-import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
-import { client } from "./api/$";
+import useAuth from "@/lib/hooks/useAuth";
 
 export const Route = createFileRoute("/")({
-	loader: async () => {
-		const res = await client.api.user.$get();
-		if (res.status !== 200) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-		const user = await res.json();
-		if ("error" in user) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-
-		let check = { message: "You don't have the permission" };
-		const perms = await client.api.rbac.$get();
-		if (perms.status === 200) {
-			check = await perms.json();
-		}
-		return { check, ...user };
-	},
 	component: App,
 });
 
 function App() {
-	const user = Route.useLoaderData();
-	const { flatRoutes, navigate } = useRouter();
-	const allowedRoutes = flatRoutes.filter(
-		(route) =>
-			route.options.staticData?.requiredPermissions &&
-			user.role.allowed.some((perm) =>
-				route.options.staticData?.requiredPermissions?.includes(perm),
-			),
-	);
+	const { navigate } = useRouter();
+	const { allowedRoutes } = useAuth();
 
 	if (allowedRoutes.length === 1) {
 		navigate({ to: allowedRoutes[0].fullPath });

@@ -16,6 +16,7 @@ import {
 	EmptyTitle,
 } from "@/components/ui/empty";
 import type { statusEnums } from "@/db/lab";
+import useAuth from "@/lib/hooks/useAuth";
 import { cn, handleUnauthorized } from "@/lib/utils";
 import { client } from "../api/$";
 
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/lab")({
 });
 
 function LabDashboard() {
+	useAuth(["lab"]);
 	const { reports } = Route.useLoaderData();
 	// group reports by case
 	const caseGroups = reports.reduce(

@@ -17,6 +17,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import useAuth from "@/lib/hooks/useAuth";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/doctor")({
@@ -50,6 +51,7 @@ export const Route = createFileRoute("/doctor")({
 });
 
 function DoctorDashboard() {
+	useAuth(["doctor"]);
 	const { queue: initialQueue } = Route.useLoaderData();
 	const navigate = useNavigate();
 	const router = useRouter();

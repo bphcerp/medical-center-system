@@ -1,7 +1,7 @@
 import { Label } from "@radix-ui/react-label";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronsUpDown, Trash2 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
+import { AutoSizer } from "react-virtualized";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -17,6 +17,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import useVirtualList from "@/lib/hooks/useVirtualList";
 
 export type DiagnosisItem = {
 	id: number;
@@ -41,7 +42,7 @@ const DiagnosisCard = ({
 }) => {
 	const [diseasesSearchOpen, setDiseasesSearchOpen] = useState<boolean>(false);
 	const [diagnosisQuery, setDiagnosisQuery] = useState<string>("");
-	const diseaseListRef = useRef(null);
+	const { renderList } = useVirtualList<DiagnosisItem>(300, 48);
 
 	const filteredDiseases = useMemo(
 		() =>
@@ -80,15 +81,8 @@ const DiagnosisCard = ({
 					[] as { disease: (typeof diseases)[0]; count: number }[],
 				)
 				.sort((a, b) => b.count - a.count),
-		[diagnosisQuery, diseases.reduce],
+		[diagnosisQuery, diseases],
 	);
-	const diseaseRowVirtualizer = useVirtualizer({
-		count: filteredDiseases.length,
-		getScrollElement: () => diseaseListRef.current,
-		estimateSize: () => 48,
-		overscan: 15,
-		initialOffset: 0,
-	});
 
 	const handleAddDisease = (disease: (typeof diseases)[0]) => {
 		if (diagnosisItems.some((item) => item.id === disease.id)) {
@@ -136,45 +130,34 @@ const DiagnosisCard = ({
 									value={diagnosisQuery}
 									onValueChange={setDiagnosisQuery}
 								/>
-								<CommandList ref={diseaseListRef}>
-									<div
-										style={{
-											height:
-												diseaseRowVirtualizer.getTotalSize() > 0
-													? `${diseaseRowVirtualizer.getTotalSize()}px`
-													: "auto",
-										}}
-										className="relative w-full"
-									>
-										<CommandEmpty>No diseases found.</CommandEmpty>
-										<CommandGroup>
-											{diseaseRowVirtualizer
-												.getVirtualItems()
-												.map((virtualItem) => {
-													const disease =
-														filteredDiseases[virtualItem.index].disease;
-													return (
+								<CommandEmpty>No diseases found.</CommandEmpty>
+								<CommandGroup>
+									<CommandList>
+										<AutoSizer disableHeight>
+											{({ width }) =>
+												renderList(
+													filteredDiseases.map((item) => item.disease),
+													(key, item, style) => (
 														<CommandItem
-															key={virtualItem.key}
+															key={key}
+															style={style}
 															onSelect={() => {
-																handleAddDisease(disease);
+																handleAddDisease(item);
 																setDiseasesSearchOpen(false);
 															}}
-															className="flex absolute top-0 left-0 w-full justify-between"
-															style={{
-																height: `${virtualItem.size}px`,
-																transform: `translateY(${virtualItem.start}px)`,
-															}}
+															className="flex w-full justify-between"
 														>
 															<span>
-																{disease.name} (ICD: {disease.icd})
+																{item.name} (ICD: {item.icd})
 															</span>
 														</CommandItem>
-													);
-												})}
-										</CommandGroup>
-									</div>
-								</CommandList>
+													),
+													width,
+												)
+											}
+										</AutoSizer>
+									</CommandList>
+								</CommandGroup>
 							</Command>
 						</PopoverContent>
 					</Popover>

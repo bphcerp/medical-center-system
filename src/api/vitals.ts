@@ -6,6 +6,7 @@ import z from "zod";
 import { rolesTable, usersTable } from "@/db/auth";
 import { casesTable, unprocessedTable } from "@/db/case";
 import { patientsTable } from "@/db/patient";
+import { getAge } from "@/lib/utils";
 import { db } from ".";
 import { rbacCheck } from "./rbac";
 
@@ -22,7 +23,13 @@ const vitals = new Hono()
 			.orderBy(unprocessedTable.id);
 
 		return c.json({
-			unprocessed,
+			unprocessed: unprocessed.map((item) => ({
+				...item,
+				patients: {
+					...item.patients,
+					age: getAge(item.patients.birthdate),
+				},
+			})),
 		});
 	})
 	.get("/availableDoctors", async (c) => {
