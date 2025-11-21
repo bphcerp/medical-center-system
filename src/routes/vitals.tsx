@@ -246,7 +246,7 @@ function Vitals() {
 								<PatientDetails
 									patient={focusedPatient.patients}
 									token={focusedPatient.unprocessed.id}
-									subtitle="Entering vitals for"
+									label="Entering vitals for"
 								/>
 							</div>
 							<FieldSet>

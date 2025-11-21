@@ -1,6 +1,6 @@
 import type React from "react";
 import type { Patient } from "@/lib/types/patient";
-import { ageSexString } from "@/lib/utils";
+import { ageSexString, cn } from "@/lib/utils";
 import { PatientTypeBadge } from "./patient-type-badge";
 
 type PatientDetailsProps = {
@@ -17,9 +17,14 @@ export function PatientDetails({
 	patient,
 }: PatientDetailsProps) {
 	return (
-		<div className="flex flex-col gap-2">
-			{label && <p className="italic text-muted-foreground">{label}</p>}
-			<div className="flex items-stretch gap-3">
+		<div>
+			{label && <p className="italic mb-1 text-muted-foreground">{label}</p>}
+			<div
+				className={cn(
+					"flex items-stretch gap-3",
+					token !== undefined && "mt-2",
+				)}
+			>
 				{token !== undefined && (
 					<PatientTypeBadge
 						type={patient?.type}

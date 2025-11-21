@@ -4,6 +4,7 @@ import {
 	redirect,
 	useNavigate,
 } from "@tanstack/react-router";
+import { PatientDetails } from "@/components/patient-details";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,17 +94,7 @@ function HistoryPage() {
 			<div className="container mx-auto p-6">
 				<div className="mb-6 flex justify-between items-start">
 					<div>
-						<h1 className="text-3xl font-bold">Patient History</h1>
-						<div className="mt-2 space-y-1">
-							<p className="text-lg">
-								<span className="font-semibold">Name:</span> {patient.name}
-							</p>
-							<p className="text-muted-foreground">
-								<span className="font-semibold">Age:</span> {patient.age} |{" "}
-								<span className="font-semibold">Sex:</span> {patient.sex} |{" "}
-								<span className="font-semibold">Type:</span> {patient.type}
-							</p>
-						</div>
+						<PatientDetails patient={patient} label="Case history of" />
 					</div>
 					{latestCase && (
 						<Button
