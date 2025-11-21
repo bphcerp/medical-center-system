@@ -123,9 +123,14 @@ function InventoryPage() {
 
 	const [isOpenChangeCriticalQty, setIsOpenChangeCriticalQty] =
 		useState<boolean>(false);
+	const [selectedCriticalQty, setSelectedCriticalQty] = useState<number>(0);
 
-	const openChangeCriticalQty = (selectedMedicine: Medicine) => {
+	const openChangeCriticalQty = (
+		selectedMedicine: Medicine,
+		criticalQty: number,
+	) => {
 		setSelectedMedicine(selectedMedicine);
+		setSelectedCriticalQty(criticalQty);
 		setIsOpenChangeCriticalQty(true);
 	};
 
@@ -281,7 +286,12 @@ function InventoryPage() {
 									<TableRow>
 										<TableCell>
 											<Button
-												onClick={() => openChangeCriticalQty(item.medicine)}
+												onClick={() =>
+													openChangeCriticalQty(
+														item.medicine,
+														item.criticalQty ?? 0,
+													)
+												}
 											>
 												<Pencil />
 											</Button>
@@ -373,6 +383,7 @@ function InventoryPage() {
 				open={isOpenChangeCriticalQty}
 				onOpenChange={setIsOpenChangeCriticalQty}
 				medicine={selectedMedicine}
+				currentCriticalQty={selectedCriticalQty}
 			/>
 			<AddMedicinesModal
 				open={isOpenAddMedicines}

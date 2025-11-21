@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRouter } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -9,20 +10,33 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { client } from "@/routes/api/$";
 import type { Medicine } from "@/routes/inventory";
 
 export function ChangeCriticalQtyModal({
 	open,
 	onOpenChange,
 	medicine,
+	currentCriticalQty,
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	medicine: Medicine | null;
+	currentCriticalQty?: number;
 }) {
-	const [criticalQty, setCriticalQty] = useState<number>(0);
+	const router = useRouter();
+
+	const [criticalQty, setCriticalQty] = useState<number>(
+		currentCriticalQty ?? 0,
+	);
 	const [criticalQtyError, setCriticalQtyError] = useState<boolean>(false);
 	const [apiError, setApiError] = useState<boolean>(false);
+
+	useEffect(() => {
+		if (open && currentCriticalQty !== undefined) {
+			setCriticalQty(currentCriticalQty);
+		}
+	}, [open, currentCriticalQty]);
 
 	if (!medicine) return;
 
@@ -37,6 +51,18 @@ export function ChangeCriticalQtyModal({
 			resetState();
 			setCriticalQtyError(true);
 			return;
+		}
+
+		const res = await client.api.inventory.changeCriticalQty.$post({
+			json: { medicineId: medicine.id, criticalQty },
+		});
+
+		if (res.status === 200) {
+			await router.invalidate();
+			resetState();
+			onOpenChange(false);
+		} else {
+			setApiError(true);
 		}
 	};
 
