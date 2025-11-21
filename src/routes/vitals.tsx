@@ -205,7 +205,7 @@ function Vitals() {
 							);
 						})}
 					</div>
-					<div className="sticky flex flex-col bottom-0 bg-linear-to-t from-background to-transparent from-70% via-75% to-100% pb-4 pt-10">
+					<div className="sticky flex flex-col bottom-0 bg-linear-to-t from-background to-transparent from-70% via-85% to-100% pb-4 pt-10">
 						<NewPatientDialog />
 					</div>
 				</div>

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { LabTestStatusBadge } from "@/components/lab-test-status-badge";
 import { PatientDetails } from "@/components/patient-details";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -179,7 +178,7 @@ function TestEntry() {
 	});
 
 	return (
-		<div className="p-4 lg:p-12 flex flex-col gap-4">
+		<div className="p-4 pb-0 lg:p-12 lg:pb-0 flex flex-col gap-6 h-full min-h-0 overflow-y-scroll">
 			<PatientDetails
 				patient={patient}
 				token={token}
@@ -191,86 +190,75 @@ function TestEntry() {
 				}
 			/>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Lab Tests</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<div className="flex flex-col gap-6">
-						{tests.map((test) => (
-							<div
-								key={test.labTestReportId}
-								className="flex flex-col border-2 rounded-lg overflow-clip"
-							>
-								<Label className="flex items-center gap-2 text-lg font-medium cursor-pointer w-full p-4 has-aria-checked:border-b hover:bg-accent transition-colors">
-									<Checkbox
-										id={`test-${test.labTestReportId}`}
-										className="size-6 [&>svg]:size-10"
-										checked={test.status !== "Requested"}
-										onCheckedChange={(checked) =>
-											handleCheckboxChange(
-												test.labTestReportId,
-												checked as boolean,
-											)
-										}
-									/>
-									{test.testName}
-									<LabTestStatusBadge status={test.status} />
+			<div className="grow flex flex-col gap-4 ">
+				{tests.map((test) => (
+					<div
+						key={test.labTestReportId}
+						className="flex flex-col border-2 rounded-lg overflow-clip"
+					>
+						<Label className="flex items-center gap-2 text-lg font-medium cursor-pointer w-full p-4 has-aria-checked:border-b hover:bg-accent transition-colors">
+							<Checkbox
+								id={`test-${test.labTestReportId}`}
+								className="size-6 [&>svg]:size-10"
+								checked={test.status !== "Requested"}
+								onCheckedChange={(checked) =>
+									handleCheckboxChange(test.labTestReportId, checked as boolean)
+								}
+							/>
+							{test.testName}
+							<LabTestStatusBadge status={test.status} />
+						</Label>
+
+						{test.status !== "Requested" && (
+							<div className="p-4 flex flex-col gap-2">
+								<Label className="min-h-6">
+									Upload Report
+									{uploading[test.labTestReportId] && (
+										<Spinner className="size-4" />
+									)}
+									{test.fileId !== null && (
+										<Check className="text-bits-green size-5" />
+									)}
 								</Label>
-
-								{test.status !== "Requested" && (
-									<div className="p-4 flex flex-col gap-2">
-										<Label className="min-h-6">
-											Upload Report
-											{uploading[test.labTestReportId] && (
-												<Spinner className="size-4" />
-											)}
-											{test.fileId !== null && (
-												<Check className="text-bits-green size-5" />
-											)}
-										</Label>
-										<div className="flex items-center gap-2 w-full">
-											<Input
-												type="file"
-												accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-												className={cn(
-													"transition-colors hover:enabled:cursor-pointer hover:enabled:bg-accent file:mr-4 p-0 h-auto",
-													"file:px-4 file:py-4 file:items-center file:border-r-2 file:border-border file:text-sm file:font-semibold w-full",
-												)}
-												onChange={(e) => {
-													const file = e.target.files?.[0];
-													if (file) {
-														handleFileUpload(test.labTestReportId, file);
-													}
-												}}
-												disabled={
-													uploading[test.labTestReportId] || isSubmitting
-												}
-											/>
-										</div>
-									</div>
-								)}
+								<div className="flex items-center gap-2 w-full">
+									<Input
+										type="file"
+										accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+										className={cn(
+											"transition-colors hover:enabled:cursor-pointer hover:enabled:bg-accent file:mr-4 p-0 h-auto",
+											"file:px-4 file:py-4 file:items-center file:border-r-2 file:border-border file:text-sm file:font-semibold w-full",
+										)}
+										onChange={(e) => {
+											const file = e.target.files?.[0];
+											if (file) {
+												handleFileUpload(test.labTestReportId, file);
+											}
+										}}
+										disabled={uploading[test.labTestReportId] || isSubmitting}
+									/>
+								</div>
 							</div>
-						))}
+						)}
 					</div>
-
-					<div className="flex justify-end gap-3 mt-6">
-						<Button
-							variant="outline"
-							onClick={() => navigate({ to: "/lab" })}
-							disabled={isSubmitting}
-						>
-							Cancel
-						</Button>
-						<Button
-							onClick={handleSubmit}
-							disabled={!hasChanges || isSubmitting}
-						>
-							{isSubmitting ? "Updating..." : "Update Tests"}
-						</Button>
-					</div>
-				</CardContent>
-			</Card>
+				))}
+			</div>
+			<div
+				className={cn(
+					"sticky bottom-0 flex justify-end gap-3 py-4 lg:py-12",
+					"bg-linear-to-t from-background to-transparent from-80% via-90% to-100%",
+				)}
+			>
+				<Button
+					variant="outline"
+					onClick={() => navigate({ to: "/lab" })}
+					disabled={isSubmitting}
+				>
+					Cancel
+				</Button>
+				<Button onClick={handleSubmit} disabled={!hasChanges || isSubmitting}>
+					{isSubmitting ? "Updating..." : "Update Tests"}
+				</Button>
+			</div>
 		</div>
 	);
 }
