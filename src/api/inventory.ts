@@ -218,6 +218,33 @@ const inventory = new Hono()
 		},
 	)
 	.post(
+		"changeCriticalQty",
+		zValidator(
+			"json",
+			z.object({
+				medicineId: z.number().int().positive(),
+				criticalQty: z.number().int().nonnegative(),
+			}),
+		),
+		async (c) => {
+			const { medicineId, criticalQty } = c.req.valid("json");
+
+			const updated = await db
+				.update(inventoryMedicinesTable)
+				.set({ criticalQty })
+				.where(eq(inventoryMedicinesTable.medicine, medicineId))
+				.returning();
+
+			if (updated.length === 0) {
+				throw new Error("Medicine not found in inventory");
+			}
+			return c.json({
+				success: true,
+				message: "Critical quantity updated successfully",
+			});
+		},
+	)
+	.post(
 		"addMedicines",
 		zValidator(
 			"json",

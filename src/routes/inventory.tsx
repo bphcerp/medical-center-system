@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { AddBatchModal } from "@/components/inventory/add-batch-modal";
 import { AddMedicinesModal } from "@/components/inventory/add-medicines-modal";
 import { AddQuantityModal } from "@/components/inventory/add-quantity-modal";
+import { ChangeCriticalQtyModal } from "@/components/inventory/change-critical-qty-modal";
 import { DispenseModal } from "@/components/inventory/dispense-modal";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
@@ -112,6 +113,14 @@ function InventoryPage() {
 	const openAddBatch = (selectedMedicine: Medicine) => {
 		setSelectedMedicine(selectedMedicine);
 		setIsOpenAddBatch(true);
+	};
+
+	const [isOpenChangeCriticalQty, setIsOpenChangeCriticalQty] =
+		useState<boolean>(false);
+
+	const openChangeCriticalQty = (selectedMedicine: Medicine) => {
+		setSelectedMedicine(selectedMedicine);
+		setIsOpenChangeCriticalQty(true);
 	};
 
 	const terms = inventoryQuery.trim().toLowerCase().split(/\s+/);
@@ -253,6 +262,7 @@ function InventoryPage() {
 					<Table>
 						<TableHeader>
 							<TableRow>
+								<TableHead>Edit</TableHead>
 								<TableHead>Medicine</TableHead>
 								<TableHead>Total Quantity</TableHead>
 								<TableHead>Quick Actions</TableHead>
@@ -263,6 +273,13 @@ function InventoryPage() {
 							{finalInventory.map((item) => (
 								<React.Fragment key={item.id}>
 									<TableRow>
+										<TableCell>
+											<Button
+												onClick={() => openChangeCriticalQty(item.medicine)}
+											>
+												&#9998;
+											</Button>
+										</TableCell>
 										<TableCell
 											onClick={() => toggleRow(item.id)}
 											className="cursor-pointer"
@@ -346,6 +363,11 @@ function InventoryPage() {
 					</Table>
 				</CardContent>
 			</Card>
+			<ChangeCriticalQtyModal
+				open={isOpenChangeCriticalQty}
+				onOpenChange={setIsOpenChangeCriticalQty}
+				medicine={selectedMedicine}
+			/>
 			<AddMedicinesModal
 				open={isOpenAddMedicines}
 				onOpenChange={setIsOpenAddMedicines}
