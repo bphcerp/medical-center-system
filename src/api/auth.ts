@@ -258,22 +258,22 @@ export const unauthenticated = new Hono()
 			"json",
 			z.object({
 				name: z.string().min(1),
-				age: z.number().int().min(0),
+				birthdate: z.iso.date(),
 				sex: z.enum(["male", "female"]),
 				phone: z.string().min(1),
 				email: z.email(),
 			}),
 		),
 		async (c) => {
-			const { name, age, sex, phone, email } = c.req.valid("json");
+			const { name, birthdate, sex, phone, email } = c.req.valid("json");
 			const token = await db.transaction(async (tx) => {
 				const patient = await tx
 					.insert(patientsTable)
 					.values({
 						name,
-						age,
-						sex,
 						type: "visitor",
+						birthdate: birthdate.split("T")[0],
+						sex,
 					})
 					.returning();
 				await tx.insert(visitorsTable).values({

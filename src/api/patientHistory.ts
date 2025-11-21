@@ -14,6 +14,7 @@ import {
 	visitorsTable,
 } from "@/db/patient";
 import env from "@/lib/env";
+import { getAge } from "@/lib/utils";
 import { db } from ".";
 import type { JWTPayload } from "./auth";
 import { getCaseDetail } from "./doctor";
@@ -36,7 +37,7 @@ const patientHistory = new Hono()
 			.select({
 				id: patientsTable.id,
 				name: patientsTable.name,
-				age: patientsTable.age,
+				birthdate: patientsTable.birthdate,
 				sex: patientsTable.sex,
 				type: patientsTable.type,
 			})
@@ -60,7 +61,10 @@ const patientHistory = new Hono()
 			.orderBy(casesTable.id);
 
 		return c.json({
-			patient,
+			patient: {
+				...patient,
+				age: getAge(patient.birthdate),
+			},
 			cases,
 		});
 	})

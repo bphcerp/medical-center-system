@@ -33,3 +33,7 @@ export function handleUnauthorized(status: number) {
 			});
 	}
 }
+
+export const getAge = (birthdate: string) => {
+	return Math.floor((Date.now() - new Date(birthdate).getTime()) / 31557600000);
+};

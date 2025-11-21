@@ -1,4 +1,5 @@
 import {
+	date,
 	integer,
 	pgEnum,
 	pgTable,
@@ -18,7 +19,7 @@ export const patientsTable = pgTable("patients", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	name: varchar({ length: 255 }).notNull(),
 	type: patientTypeEnum("type").notNull(),
-	age: integer().notNull(),
+	birthdate: date().notNull(),
 	sex: sexTypeEnum("sex").notNull(),
 });
 
