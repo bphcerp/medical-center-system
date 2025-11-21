@@ -380,7 +380,6 @@ const doctor = new Hono()
 			.select({
 				id: labTestsMasterTable.id,
 				name: labTestsMasterTable.name,
-				description: labTestsMasterTable.description,
 				category: labTestsMasterTable.category,
 			})
 			.from(labTestsMasterTable)
