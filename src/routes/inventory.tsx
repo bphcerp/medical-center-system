@@ -1,9 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronDown, ChevronRight, Package2, SquarePlus } from "lucide-react";
+import {
+	ChevronDown,
+	ChevronRight,
+	Package2,
+	Pencil,
+	SquarePlus,
+} from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { AddBatchModal } from "@/components/inventory/add-batch-modal";
 import { AddMedicinesModal } from "@/components/inventory/add-medicines-modal";
 import { AddQuantityModal } from "@/components/inventory/add-quantity-modal";
+import { ChangeCriticalQtyModal } from "@/components/inventory/change-critical-qty-modal";
 import { DispenseModal } from "@/components/inventory/dispense-modal";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
@@ -112,6 +119,19 @@ function InventoryPage() {
 	const openAddBatch = (selectedMedicine: Medicine) => {
 		setSelectedMedicine(selectedMedicine);
 		setIsOpenAddBatch(true);
+	};
+
+	const [isOpenChangeCriticalQty, setIsOpenChangeCriticalQty] =
+		useState<boolean>(false);
+	const [selectedCriticalQty, setSelectedCriticalQty] = useState<number>(0);
+
+	const openChangeCriticalQty = (
+		selectedMedicine: Medicine,
+		criticalQty: number,
+	) => {
+		setSelectedMedicine(selectedMedicine);
+		setSelectedCriticalQty(criticalQty);
+		setIsOpenChangeCriticalQty(true);
 	};
 
 	const terms = inventoryQuery.trim().toLowerCase().split(/\s+/);
@@ -253,6 +273,7 @@ function InventoryPage() {
 					<Table>
 						<TableHeader>
 							<TableRow>
+								<TableHead>Edit</TableHead>
 								<TableHead>Medicine</TableHead>
 								<TableHead>Total Quantity</TableHead>
 								<TableHead>Quick Actions</TableHead>
@@ -263,6 +284,18 @@ function InventoryPage() {
 							{finalInventory.map((item) => (
 								<React.Fragment key={item.id}>
 									<TableRow>
+										<TableCell>
+											<Button
+												onClick={() =>
+													openChangeCriticalQty(
+														item.medicine,
+														item.criticalQty ?? 0,
+													)
+												}
+											>
+												<Pencil />
+											</Button>
+										</TableCell>
 										<TableCell
 											onClick={() => toggleRow(item.id)}
 											className="cursor-pointer"
@@ -346,6 +379,12 @@ function InventoryPage() {
 					</Table>
 				</CardContent>
 			</Card>
+			<ChangeCriticalQtyModal
+				open={isOpenChangeCriticalQty}
+				onOpenChange={setIsOpenChangeCriticalQty}
+				medicine={selectedMedicine}
+				currentCriticalQty={selectedCriticalQty}
+			/>
 			<AddMedicinesModal
 				open={isOpenAddMedicines}
 				onOpenChange={setIsOpenAddMedicines}
