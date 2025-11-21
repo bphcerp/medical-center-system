@@ -1,7 +1,14 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert, ShieldCheck } from "lucide-react";
 import TopBar from "@/components/topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Empty,
+	EmptyContent,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
 import {
 	Table,
 	TableBody,
@@ -66,20 +73,24 @@ function OTPOverridesPage() {
 						access patient history.
 					</p>
 				</div>
-
-				<Card>
-					<CardHeader>
-						<CardTitle>Override History ({logs.length} total)</CardTitle>
-					</CardHeader>
-					<CardContent>
-						{logs.length === 0 ? (
-							<div className="text-center py-8">
-								<p className="text-muted-foreground">
-									No override logs found. All access has been through proper OTP
-									verification.
-								</p>
-							</div>
-						) : (
+				{logs.length === 0 ? (
+					<Empty>
+						<EmptyHeader>
+							<EmptyMedia variant="icon">
+								<ShieldCheck />
+							</EmptyMedia>
+							<EmptyTitle>No OTP override logs found</EmptyTitle>
+							<EmptyContent>
+								All access has been through proper OTP verification.
+							</EmptyContent>
+						</EmptyHeader>
+					</Empty>
+				) : (
+					<Card>
+						<CardHeader>
+							<CardTitle>Override History ({logs.length} total)</CardTitle>
+						</CardHeader>
+						<CardContent>
 							<div className="overflow-x-auto">
 								<Table>
 									<TableHeader>
@@ -122,9 +133,9 @@ function OTPOverridesPage() {
 									</TableBody>
 								</Table>
 							</div>
-						)}
-					</CardContent>
-				</Card>
+						</CardContent>
+					</Card>
+				)}
 			</div>
 		</>
 	);
