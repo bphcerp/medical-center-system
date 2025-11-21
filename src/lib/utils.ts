@@ -1,5 +1,6 @@
 import { redirect } from "@tanstack/react-router";
 import { type ClassValue, clsx } from "clsx";
+import type { ClientResponse } from "hono/client";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -20,19 +21,53 @@ export function titleCase(str: string) {
 	return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
-export function handleUnauthorized(status: number) {
-	switch (status) {
-		case 401:
-			throw redirect({
-				to: "/login",
-			});
-		case 403:
-			alert("You don't have the permission to access this page.");
-			throw redirect({
-				to: "/",
-			});
+export const handleErrors = async <
+	R extends ClientResponse<unknown, number, "json">,
+>(
+	res: R,
+): Promise<
+	R extends ClientResponse<infer T, number, "json">
+		? Extract<T, { success: true }> | undefined
+		: never
+> => {
+	let json: unknown = null;
+	try {
+		json = await res.json();
+	} catch {
+		alert("An unexpected error occurred. Please try again.");
+		return undefined as never;
 	}
-}
+
+	if (!json) {
+		alert("An unexpected error occurred. Please try again.");
+		return undefined as never;
+	}
+
+	if (
+		typeof json === "object" &&
+		json !== null &&
+		"success" in json &&
+		json.success
+	) {
+		return json as never;
+	}
+
+	switch (res.status) {
+		case 401:
+			window.location.assign("/api/logout");
+			break;
+		case 403:
+			alert("You don't have the permission to perform this action.");
+			redirect({ to: "/" });
+			break;
+		default:
+			if (typeof json === "object" && json !== null && "error" in json) {
+				const errorJson = json as { error: { message: string } };
+				alert(`Error: ${errorJson.error.message}`);
+			}
+	}
+	return undefined as never;
+};
 
 export function ageSexString(age?: number, sex?: "male" | "female") {
 	const s = sex ? titleCase(sex) : "";

@@ -1,6 +1,7 @@
 import { ArrowRight, CheckIcon } from "lucide-react";
 import { useId, useState } from "react";
 import type { identifierTypes } from "@/db/case";
+import { handleErrors } from "@/lib/utils";
 import { client } from "@/routes/api/$";
 import { Button } from "./ui/button";
 import { DatePicker } from "./ui/date-picker";
@@ -122,13 +123,13 @@ export function RegistrationForm({
 						phone: identifier as string,
 					},
 				});
-		if (res.status !== 200) {
-			alert("Error registering. Please report this to the front desk.");
+		const registered = await handleErrors(res);
+		if (!registered) {
 			resetState();
 			return;
 		}
-		const data = await res.json();
-		setToken(data.token);
+
+		setToken(registered.data.token);
 		resetState();
 	};
 
@@ -153,27 +154,36 @@ export function RegistrationForm({
 				identifierType,
 			},
 		});
-		switch (res.status) {
-			case 400:
+		const existing = await handleErrors(res);
+		// For actual errors, handle them
+		if (!existing) {
+			resetState();
+			return;
+		}
+
+		// If existing record not found, proceed to details form
+		if (
+			existing.data.exists === false ||
+			"tryVisitorRegistration" in existing.data
+		) {
+			if (
+				"tryVisitorRegistration" in existing.data &&
+				existing.data.tryVisitorRegistration
+			) {
 				alert(
 					"No existing record found. Please register as a visitor temporarily.",
 				);
 				setVisitor();
-				return;
-			case 200:
-				break;
-			case 404:
+			} else {
 				setShowDetails(true);
-				return;
-			default:
-				alert("Error registering. Please report this to the front desk.");
-				resetState();
-				return;
+			}
+			return;
 		}
+
+		const data = existing.data;
 
 		setShowDetails(true);
 		setDisableForm(true);
-		const data = await res.json();
 		if ("dependents" in data) {
 			if (data.dependents.length === 0) {
 				setPatientId(data.professor.id);

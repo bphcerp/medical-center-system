@@ -1,14 +1,13 @@
-import { zValidator } from "@hono/zod-validator";
 import { usersTable } from "@/db/auth";
 import "dotenv/config";
 import { desc, eq, getTableColumns } from "drizzle-orm";
-import { Hono } from "hono";
 import z from "zod";
+import type { JWTPayload } from "@/lib/types/api";
+import { createStrictHono, strictValidator } from "@/lib/types/api";
 import { db } from ".";
-import type { JWTPayload } from "./auth";
 import { rbacCheck } from "./rbac";
 
-const user = new Hono()
+const user = createStrictHono()
 	.get("/", async (c) => {
 		const jwtPayload: JWTPayload = c.get("jwtPayload");
 		const { passwordHash: _, ...rest } = getTableColumns(usersTable);
@@ -20,12 +19,16 @@ const user = new Hono()
 		if (users.length < 1) {
 			return c.json(
 				{
-					error: "User Not Found",
+					success: false,
+					error: { message: "User Not Found" },
 				},
 				404,
 			);
 		}
-		return c.json({ user: users[0], role: jwtPayload.role });
+		return c.json({
+			success: true,
+			data: { user: users[0], role: jwtPayload.role },
+		});
 	})
 	.get("/all", rbacCheck({ permissions: ["admin"] }), async (c) => {
 		const { id, name, username, role } = getTableColumns(usersTable);
@@ -35,19 +38,19 @@ const user = new Hono()
 			.from(usersTable)
 			.orderBy(desc(role));
 
-		return c.json({ users: users });
+		return c.json({ success: true, data: { users } });
 	})
 	// probably will have more to edit than just roles in the future
 	.post(
 		"/:id",
 		rbacCheck({ permissions: ["admin"] }),
-		zValidator(
+		strictValidator(
 			"param",
 			z.object({
 				id: z.coerce.number().int(),
 			}),
 		),
-		zValidator(
+		strictValidator(
 			"json",
 			z.object({
 				role: z.number().int(),
@@ -65,13 +68,14 @@ const user = new Hono()
 			if (users.rowCount !== 1) {
 				return c.json(
 					{
-						error: "User Not Found",
+						success: false,
+						error: { message: "User Not Found" },
 					},
 					404,
 				);
 			}
 
-			return c.json({ success: true });
+			return c.json({ success: true, data: { id, role } });
 		},
 	);
 

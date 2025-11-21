@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Activity, ArrowLeft, Check, ClipboardPlus, Plus } from "lucide-react";
 import { useId, useState } from "react";
 import { PatientDetails } from "@/components/patient-details";
@@ -25,42 +25,24 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import VitalsCard from "@/components/vitals-card";
-import { cn, titleCase } from "@/lib/utils";
+import { cn, handleErrors, titleCase } from "@/lib/utils";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/vitals")({
 	loader: async () => {
-		const res = await client.api.vitals.unprocessed.$get();
-		switch (res.status) {
-			case 401:
-				throw redirect({
-					to: "/login",
-				});
-			case 403:
-				alert("You don't have the permission to access Vitals");
-				throw redirect({
-					to: "/",
-				});
+		const unprocessedRes = await client.api.vitals.unprocessed.$get();
+		const doctorsRes = await client.api.vitals.availableDoctors.$get();
+		const unprocessed = await handleErrors(unprocessedRes);
+		const doctors = await handleErrors(doctorsRes);
+		if (!unprocessed || !doctors) {
+			return {
+				unprocessed: [],
+				availableDoctors: [],
+			};
 		}
-		const json = await res.json();
-
-		const doctors = await client.api.vitals.availableDoctors.$get();
-		switch (doctors.status) {
-			case 401:
-				throw redirect({
-					to: "/login",
-				});
-			case 403:
-				alert("You don't have the permission to access Vitals");
-				throw redirect({
-					to: "/",
-				});
-		}
-		const doctorsJson = await doctors.json();
-
 		return {
-			unprocessed: json.unprocessed,
-			availableDoctors: doctorsJson.doctors,
+			unprocessed: unprocessed.data.unprocessed,
+			availableDoctors: doctors.data.doctors,
 		};
 	},
 	component: Vitals,
@@ -132,10 +114,8 @@ function Vitals() {
 				},
 			},
 		});
-		if (res.status !== 201) {
-			alert(
-				"Error creating case. Please proceed with offline process, and report this error.",
-			);
+		const data = await handleErrors(res);
+		if (!data) {
 			return;
 		}
 		alert("Case created successfully!");

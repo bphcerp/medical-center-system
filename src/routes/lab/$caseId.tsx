@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import type { statusEnums } from "@/db/lab";
 import useAuth from "@/lib/hooks/useAuth";
-import { cn, getAge, handleUnauthorized } from "@/lib/utils";
+import { cn, handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
 
 type TestUpdate = {
@@ -22,20 +22,15 @@ type TestUpdate = {
 export const Route = createFileRoute("/lab/$caseId")({
 	loader: async ({ params: { caseId } }) => {
 		const res = await client.api.lab.details[":caseId"].$get({
-			param: { caseId },
+			param: { caseId: caseId },
 		});
-		handleUnauthorized(res.status);
-		if (res.status === 404) {
+		const reports = await handleErrors(res);
+		if (res.status === 404 || !reports) {
 			throw redirect({ to: "/lab" });
 		}
 
-		const data = await res.json();
 		return {
-			...data,
-			patient: {
-				...data.patient,
-				age: getAge(data.patient.birthdate),
-			},
+			...reports.data,
 		};
 	},
 	component: TestEntry,
@@ -73,50 +68,30 @@ function TestEntry() {
 
 	const handleFileUpload = async (testId: number, file: File) => {
 		setUploading((prev) => ({ ...prev, [testId]: true }));
-
-		try {
-			const res = await client.api.lab["upload-file"].$post({
-				form: {
-					file,
-					labTestReportId: testId.toString(),
-				},
-			});
-
-			if (!res.ok) {
-				const errorData = await res
-					.json()
-					.catch(() => ({ error: "Unknown error" }));
-				const message =
-					(typeof errorData === "object" &&
-						errorData !== null &&
-						"error" in errorData &&
-						(errorData as { error: string }).error) ||
-					res.statusText ||
-					"Unknown error";
-				alert(`Upload failed: ${message}`);
-				return;
-			}
-
-			const data = await res.json();
-			if (data.success && data.file?.id) {
-				setTests((prev) =>
-					prev.map((test) =>
-						test.labTestReportId === testId
-							? {
-									...test,
-									fileId: data.file.id,
-									status: "Complete",
-								}
-							: test,
-					),
-				);
-			}
-		} catch (error) {
-			console.error("Upload error:", error);
-			alert(`Upload failed: ${String(error)}`);
-		} finally {
+		const res = await client.api.lab["upload-file"].$post({
+			form: {
+				file,
+				labTestReportId: testId,
+			},
+		});
+		const data = await handleErrors(res);
+		if (!data) {
 			setUploading((prev) => ({ ...prev, [testId]: false }));
+			return;
 		}
+
+		setTests((prev) =>
+			prev.map((test) =>
+				test.labTestReportId === testId
+					? {
+							...test,
+							fileId: data.data.file.id,
+							status: "Complete",
+						}
+					: test,
+			),
+		);
+		setUploading((prev) => ({ ...prev, [testId]: false }));
 	};
 
 	const handleSubmit = async () => {
@@ -148,37 +123,16 @@ function TestEntry() {
 			return;
 		}
 
-		try {
-			const res = await client.api.lab["update-tests"][":caseId"].$post({
-				param: { caseId: caseId.toString() },
-				json: { tests: updates },
-			});
-
-			if (res.ok) {
-				navigate({ to: "/lab" });
-			} else {
-				const errorData = await res
-					.json()
-					.catch(() => ({ error: "Unknown error" }));
-				const message =
-					typeof errorData === "object" && errorData !== null
-						? "error" in errorData &&
-							typeof (errorData as { error?: string }).error === "string"
-							? (errorData as { error: string }).error
-							: "message" in errorData &&
-									typeof (errorData as { message?: string }).message ===
-										"string"
-								? (errorData as { message: string }).message
-								: res.statusText || "Unknown error"
-						: res.statusText || "Unknown error";
-				alert(`Update failed: ${message}`);
-			}
-		} catch (error) {
-			console.error("Submission error:", error);
-			alert(`Submission failed: ${String(error)}`);
-		} finally {
+		const res = await client.api.lab["update-tests"][":caseId"].$post({
+			param: { caseId: caseId.toString() },
+			json: { tests: updates },
+		});
+		const data = await handleErrors(res);
+		if (!data) {
 			setIsSubmitting(false);
+			return;
 		}
+		navigate({ to: "/lab" });
 	};
 
 	const hasChanges = tests.some((test, idx) => {

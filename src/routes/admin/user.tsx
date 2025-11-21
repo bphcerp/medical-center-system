@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeftRight, Search } from "lucide-react";
 import { useState } from "react";
 import TopBar from "@/components/topbar";
@@ -26,46 +26,36 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import useAuth from "@/lib/hooks/useAuth";
+import { handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
 
 export const Route = createFileRoute("/admin/user")({
 	component: Admin,
 	loader: async () => {
 		const usersRes = await client.api.user.all.$get();
-		handleUnauthorized(usersRes.status);
 		const rolesRes = await client.api.role.all.$get();
-		handleUnauthorized(rolesRes.status);
-
-		const roles = (await rolesRes.json()).roles;
-		const users = (await usersRes.json()).users;
+		const users = await handleErrors(usersRes);
+		const roles = await handleErrors(rolesRes);
+		if (!users || !roles) {
+			return {
+				roles: [],
+				rolesMap: {},
+				users: [],
+			};
+		}
 
 		const rolesMap: { [key: number]: string } = {};
-
-		for (const role of roles) {
+		for (const role of roles.data) {
 			rolesMap[role.id] = role.name;
 		}
 
 		return {
-			roles: roles,
+			roles: roles.data,
 			rolesMap: rolesMap,
-			users: users,
+			users: users.data.users,
 		};
 	},
 });
-
-function handleUnauthorized(status: number) {
-	switch (status) {
-		case 401:
-			throw redirect({
-				to: "/login",
-			});
-		case 403:
-			alert("You don't have the permission to access this page.");
-			throw redirect({
-				to: "/",
-			});
-	}
-}
 
 function Admin() {
 	useAuth(["admin"]);
@@ -77,7 +67,11 @@ function Admin() {
 			param: { id: userId.toString() },
 			json: { role: roleId },
 		});
-		return res.status === 200;
+		const data = await handleErrors(res);
+		if (!data) {
+			return false;
+		}
+		return true;
 	};
 
 	const handleFilter = (query: string) => {

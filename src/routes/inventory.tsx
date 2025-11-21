@@ -19,6 +19,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import useAuth from "@/lib/hooks/useAuth";
+import { handleErrors } from "@/lib/utils";
 import { client } from "./api/$";
 
 // Maybe make this standard?
@@ -35,23 +36,16 @@ export type Medicine = {
 export const Route = createFileRoute("/inventory")({
 	loader: async () => {
 		const inventoryRes = await client.api.inventory.$get();
-
-		if (inventoryRes.status !== 200) {
-			throw new Error("Failed to fetch inventory details");
-		}
-
-		const { inventory } = await inventoryRes.json();
-		// console.log(inventory);
-
 		const medicinesRes = await client.api.inventory.medicines.$get();
-
-		if (medicinesRes.status !== 200) {
-			throw new Error("Failed to fetch medicines details");
+		const inventory = await handleErrors(inventoryRes);
+		const medicines = await handleErrors(medicinesRes);
+		if (!inventory || !medicines) {
+			return { inventory: [], medicines: [] };
 		}
-
-		const { medicines } = await medicinesRes.json();
-
-		return { inventory, medicines };
+		return {
+			inventory: inventory.data.inventory,
+			medicines: medicines.data.medicines,
+		};
 	},
 	staticData: {
 		requiredPermissions: ["inventory"],
@@ -152,7 +146,7 @@ function InventoryPage() {
 		});
 	};
 
-	const filteredInventory = getFilteredByMode(inventory)
+	const finalInventory = getFilteredByMode(inventory)
 		.reduce(
 			(acc, inventoryItem) => {
 				if (inventoryQuery === "") {
@@ -202,9 +196,8 @@ function InventoryPage() {
 			},
 			[] as { inventoryItem: (typeof inventory)[0]; count: number }[],
 		)
-		.sort((a, b) => b.count - a.count);
-
-	const finalInventory = filteredInventory.map((f) => f.inventoryItem);
+		.sort((a, b) => b.count - a.count)
+		.map((f) => f.inventoryItem);
 
 	useEffect(() => {
 		if (inventoryQuery.trim() === "") {

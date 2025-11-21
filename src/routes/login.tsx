@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import useAuth from "@/lib/hooks/useAuth";
+import { handleErrors } from "@/lib/utils";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/login")({
@@ -24,18 +25,14 @@ function Login() {
 		const username = formData.get("username");
 		const password = formData.get("password");
 		if (username === null || password === null) return;
-		const res = await (
-			await client.api.login.$post({
-				json: {
-					username: username as string,
-					password: password as string,
-				},
-			})
-		).json();
-
-		if ("error" in res) {
-			alert(res.error);
-		}
+		const res = await client.api.login.$post({
+			json: {
+				username: username as string,
+				password: password as string,
+			},
+		});
+		const data = await handleErrors(res);
+		if (!data) return;
 		navigate({
 			to: "/",
 		});

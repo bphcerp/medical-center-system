@@ -38,16 +38,15 @@ import {
 	permissionDescriptions,
 	permissions,
 } from "@/lib/types/permissions";
-import { cn, handleUnauthorized } from "@/lib/utils";
+import { cn, handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
 
 export const Route = createFileRoute("/admin/role")({
 	component: RolePage,
 	loader: async () => {
-		const data = await client.api.role.all.$get();
-		handleUnauthorized(data.status);
-		const roles = (await data.json()).roles;
-		return { roles };
+		const res = await client.api.role.all.$get();
+		const data = await handleErrors(res);
+		return { roles: data ? data.data : [] };
 	},
 });
 
@@ -65,9 +64,8 @@ function RolePage() {
 			param: { id: id.toString() },
 			json: { name: name, allowed: perms },
 		});
-
-		if (res.status !== 200) {
-			alert("Failed to update role");
+		const data = await handleErrors(res);
+		if (!data) {
 			return;
 		}
 
@@ -78,12 +76,10 @@ function RolePage() {
 		const res = await client.api.role[":id"].$delete({
 			param: { id: id.toString() },
 		});
-
-		if (res.status !== 200) {
-			alert("Failed to delete role");
+		const data = await handleErrors(res);
+		if (!data) {
 			return;
 		}
-
 		router.invalidate();
 	};
 
@@ -94,12 +90,10 @@ function RolePage() {
 				allowed: [],
 			},
 		});
-
-		if (res.status !== 200) {
-			alert("Failed to create role");
+		const data = await handleErrors(res);
+		if (!data) {
 			return;
 		}
-
 		router.invalidate();
 	};
 

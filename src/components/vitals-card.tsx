@@ -10,7 +10,7 @@ export type CaseDetail = InferResponseType<typeof caseDetailsResponse, 200>;
 const VitalsCard = ({
 	vitals,
 }: {
-	vitals?: CaseDetail["caseDetail"]["cases"];
+	vitals?: CaseDetail["data"]["caseDetail"]["cases"];
 }) => {
 	return (
 		<Card className="mb-2 flex flex-row gap-4 px-6">

@@ -17,15 +17,18 @@ import {
 } from "@/components/ui/empty";
 import type { statusEnums } from "@/db/lab";
 import useAuth from "@/lib/hooks/useAuth";
-import { cn, handleUnauthorized } from "@/lib/utils";
+import { cn, handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
 
 export const Route = createFileRoute("/lab")({
 	loader: async () => {
 		const res = await client.api.lab.pending.$get();
-		handleUnauthorized(res.status);
+		const reports = await handleErrors(res);
+		if (!reports) {
+			return { reports: [] };
+		}
 
-		return await res.json();
+		return { reports: reports.data.reports };
 	},
 	component: LabDashboard,
 	staticData: {

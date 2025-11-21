@@ -18,6 +18,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import useVirtualList from "@/lib/hooks/useVirtualList";
+import { handleErrors } from "@/lib/utils";
 import { client } from "@/routes/api/$";
 import { Label } from "./ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
@@ -96,10 +97,8 @@ const LabRequestModal = ({
 				testIds,
 			},
 		});
-
-		if (res.status !== 200) {
-			const error = await res.json();
-			alert("error" in error ? error.error : "Failed to request lab tests");
+		const data = await handleErrors(res);
+		if (!data) {
 			return;
 		}
 

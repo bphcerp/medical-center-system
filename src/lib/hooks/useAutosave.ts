@@ -3,6 +3,7 @@ import type { DiagnosisItem } from "@/components/diagnosis-card";
 import type { PrescriptionItem } from "@/components/prescription/types";
 import type { CaseDetail } from "@/components/vitals-card";
 import { client } from "@/routes/api/$";
+import { handleErrors } from "../utils";
 import { useDebounce } from "./useDebounce";
 
 type AutosaveState = {
@@ -19,7 +20,7 @@ export const useAutosave = ({
 }: {
 	id: string;
 	diagnosesFromCase: DiagnosisItem[];
-	caseDetail: CaseDetail["caseDetail"] | null;
+	caseDetail: CaseDetail["data"]["caseDetail"] | null;
 	prescriptions: PrescriptionItem[];
 }) => {
 	const [diagnosisItems, setDiagnosisItems] = useState<DiagnosisItem[]>(
@@ -55,25 +56,25 @@ export const useAutosave = ({
 		}
 		setAutoSaved(false);
 		setAutosaveError(null);
-		try {
-			await client.api.doctor.autosave.$post({
-				json: {
+		const res = await client.api.doctor.autosave.$post({
+			json: {
+				caseId: Number(id),
+				consultationNotes: debouncedConsultationNotes,
+				diagnosis: diagnosisItems.map((d) => d.id),
+				prescriptions: debouncedPrescriptionItems.map((item) => ({
+					...item.case_prescriptions,
 					caseId: Number(id),
-					consultationNotes: debouncedConsultationNotes,
-					diagnosis: diagnosisItems.map((d) => d.id),
-					prescriptions: debouncedPrescriptionItems.map((item) => ({
-						...item.case_prescriptions,
-						caseId: Number(id),
-						medicineId: item.medicines.id,
-					})),
-				},
-			});
-		} catch (error) {
+					medicineId: item.medicines.id,
+				})),
+			},
+		});
+		const data = await handleErrors(res);
+		if (!data) {
 			setAutosaveError("Failed to save");
 			setAutoSaved(false);
-			console.error("Autosave failed:", error);
-			throw error;
+			return;
 		}
+
 		setAutoSaved(true);
 		prevAutosaveRef.current = {
 			consultationNotes: debouncedConsultationNotes,

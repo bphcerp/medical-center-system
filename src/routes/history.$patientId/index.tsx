@@ -1,9 +1,4 @@
-import {
-	createFileRoute,
-	Outlet,
-	redirect,
-	useNavigate,
-} from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { PatientDetails } from "@/components/patient-details";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
@@ -17,6 +12,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import useAuth from "@/lib/hooks/useAuth";
+import { handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
 
 export const Route = createFileRoute("/history/$patientId/")({
@@ -24,31 +20,14 @@ export const Route = createFileRoute("/history/$patientId/")({
 		const historyRes = await client.api.patientHistory[":patientId"].$get({
 			param: { patientId: params.patientId },
 		});
-
-		if (historyRes.status === 401) {
-			throw redirect({
-				to: "/login",
-			});
+		const history = await handleErrors(historyRes);
+		if (!history) {
+			return { patientId: params.patientId, patient: null, cases: [] };
 		}
-		if (historyRes.status === 403) {
-			alert("You don't have permission to view patient history.");
-			throw redirect({
-				to: "/",
-			});
-		}
-		if (historyRes.status === 404) {
-			throw new Error("Patient not found");
-		}
-		if (historyRes.status !== 200) {
-			throw new Error("Failed to fetch patient history");
-		}
-
-		const historyData = await historyRes.json();
-
 		return {
 			patientId: params.patientId,
-			patient: historyData.patient,
-			cases: historyData.cases,
+			patient: history.data.patient,
+			cases: history.data.cases,
 		};
 	},
 	component: HistoryPage,
@@ -82,7 +61,9 @@ function HistoryPage() {
 			<div className="container mx-auto p-6">
 				<div className="mb-6 flex justify-between items-start">
 					<div>
-						<PatientDetails patient={patient} label="Case history of" />
+						{patient && (
+							<PatientDetails patient={patient} label="Case history of" />
+						)}
 					</div>
 					{latestCase && (
 						<Button

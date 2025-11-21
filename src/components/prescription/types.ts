@@ -5,13 +5,13 @@ const caseDetailsResponse = client.api.doctor.consultation[":caseId"].$get;
 export type PrescriptionItem = InferResponseType<
 	typeof caseDetailsResponse,
 	200
->["prescriptions"][number];
+>["data"]["prescriptions"][number];
 
 const medicinesResponse = client.api.doctor.medicines.$get;
 export type MedicineItem = InferResponseType<
 	typeof medicinesResponse,
 	200
->["medicines"][number];
+>["data"]["medicines"][number];
 
 export interface PrescriptionItemProps {
 	item: PrescriptionItem;

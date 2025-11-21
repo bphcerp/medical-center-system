@@ -1,7 +1,5 @@
 import "dotenv/config";
-import { zValidator } from "@hono/zod-validator";
 import { and, eq } from "drizzle-orm";
-import { Hono } from "hono";
 import nodemailer from "nodemailer";
 import z from "zod";
 import { casesTable } from "@/db/case";
@@ -14,9 +12,9 @@ import {
 	visitorsTable,
 } from "@/db/patient";
 import env from "@/lib/env";
+import { createStrictHono, strictValidator } from "@/lib/types/api";
 import { getAge } from "@/lib/utils";
 import { db } from ".";
-import type { JWTPayload } from "./auth";
 import { getCaseDetail } from "./doctor";
 import { rbacCheck } from "./rbac";
 
@@ -28,7 +26,7 @@ const transporter = nodemailer.createTransport({
 	},
 });
 
-const patientHistory = new Hono()
+const patientHistory = createStrictHono()
 	.use(rbacCheck({ permissions: ["doctor"] }))
 	.get("/:patientId", async (c) => {
 		const patientId = Number(c.req.param("patientId"));
@@ -46,7 +44,10 @@ const patientHistory = new Hono()
 			.limit(1);
 
 		if (!patient) {
-			return c.json({ error: "Patient not found" }, 404);
+			return c.json(
+				{ success: false, error: { message: "Patient not found" } },
+				404,
+			);
 		}
 
 		const cases = await db
@@ -61,19 +62,22 @@ const patientHistory = new Hono()
 			.orderBy(casesTable.id);
 
 		return c.json({
-			patient: {
-				...patient,
-				age: getAge(patient.birthdate),
+			success: true,
+			data: {
+				patient: {
+					...patient,
+					age: getAge(patient.birthdate),
+				},
+				cases,
 			},
-			cases,
 		});
 	})
 	.post(
 		"/otp/:caseId/send",
-		zValidator("param", z.object({ caseId: z.coerce.number() })),
+		strictValidator("param", z.object({ caseId: z.coerce.number() })),
 		async (c) => {
 			const { caseId } = c.req.valid("param");
-			const payload = c.get("jwtPayload") as JWTPayload;
+			const payload = c.get("jwtPayload");
 			const doctorId = payload.id;
 
 			// Get case details
@@ -88,12 +92,21 @@ const patientHistory = new Hono()
 				.limit(1);
 
 			if (!caseData) {
-				return c.json({ error: "Case not found" }, 404);
+				return c.json(
+					{ success: false, error: { message: "Case not found" } },
+					404,
+				);
 			}
 
 			// only allow OTP for finalized cases
 			if (caseData.finalizedState === null) {
-				return c.json({ error: "OTP not required for active cases" }, 400);
+				return c.json(
+					{
+						success: false,
+						error: { message: "OTP not required for active cases" },
+					},
+					400,
+				);
 			}
 
 			const patientId = caseData.patientId;
@@ -108,7 +121,10 @@ const patientHistory = new Hono()
 				.limit(1);
 
 			if (!patient) {
-				return c.json({ error: "Patient not found" }, 404);
+				return c.json(
+					{ success: false, error: { message: "Patient not found" } },
+					404,
+				);
 			}
 
 			let patientEmail: string | null = null;
@@ -162,7 +178,10 @@ const patientHistory = new Hono()
 			}
 
 			if (!patientEmail) {
-				return c.json({ error: "Patient email not found" }, 404);
+				return c.json(
+					{ success: false, error: { message: "Patient email not found" } },
+					404,
+				);
 			}
 
 			// gen 6 digit OTP
@@ -190,17 +209,20 @@ const patientHistory = new Hono()
 				text: `A doctor is requesting access to view case history. Your OTP is: ${otp}. It is valid for a limited time.`,
 			});
 
-			return c.json({ message: "OTP sent successfully" });
+			return c.json({
+				success: true,
+				data: { message: "OTP sent successfully" },
+			});
 		},
 	)
 	.post(
 		"/otp/:caseId/verify",
-		zValidator("param", z.object({ caseId: z.coerce.number() })),
-		zValidator("json", z.object({ otp: z.coerce.number() })),
+		strictValidator("param", z.object({ caseId: z.coerce.number() })),
+		strictValidator("json", z.object({ otp: z.coerce.number() })),
 		async (c) => {
 			const { caseId } = c.req.valid("param");
 			const { otp } = c.req.valid("json");
-			const payload = c.get("jwtPayload") as JWTPayload;
+			const payload = c.get("jwtPayload");
 			const doctorId = payload.id;
 			const otpRecord = await db
 				.select()
@@ -215,19 +237,25 @@ const patientHistory = new Hono()
 				.limit(1);
 
 			if (otpRecord.length === 0) {
-				return c.json({ error: "Invalid OTP" }, 400);
+				return c.json(
+					{ success: false, error: { message: "Invalid OTP" } },
+					400,
+				);
 			}
 
 			const { caseDetail, prescriptions, diseases } =
 				await getCaseDetail(caseId);
 
-			return c.json({ caseDetail, prescriptions, diseases });
+			return c.json({
+				success: true,
+				data: { caseDetail, prescriptions, diseases },
+			});
 		},
 	)
 	.post(
 		"/otp/:caseId/override",
-		zValidator("param", z.object({ caseId: z.coerce.number() })),
-		zValidator(
+		strictValidator("param", z.object({ caseId: z.coerce.number() })),
+		strictValidator(
 			"json",
 			z.object({
 				reason: z.string().min(10, "Reason must be at least 10 characters"),
@@ -236,7 +264,7 @@ const patientHistory = new Hono()
 		async (c) => {
 			const { caseId } = c.req.valid("param");
 			const { reason } = c.req.valid("json");
-			const payload = c.get("jwtPayload") as JWTPayload;
+			const payload = c.get("jwtPayload");
 			const doctorId = payload.id;
 
 			// Get case details to verify it exists and is finalized
@@ -250,11 +278,20 @@ const patientHistory = new Hono()
 				.limit(1);
 
 			if (!caseData) {
-				return c.json({ error: "Case not found" }, 404);
+				return c.json(
+					{ success: false, error: { message: "Case not found" } },
+					404,
+				);
 			}
 
 			if (caseData.finalizedState === null) {
-				return c.json({ error: "Override not required for active cases" }, 400);
+				return c.json(
+					{
+						success: false,
+						error: { message: "Override not required for active cases" },
+					},
+					400,
+				);
 			}
 
 			// log the override to audit table
@@ -285,7 +322,10 @@ const patientHistory = new Hono()
 			const { caseDetail, prescriptions, diseases } =
 				await getCaseDetail(caseId);
 
-			return c.json({ caseDetail, prescriptions, diseases });
+			return c.json({
+				success: true,
+				data: { caseDetail, prescriptions, diseases },
+			});
 		},
 	);
 

@@ -1,16 +1,15 @@
 import "dotenv/config";
-import { zValidator } from "@hono/zod-validator";
 import { arrayContains, eq, getTableColumns } from "drizzle-orm";
-import { Hono } from "hono";
 import z from "zod";
 import { rolesTable, usersTable } from "@/db/auth";
 import { casesTable, unprocessedTable } from "@/db/case";
 import { patientsTable } from "@/db/patient";
+import { createStrictHono, strictValidator } from "@/lib/types/api";
 import { getAge } from "@/lib/utils";
 import { db } from ".";
 import { rbacCheck } from "./rbac";
 
-const vitals = new Hono()
+const vitals = createStrictHono()
 	.use(rbacCheck({ permissions: ["vitals"] }))
 	.get("/unprocessed", async (c) => {
 		const unprocessed = await db
@@ -23,13 +22,16 @@ const vitals = new Hono()
 			.orderBy(unprocessedTable.id);
 
 		return c.json({
-			unprocessed: unprocessed.map((item) => ({
-				...item,
-				patients: {
-					...item.patients,
-					age: getAge(item.patients.birthdate),
-				},
-			})),
+			success: true,
+			data: {
+				unprocessed: unprocessed.map((item) => ({
+					...item,
+					patients: {
+						...item.patients,
+						age: getAge(item.patients.birthdate),
+					},
+				})),
+			},
 		});
 	})
 	.get("/availableDoctors", async (c) => {
@@ -40,11 +42,11 @@ const vitals = new Hono()
 			.innerJoin(rolesTable, eq(usersTable.role, rolesTable.id))
 			.where(arrayContains(rolesTable.allowed, ["doctor"]));
 
-		return c.json({ doctors });
+		return c.json({ success: true, data: { doctors } });
 	})
 	.post(
 		"/createCase",
-		zValidator(
+		strictValidator(
 			"json",
 			z.object({
 				patientId: z.number().int().min(1),
@@ -90,7 +92,10 @@ const vitals = new Hono()
 			});
 
 			return c.json(
-				{ message: "Case created successfully", case: result },
+				{
+					success: true,
+					data: { message: "Case created successfully", case: result },
+				},
 				201,
 			);
 		},

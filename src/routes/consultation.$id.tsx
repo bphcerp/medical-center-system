@@ -16,6 +16,7 @@ import VitalField from "@/components/vital-field";
 import VitalsCard from "@/components/vitals-card";
 import useAuth from "@/lib/hooks/useAuth";
 import { useAutosave } from "@/lib/hooks/useAutosave";
+import { handleErrors } from "@/lib/utils";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/consultation/$id")({
@@ -26,22 +27,28 @@ export const Route = createFileRoute("/consultation/$id")({
 		].$get({
 			param: { caseId: params.id },
 		});
-
-		if (consultationRes.status === 403) {
-			throw redirect({
-				to: "/doctor",
-			});
+		const medicinesRes = await client.api.doctor.medicines.$get();
+		const diseasesRes = await client.api.doctor.diseases.$get();
+		const testsRes = await client.api.doctor.tests.$get();
+		const consultation = await handleErrors(consultationRes);
+		const medicines = await handleErrors(medicinesRes);
+		const diseases = await handleErrors(diseasesRes);
+		const tests = await handleErrors(testsRes);
+		if (!consultation || !medicines || !diseases || !tests) {
+			return {
+				caseDetail: null,
+				medicines: [],
+				diseases: [],
+				tests: [],
+				prescriptions: [],
+				diagnosesFromCase: [],
+			};
 		}
-
-		if (consultationRes.status !== 200) {
-			throw new Error("Failed to fetch consultation details");
-		}
-
 		const {
 			caseDetail,
 			prescriptions,
 			diseases: diagnosesFromCase,
-		} = await consultationRes.json();
+		} = consultation.data;
 
 		if (caseDetail.cases.finalizedState !== null) {
 			throw redirect({
@@ -53,37 +60,14 @@ export const Route = createFileRoute("/consultation/$id")({
 			});
 		}
 
-		const medicinesRes = await client.api.doctor.medicines.$get();
-
-		if (medicinesRes.status !== 200) {
-			throw new Error("Failed to fetch medicines details");
-		}
-
-		const { medicines } = await medicinesRes.json();
-
-		const diseasesRes = await client.api.doctor.diseases.$get();
-
-		if (diseasesRes.status !== 200) {
-			throw new Error("Failed to fetch diseases details");
-		}
-
-		const { diseases } = await diseasesRes.json();
-
-		const testsRes = await client.api.doctor.tests.$get();
-
-		if (testsRes.status !== 200) {
-			throw new Error("Failed to fetch lab tests details");
-		}
-
-		const { tests } = await testsRes.json();
-
 		return {
 			caseDetail,
-			medicines,
-			diseases,
-			tests,
 			prescriptions,
 			diagnosesFromCase,
+
+			medicines: medicines.data.medicines,
+			diseases: diseases.data.diseases,
+			tests: tests.data.tests,
 		};
 	},
 	component: ConsultationPage,
@@ -165,13 +149,10 @@ function ConsultationPage() {
 				finalizedState: finalizedState,
 			},
 		});
-
-		if (finalizeRes.status !== 200) {
-			const error = await finalizeRes.json();
-			alert("error" in error ? error.error : "Failed to finalize case");
+		const finalizeData = await handleErrors(finalizeRes);
+		if (!finalizeData) {
 			return;
 		}
-
 		navigate({
 			to: "/doctor",
 		});

@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { CaseDetail } from "@/components/vitals-card";
+import { handleErrors } from "@/lib/utils";
 import { client } from "@/routes/api/$";
 
 interface OTPVerificationDialogProps {
@@ -30,41 +31,24 @@ export const useOTP = (caseId: string) => {
 	const [isSendingOtp, setIsSendingOtp] = useState(false);
 	const [otpError, setOtpError] = useState<string | null>(null);
 	const otpSentRef = useRef<boolean>(false);
-	const [caseRecord, setCaseRecord] = useState<CaseDetail | null>(null);
+	const [caseRecord, setCaseRecord] = useState<CaseDetail["data"] | null>(null);
 	const sendOtp = useCallback(async () => {
 		setIsSendingOtp(true);
 		setOtpError(null);
-		try {
-			const response = await client.api.patientHistory.otp[
-				":caseId"
-			].send.$post({
-				param: { caseId },
-			});
-
-			if (response.status === 200) {
-				setIsOtpDialogOpen(true);
-				setOtpError(null);
-			} else if (response.status === 404) {
-				setOtpError(
-					"Patient email not found. Use emergency override to access this case.",
-				);
-				setIsOtpDialogOpen(true);
-			} else {
-				const errorData = await response.json();
-				setOtpError(
-					`Failed to send OTP: ${(errorData as { error?: string })?.error || "Unknown error"}. Use emergency override if needed.`,
-				);
-				setIsOtpDialogOpen(true);
-			}
-		} catch (error) {
-			console.error("Failed to send OTP:", error);
+		const res = await client.api.patientHistory.otp[":caseId"].send.$post({
+			param: { caseId },
+		});
+		const data = await handleErrors(res);
+		if (!data) {
 			setOtpError(
-				"Failed to send OTP due to network error. Use emergency override if needed.",
+				"Failed to send OTP. Please try again, or use emergency override.",
 			);
 			setIsOtpDialogOpen(true);
-		} finally {
 			setIsSendingOtp(false);
+			return;
 		}
+		setIsOtpDialogOpen(true);
+		setOtpError(null);
 	}, [caseId]);
 
 	// Auto-send OTP when OTP is required (only once)
@@ -78,56 +62,40 @@ export const useOTP = (caseId: string) => {
 	const handleVerifyOtp = async (otp: string) => {
 		setIsVerifying(true);
 		setOtpError(null);
-		try {
-			const response = await client.api.patientHistory.otp[
-				":caseId"
-			].verify.$post({
-				param: { caseId },
-				json: { otp: Number(otp) },
-			});
-
-			if (response.status === 200) {
-				setIsOtpDialogOpen(false);
-				const data = await response.json();
-				setCaseRecord(data);
-			} else if (response.status === 400) {
-				setOtpError("Invalid OTP. Please try again.");
-			} else {
-				setOtpError("Failed to verify OTP. Please try again.");
-			}
-		} catch (error) {
-			console.error("Failed to verify OTP:", error);
+		const response = await client.api.patientHistory.otp[
+			":caseId"
+		].verify.$post({
+			param: { caseId },
+			json: { otp: Number(otp) },
+		});
+		const data = await handleErrors(response);
+		if (!data) {
 			setOtpError("Failed to verify OTP. Please try again.");
-		} finally {
 			setIsVerifying(false);
+			return;
 		}
+
+		setIsOtpDialogOpen(false);
+		setCaseRecord(data.data);
+		setIsVerifying(false);
 	};
 
 	const handleOverride = async (reason: string) => {
 		setOtpError(null);
-		try {
-			const response = await client.api.patientHistory.otp[
-				":caseId"
-			].override.$post({
-				param: { caseId },
-				json: { reason },
-			});
-
-			if (response.status === 200) {
-				setIsOtpDialogOpen(false);
-				const data = await response.json();
-				setCaseRecord(data);
-			} else {
-				const errorData = await response.json();
-				setOtpError(
-					(errorData as { error?: string })?.error ||
-						"Failed to process override",
-				);
-			}
-		} catch (error) {
-			console.error("Failed to override:", error);
+		const response = await client.api.patientHistory.otp[
+			":caseId"
+		].override.$post({
+			param: { caseId },
+			json: { reason },
+		});
+		const data = await handleErrors(response);
+		if (!data) {
 			setOtpError("Failed to process override. Please try again.");
+			return;
 		}
+
+		setIsOtpDialogOpen(false);
+		setCaseRecord(data.data);
 	};
 
 	return {

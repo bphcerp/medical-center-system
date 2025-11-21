@@ -1,5 +1,4 @@
 import "dotenv/config";
-import { zValidator } from "@hono/zod-validator";
 import {
 	and,
 	arrayContains,
@@ -10,7 +9,6 @@ import {
 	sql,
 } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
-import { Hono } from "hono";
 import z from "zod";
 import {
 	casePrescriptionsTable,
@@ -27,9 +25,9 @@ import {
 	studentsTable,
 	visitorsTable,
 } from "@/db/patient";
+import { createStrictHono, strictValidator } from "@/lib/types/api";
 import { getAge } from "@/lib/utils";
 import { db } from ".";
-import type { JWTPayload } from "./auth";
 import { rbacCheck } from "./rbac";
 
 export const getCaseDetail = async (caseId: number) => {
@@ -112,10 +110,10 @@ export const getCaseDetail = async (caseId: number) => {
 	};
 };
 
-const doctor = new Hono()
+const doctor = createStrictHono()
 	.use(rbacCheck({ permissions: ["doctor"] }))
 	.get("/queue", async (c) => {
-		const payload = c.get("jwtPayload") as JWTPayload;
+		const payload = c.get("jwtPayload");
 		const userId = payload.id;
 
 		const cases = await db
@@ -180,55 +178,82 @@ const doctor = new Hono()
 				};
 			});
 
-		return c.json({ queue });
+		return c.json({ success: true, data: { queue } });
 	})
 	.get("/consultation/:caseId", async (c) => {
-		const payload = c.get("jwtPayload") as JWTPayload;
+		const payload = c.get("jwtPayload");
 		const userId = payload.id;
 		const caseId = Number(c.req.param("caseId"));
 
 		const { caseDetail, prescriptions, diseases } = await getCaseDetail(caseId);
 
 		if (!caseDetail) {
-			return c.json({ error: "Case not found" }, 404);
+			return c.json(
+				{
+					success: false,
+					error: { message: "Case not found", details: { caseId } },
+				},
+				404,
+			);
 		}
 
-		if (!caseDetail.cases.associatedUsers?.includes(userId)) {
-			return c.json({ error: "Unauthorized" }, 403);
+		if (!caseDetail.cases.associatedUsers.includes(userId)) {
+			return c.json(
+				{ success: false, error: { message: "Unauthorized" } },
+				403,
+			);
 		}
 
 		if (caseDetail.cases.finalizedState !== null) {
 			return c.json(
 				{
-					error: "Case is finalized. Access via OTP required.",
+					success: false,
+					error: {
+						message: "Case is finalized. Access via OTP required.",
+						details: { caseId },
+					},
 				},
 				400,
 			);
 		}
 
-		return c.json({ caseDetail, prescriptions, diseases });
+		return c.json({
+			success: true,
+			data: { caseDetail, prescriptions, diseases },
+		});
 	})
 	.get("/medicines", async (c) => {
 		const medicines = await db.select().from(medicinesTable);
 
 		if (medicines.length === 0) {
-			return c.json({ error: "Medicines data not found" }, 404);
+			return c.json(
+				{
+					success: false,
+					error: {
+						message: "Medicines data not found",
+					},
+				},
+				404,
+			);
 		}
 
-		return c.json({ medicines });
+		return c.json({ success: true, data: { medicines } });
 	})
 	.get("/diseases", async (c) => {
 		const diseases = await db.select().from(diseasesTable);
 
 		if (diseases.length === 0) {
-			return c.json({ error: "Diseases data not found" }, 404);
+			return c.json(
+				{ success: false, error: { message: "Diseases data not found" } },
+				404,
+			);
 		}
 
-		return c.json({ diseases });
+		return c.json({ success: true, data: { diseases } });
 	})
 	.post(
 		"/autosave",
-		zValidator(
+		strictValidator(
 			"json",
 			z.object({
 				caseId: z.number().int(),
@@ -240,7 +265,7 @@ const doctor = new Hono()
 			}),
 		),
 		async (c) => {
-			const payload = c.get("jwtPayload") as JWTPayload;
+			const payload = c.get("jwtPayload");
 			const userId = payload.id;
 			const { caseId, consultationNotes, prescriptions, diagnosis } =
 				c.req.valid("json");
@@ -262,7 +287,10 @@ const doctor = new Hono()
 					.returning();
 
 				if (updated.length === 0) {
-					return c.json({ error: "Case not found" }, 404);
+					return c.json(
+						{ success: false, error: { message: "Case not found" } },
+						404,
+					);
 				}
 
 				if (prescriptions !== undefined) {
@@ -278,13 +306,13 @@ const doctor = new Hono()
 
 			return c.json({
 				success: true,
-				message: "Case data saved successfully",
+				data: { message: "Case data saved successfully" },
 			});
 		},
 	)
 	.post(
 		"/finalizeCase",
-		zValidator(
+		strictValidator(
 			"json",
 			z.object({
 				caseId: z.number().int(),
@@ -292,7 +320,7 @@ const doctor = new Hono()
 			}),
 		),
 		async (c) => {
-			const payload = c.get("jwtPayload") as JWTPayload;
+			const payload = c.get("jwtPayload");
 			const userId = payload.id;
 			const { caseId, finalizedState } = c.req.valid("json");
 
@@ -309,18 +337,26 @@ const doctor = new Hono()
 				.returning();
 
 			if (updated.length === 0) {
-				return c.json({ error: "Case not found or already finalized" }, 404);
+				return c.json(
+					{
+						success: false,
+						error: { message: "Case not found or already finalized" },
+					},
+					404,
+				);
 			}
 
 			return c.json({
 				success: true,
-				message: "Case finalized successfully",
+				data: {
+					message: "Case finalized successfully",
+				},
 			});
 		},
 	)
 	.post(
 		"/requestLabTests",
-		zValidator(
+		strictValidator(
 			"json",
 			z.object({
 				caseId: z.number().int(),
@@ -328,7 +364,7 @@ const doctor = new Hono()
 			}),
 		),
 		async (c) => {
-			const payload = c.get("jwtPayload") as JWTPayload;
+			const payload = c.get("jwtPayload");
 			const userId = payload.id;
 			const { caseId, testIds } = c.req.valid("json");
 
@@ -345,7 +381,10 @@ const doctor = new Hono()
 				.limit(1);
 
 			if (!caseExists) {
-				return c.json({ error: "Case not found" }, 404);
+				return c.json(
+					{ success: false, error: { message: "Case not found" } },
+					404,
+				);
 			}
 			const validTests = await db
 				.select({ id: labTestsMasterTable.id })
@@ -358,7 +397,20 @@ const doctor = new Hono()
 				);
 
 			if (validTests.length !== testIds.length) {
-				return c.json({ error: "Some test IDs are invalid" }, 400);
+				return c.json(
+					{
+						success: false,
+						error: {
+							message: "Some test IDs are invalid",
+							details: {
+								invalidTestIds: testIds.filter(
+									(id) => !validTests.some((test) => test.id === id),
+								),
+							},
+						},
+					},
+					400,
+				);
 			}
 
 			await db.insert(caseLabReportsTable).values(
@@ -371,7 +423,7 @@ const doctor = new Hono()
 
 			return c.json({
 				success: true,
-				message: "Lab tests requested successfully",
+				data: { message: "Lab tests requested successfully" },
 			});
 		},
 	)
@@ -386,7 +438,7 @@ const doctor = new Hono()
 			.from(labTestsMasterTable)
 			.where(eq(labTestsMasterTable.isActive, true));
 
-		return c.json({ success: true, tests: activeTests });
+		return c.json({ success: true, data: { tests: activeTests } });
 	});
 
 export default doctor;

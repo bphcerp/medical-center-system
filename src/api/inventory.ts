@@ -1,9 +1,8 @@
-import { zValidator } from "@hono/zod-validator";
 import { and, eq, gte, sql } from "drizzle-orm";
-import { Hono } from "hono";
 import z from "zod";
 import { medicinesTable } from "@/db/case";
 import { batchesTable, inventoryMedicinesTable } from "@/db/inventory";
+import { createStrictHono, strictValidator } from "@/lib/types/api";
 import { db } from "./index";
 import { rbacCheck } from "./rbac";
 
@@ -28,7 +27,7 @@ type InventoryItem = {
 	}[];
 };
 
-const inventory = new Hono()
+const inventory = createStrictHono()
 	.use(rbacCheck({ permissions: ["inventory"] }))
 	.get("/", async (c) => {
 		const rows = await db
@@ -101,20 +100,26 @@ const inventory = new Hono()
 			return acc;
 		}, new Map<number, InventoryItem>());
 
-		return c.json({ inventory: Array.from(inventoryMap.values()) });
+		return c.json({
+			success: true,
+			data: { inventory: Array.from(inventoryMap.values()) },
+		});
 	})
 	.get("/medicines", async (c) => {
 		const medicines = await db.select().from(medicinesTable);
 
 		if (medicines.length === 0) {
-			return c.json({ error: "Medicines data not found" }, 404);
+			return c.json(
+				{ success: false, error: { message: "Medicines data not found" } },
+				404,
+			);
 		}
 
-		return c.json({ medicines });
+		return c.json({ success: true, data: { medicines } });
 	})
 	.post(
-		"addQuantity",
-		zValidator(
+		"/addQuantity",
+		strictValidator(
 			"json",
 			z.object({
 				batchId: z.number().int(),
@@ -140,13 +145,15 @@ const inventory = new Hono()
 
 			return c.json({
 				success: true,
-				message: "Quantity added successfully",
+				data: {
+					message: "Quantity added successfully",
+				},
 			});
 		},
 	)
 	.post(
-		"dispense",
-		zValidator(
+		"/dispense",
+		strictValidator(
 			"json",
 			z.object({
 				batchId: z.number().int(),
@@ -177,13 +184,15 @@ const inventory = new Hono()
 
 			return c.json({
 				success: true,
-				message: "Quantity dispensed successfully",
+				data: {
+					message: "Quantity dispensed successfully",
+				},
 			});
 		},
 	)
 	.post(
-		"batch",
-		zValidator(
+		"/batch",
+		strictValidator(
 			"json",
 			z.object({
 				medicineId: z.number().int().positive(),
@@ -201,7 +210,10 @@ const inventory = new Hono()
 				.where(eq(batchesTable.batchNum, batchNum));
 
 			if (duplicateBatch) {
-				return c.json({ success: false, error: "Duplicate batch" }, 400);
+				return c.json(
+					{ success: false, error: { message: "Duplicate batch" } },
+					400,
+				);
 			}
 
 			await db.insert(batchesTable).values({
@@ -213,13 +225,13 @@ const inventory = new Hono()
 
 			return c.json({
 				success: true,
-				message: "Batch added successfully",
+				data: { message: "Batch added successfully" },
 			});
 		},
 	)
 	.post(
-		"changeCriticalQty",
-		zValidator(
+		"/changeCriticalQty",
+		strictValidator(
 			"json",
 			z.object({
 				medicineId: z.number().int().positive(),
@@ -236,17 +248,22 @@ const inventory = new Hono()
 				.returning();
 
 			if (updated.length === 0) {
-				return c.json({ error: "Medicines data not found" }, 404);
+				return c.json(
+					{ success: false, error: { message: "Medicines data not found" } },
+					404,
+				);
 			}
 			return c.json({
 				success: true,
-				message: "Critical quantity updated successfully",
+				data: {
+					message: "Critical quantity updated successfully",
+				},
 			});
 		},
 	)
 	.post(
-		"addMedicines",
-		zValidator(
+		"/addMedicines",
+		strictValidator(
 			"json",
 			z.object({
 				medicines: z.array(
@@ -273,7 +290,7 @@ const inventory = new Hono()
 
 			return c.json({
 				success: true,
-				message: "Medicines added successfully",
+				data: { message: "Medicines added successfully" },
 			});
 		},
 	);

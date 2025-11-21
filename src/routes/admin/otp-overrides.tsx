@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { ShieldAlert, ShieldCheck } from "lucide-react";
 import TopBar from "@/components/topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,25 +18,20 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import useAuth from "@/lib/hooks/useAuth";
+import { handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
 
 export const Route = createFileRoute("/admin/otp-overrides")({
 	loader: async () => {
 		const logsRes = await client.api.admin["otp-override-logs"].$get();
-		if (logsRes.status === 403) {
-			alert("You don't have permission to access this page.");
-			throw redirect({
-				to: "/",
-			});
+		const logs = await handleErrors(logsRes);
+		if (!logs) {
+			return {
+				logs: [],
+			};
 		}
-		if (logsRes.status !== 200) {
-			throw new Error("Failed to fetch override logs");
-		}
-
-		const { logs } = await logsRes.json();
-
 		return {
-			logs,
+			logs: logs.data,
 		};
 	},
 	component: OTPOverridesPage,

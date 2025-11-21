@@ -1,7 +1,8 @@
 import { useRouter } from "@tanstack/react-router";
 import { decode } from "hono/jwt";
 import { useCookies } from "react-cookie";
-import type { CookieValues, JWTPayload } from "@/api/auth";
+import type { CookieValues } from "@/api/auth";
+import type { JWTPayload } from "@/lib/types/api";
 import type { Permission } from "../types/permissions";
 
 const useAuth = (requiredPermissions: Permission[] = []) => {

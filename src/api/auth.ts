@@ -1,9 +1,8 @@
 import "dotenv/config";
-import { zValidator } from "@hono/zod-validator";
 import { eq } from "drizzle-orm";
-import { Hono } from "hono";
+import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
-import { jwt, sign } from "hono/jwt";
+import { sign } from "hono/jwt";
 import z from "zod";
 import { rolesTable, usersTable } from "@/db/auth";
 import { identifierTypes, unprocessedTable } from "@/db/case";
@@ -15,6 +14,13 @@ import {
 	visitorsTable,
 } from "@/db/patient";
 import env from "@/lib/env";
+import {
+	createStrictHono,
+	type JWTPayload,
+	type StrictHandler,
+	strictJwt,
+	strictValidator,
+} from "@/lib/types/api";
 import type { Permission } from "@/lib/types/permissions";
 import { db } from ".";
 import admin from "./admin";
@@ -23,34 +29,18 @@ import files from "./files";
 import inventory from "./inventory";
 import lab from "./lab";
 import patientHistory from "./patientHistory";
-import rbac from "./rbac";
 import role from "./role";
 import user from "./user";
 import vitals from "./vitals";
-
-export type JWTPayload = {
-	passwordHash: null;
-	role: {
-		id: number;
-		name: string;
-		allowed: Permission[];
-	};
-	id: number;
-	username: string;
-	email: string;
-	name: string;
-	phone: string;
-	fingerprintHash: string;
-};
 
 export interface CookieValues {
 	token: string | undefined;
 }
 
-export const unauthenticated = new Hono()
+export const unauthenticated = createStrictHono()
 	.post(
 		"/login",
-		zValidator(
+		strictValidator(
 			"json",
 			z.object({
 				username: z.string().min(1),
@@ -68,7 +58,11 @@ export const unauthenticated = new Hono()
 			if (users.length < 1) {
 				return c.json(
 					{
-						error: "User Not Found",
+						success: false,
+						error: {
+							message: "User Not Found",
+							details: { username },
+						},
 					},
 					404,
 				);
@@ -82,10 +76,13 @@ export const unauthenticated = new Hono()
 				"bcrypt",
 			);
 			if (!isMatch) {
-				c.status(400);
 				return c.json(
 					{
-						error: "Incorrect Password",
+						success: false,
+						error: {
+							message: "Incorrect Password",
+							details: { password },
+						},
 					},
 					400,
 				);
@@ -104,14 +101,14 @@ export const unauthenticated = new Hono()
 			};
 			const jwt = await sign(payload, env.JWT_SECRET);
 
-			setCookie(c, "token", jwt, {
+			setCookie(c as Context, "token", jwt, {
 				path: "/",
 				httpOnly: false,
 				domain: env.FRONTEND_URL.replace("https://", "")
 					.replace("http://", "")
 					.split(":")[0],
 			});
-			setCookie(c, "fingerprint", fingerprint, {
+			setCookie(c as Context, "fingerprint", fingerprint, {
 				path: "/",
 				httpOnly: true,
 				domain: env.FRONTEND_URL.replace("https://", "")
@@ -120,18 +117,22 @@ export const unauthenticated = new Hono()
 			});
 			return c.json({
 				success: true,
+				data: {
+					token: jwt,
+					fingerprint: fingerprint,
+				},
 			});
 		},
 	)
 	.get("/logout", async (c) => {
-		deleteCookie(c, "token", {
+		deleteCookie(c as Context, "token", {
 			path: "/",
 			httpOnly: false,
 			domain: env.FRONTEND_URL.replace("https://", "")
 				.replace("http://", "")
 				.split(":")[0],
 		});
-		deleteCookie(c, "fingerprint", {
+		deleteCookie(c as Context, "fingerprint", {
 			path: "/",
 			httpOnly: true,
 			domain: env.FRONTEND_URL.replace("https://", "")
@@ -142,7 +143,7 @@ export const unauthenticated = new Hono()
 	})
 	.post(
 		"/signup",
-		zValidator(
+		strictValidator(
 			"json",
 			z.object({
 				username: z.string().min(1),
@@ -152,22 +153,26 @@ export const unauthenticated = new Hono()
 		async (c) => {
 			const { username, password } = c.req.valid("json");
 			const hash = await Bun.password.hash(password, "bcrypt");
-			await db.insert(usersTable).values({
-				email: "",
-				name: "",
-				passwordHash: hash,
-				phone: "",
-				role: 1,
-				username: username,
-			});
+			const [user] = await db
+				.insert(usersTable)
+				.values({
+					email: "",
+					name: "",
+					passwordHash: hash,
+					phone: "",
+					role: 1,
+					username: username,
+				})
+				.returning();
 			return c.json({
 				success: true,
+				data: user,
 			});
 		},
 	)
 	.get(
 		"/existing",
-		zValidator(
+		strictValidator(
 			"query",
 			z.object({
 				identifierType: z.enum(identifierTypes),
@@ -188,12 +193,18 @@ export const unauthenticated = new Hono()
 						)
 						.limit(1);
 					if (student.length < 1) {
-						return c.json({ exists: false }, 400);
+						return c.json({
+							success: true,
+							data: { exists: false, tryVisitorRegistration: true },
+						});
 					}
 					return c.json({
-						...student[0].patients,
-						email: student[0].students.email,
-						exists: true,
+						success: true,
+						data: {
+							...student[0].patients,
+							email: student[0].students.email,
+							exists: true,
+						},
 					});
 				}
 				case "phone": {
@@ -207,12 +218,18 @@ export const unauthenticated = new Hono()
 						)
 						.limit(1);
 					if (visitor.length < 1) {
-						return c.json({ exists: false }, 404);
+						return c.json({
+							success: true,
+							data: { exists: false, tryVisitorRegistration: false },
+						});
 					}
 					return c.json({
-						...visitor[0].patients,
-						email: visitor[0].visitors.email,
-						exists: true,
+						success: true,
+						data: {
+							...visitor[0].patients,
+							email: visitor[0].visitors.email,
+							exists: true,
+						},
 					});
 				}
 				case "psrn": {
@@ -226,7 +243,10 @@ export const unauthenticated = new Hono()
 						)
 						.limit(1);
 					if (professor.length < 1) {
-						return c.json({ exists: false }, 400);
+						return c.json({
+							success: true,
+							data: { exists: false, tryVisitorRegistration: true },
+						});
 					}
 					const dependents = await db
 						.select()
@@ -237,16 +257,19 @@ export const unauthenticated = new Hono()
 							eq(dependentsTable.patientId, patientsTable.id),
 						);
 					return c.json({
-						professor: {
-							...professor[0].patients,
+						success: true,
+						data: {
+							professor: {
+								...professor[0].patients,
+							},
+							email: professor[0].professors.email,
+							dependents: dependents.map((d) => {
+								return {
+									...d.patients,
+								};
+							}),
+							exists: true,
 						},
-						email: professor[0].professors.email,
-						dependents: dependents.map((d) => {
-							return {
-								...d.patients,
-							};
-						}),
-						exists: true,
 					});
 				}
 			}
@@ -254,7 +277,7 @@ export const unauthenticated = new Hono()
 	)
 	.post(
 		"/visitorRegister",
-		zValidator(
+		strictValidator(
 			"json",
 			z.object({
 				name: z.string().min(1),
@@ -293,13 +316,15 @@ export const unauthenticated = new Hono()
 
 			return c.json({
 				success: true,
-				token: token[0].id,
+				data: {
+					token: token[0].id,
+				},
 			});
 		},
 	)
 	.post(
 		"/register",
-		zValidator(
+		strictValidator(
 			"json",
 			z.object({
 				identifierType: z.enum(identifierTypes),
@@ -319,35 +344,42 @@ export const unauthenticated = new Hono()
 				.returning();
 			return c.json({
 				success: true,
-				token: token[0].id,
+				data: {
+					token: token[0].id,
+				},
 			});
 		},
 	);
 
-export const authenticated = new Hono()
+const authMiddleware: StrictHandler = async (c, next) => {
+	const jwt: JWTPayload = c.get("jwtPayload");
+	const fingerprint = getCookie(c as Context, "fingerprint") || "";
+	const fingerprintHash = Bun.SHA256.hash(fingerprint, "base64url");
+	if (jwt.fingerprintHash !== fingerprintHash) {
+		return c.json(
+			{
+				success: false,
+				error: {
+					message: "Invalid fingerprint",
+					details: { expected: jwt.fingerprintHash, received: fingerprintHash },
+				},
+			},
+			401,
+		);
+	}
+	await next();
+};
+
+export const authenticated = createStrictHono()
 	.use(
-		jwt({
+		strictJwt({
 			cookie: "token",
 			secret: env.JWT_SECRET,
 		}),
 	)
-	.use(async (c, next) => {
-		const jwt: JWTPayload = c.get("jwtPayload");
-		const fingerprint = getCookie(c, "fingerprint") || "";
-		const fingerprintHash = Bun.SHA256.hash(fingerprint, "base64url");
-		if (jwt.fingerprintHash !== fingerprintHash) {
-			return c.json(
-				{
-					error: "Invalid Fingerprint",
-				},
-				401,
-			);
-		}
-		await next();
-	})
+	.use(authMiddleware)
 	.route("/role", role)
 	.route("/user", user)
-	.route("/rbac", rbac)
 	.route("/vitals", vitals)
 	.route("/doctor", doctor)
 	.route("/lab", lab)

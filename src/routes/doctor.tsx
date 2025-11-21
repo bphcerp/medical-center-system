@@ -1,6 +1,5 @@
 import {
 	createFileRoute,
-	redirect,
 	useNavigate,
 	useRouter,
 } from "@tanstack/react-router";
@@ -25,29 +24,17 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import useAuth from "@/lib/hooks/useAuth";
+import { handleErrors } from "@/lib/utils";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/doctor")({
 	loader: async () => {
-		// Fetch the queue (this will fail if user doesn't have doctor permissions)
 		const queueRes = await client.api.doctor.queue.$get();
-		switch (queueRes.status) {
-			case 401:
-				throw redirect({
-					to: "/login",
-				});
-			case 403:
-				alert("You don't have the permission to access Doctor Dashboard.");
-				throw redirect({
-					to: "/",
-				});
+		const queue = await handleErrors(queueRes);
+		if (!queue) {
+			return { queue: [] };
 		}
-		if (queueRes.status !== 200) {
-			throw new Error("Failed to fetch queue");
-		}
-		const queueData = await queueRes.json();
-
-		return { queue: queueData.queue };
+		return { queue: queue.data.queue };
 	},
 	component: DoctorDashboard,
 	staticData: {

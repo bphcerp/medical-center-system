@@ -1,14 +1,14 @@
 import "dotenv/config";
 import { desc, eq } from "drizzle-orm";
-import { Hono } from "hono";
 import { usersTable } from "@/db/auth";
 import { casesTable } from "@/db/case";
 import { otpOverrideLogsTable } from "@/db/otp";
 import { patientsTable } from "@/db/patient";
+import { createStrictHono } from "@/lib/types/api";
 import { db } from ".";
 import { rbacCheck } from "./rbac";
 
-const admin = new Hono()
+const admin = createStrictHono()
 	.use(rbacCheck({ permissions: ["admin"] }))
 	.get("/otp-override-logs", async (c) => {
 		const logs = await db
@@ -29,7 +29,7 @@ const admin = new Hono()
 			.innerJoin(patientsTable, eq(patientsTable.id, casesTable.patient))
 			.orderBy(desc(otpOverrideLogsTable.createdAt));
 
-		return c.json({ logs });
+		return c.json({ success: true, data: logs });
 	});
 
 export default admin;

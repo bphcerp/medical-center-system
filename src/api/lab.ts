@@ -1,6 +1,4 @@
-import { zValidator } from "@hono/zod-validator";
 import { and, eq, inArray } from "drizzle-orm";
-import { Hono } from "hono";
 import z from "zod";
 import { usersTable } from "@/db/auth";
 import { casesTable } from "@/db/case";
@@ -12,6 +10,8 @@ import {
 	statusEnums,
 } from "@/db/lab";
 import { patientsTable } from "@/db/patient";
+import { createStrictHono, strictValidator } from "@/lib/types/api";
+import { getAge } from "@/lib/utils";
 import { uploadFileService } from "./files";
 import { db } from "./index";
 import { rbacCheck } from "./rbac";
@@ -26,9 +26,8 @@ const batchUpdateSchema = z.object({
 	tests: z.array(testUpdateSchema),
 });
 
-const lab = new Hono()
+const lab = createStrictHono()
 	.use(rbacCheck({ permissions: ["lab"] }))
-
 	.get("/pending", async (c) => {
 		const pendingReports = await db
 			.select({
@@ -51,7 +50,7 @@ const lab = new Hono()
 			.where(inArray(caseLabReportsTable.status, statusEnums.slice(0, 2)));
 
 		if (pendingReports.length === 0) {
-			return c.json({ success: true, reports: [] });
+			return c.json({ success: true, data: { reports: [] } });
 		}
 
 		const patientIds = Array.from(
@@ -96,12 +95,11 @@ const lab = new Hono()
 					? doctorMap.get(report.associatedUsers.at(0) ?? 0)
 					: null) ?? "Unknown Doctor",
 		}));
-		return c.json({ success: true, reports });
+		return c.json({ success: true, data: { reports } });
 	})
-
 	.get(
 		"/details/:caseId",
-		zValidator("param", z.object({ caseId: z.coerce.number().int() })),
+		strictValidator("param", z.object({ caseId: z.coerce.number().int() })),
 		async (c) => {
 			const { caseId } = c.req.valid("param");
 
@@ -116,7 +114,10 @@ const lab = new Hono()
 				.where(eq(casesTable.id, caseId));
 
 			if (!caseDetail) {
-				return c.json({ success: false, error: "Case not found" }, 404);
+				return c.json(
+					{ success: false, error: { message: "Case not found" } },
+					404,
+				);
 			}
 
 			const tests = await db
@@ -181,19 +182,24 @@ const lab = new Hono()
 			}));
 
 			return c.json({
-				caseId,
-				token: caseDetail.token,
-				patient: patient,
-				doctorName: doctor?.name ?? "Unknown Doctor",
-				tests: testsWithFiles,
+				success: true,
+				data: {
+					caseId,
+					token: caseDetail.token,
+					patient: {
+						...patient,
+						age: getAge(patient.birthdate),
+					},
+					doctorName: doctor?.name ?? "Unknown Doctor",
+					tests: testsWithFiles,
+				},
 			});
 		},
 	)
-
 	.post(
 		"/update-tests/:caseId",
-		zValidator("param", z.object({ caseId: z.coerce.number().int() })),
-		zValidator("json", batchUpdateSchema),
+		strictValidator("param", z.object({ caseId: z.coerce.number().int() })),
+		strictValidator("json", batchUpdateSchema),
 		async (c) => {
 			const { caseId } = c.req.valid("param");
 			const { tests } = c.req.valid("json");
@@ -267,14 +273,23 @@ const lab = new Hono()
 
 				return c.json({
 					success: true,
-					message: "Tests updated successfully",
+					data: {
+						message: "Tests updated successfully",
+					},
 				});
 			} catch (error) {
 				console.error("Batch update error:", error);
 				return c.json(
 					{
 						success: false,
-						error: error instanceof Error ? error.message : "Update failed",
+						error: {
+							message: error instanceof Error ? error.message : "Update failed",
+							details: {
+								caseId,
+								tests,
+								error: error,
+							},
+						},
 					},
 					400,
 				);
@@ -284,7 +299,7 @@ const lab = new Hono()
 
 	.post(
 		"/upload-file",
-		zValidator(
+		strictValidator(
 			"form",
 			z.object({
 				file: z.instanceof(File),
@@ -303,7 +318,7 @@ const lab = new Hono()
 
 				if (!report) {
 					return c.json(
-						{ success: false, error: "Lab test report not found" },
+						{ success: false, error: { message: "Lab test report not found" } },
 						404,
 					);
 				}
@@ -315,11 +330,19 @@ const lab = new Hono()
 
 				return c.json({
 					success: true,
-					file: fileRecord,
+					data: {
+						file: fileRecord,
+					},
 				});
 			} catch (error) {
 				console.error("File upload error in lab module:", error);
-				return c.json({ success: false, error: "File upload failed" }, 500);
+				return c.json(
+					{
+						success: false,
+						error: { message: "File upload failed", details: error },
+					},
+					500,
+				);
 			}
 		},
 	);
