@@ -1,12 +1,20 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
-import { Activity, ArrowLeft, Check, Plus } from "lucide-react";
-import type React from "react";
+import { Activity, ArrowLeft, Check, ClipboardPlus, Plus } from "lucide-react";
 import { useId, useState } from "react";
+import { PatientDetails } from "@/components/patient-details";
+import { PatientTypeBadge } from "@/components/patient-type-badge";
 import { RegistrationForm } from "@/components/registration-card";
+import { TokenButton, TokenButtonTitle } from "@/components/token-button";
 import TopBar from "@/components/topbar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import {
 	Select,
@@ -16,7 +24,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import VitalField from "@/components/vital-field";
+import VitalsCard from "@/components/vitals-card";
 import { cn, titleCase } from "@/lib/utils";
 import { client } from "./api/$";
 
@@ -140,54 +148,51 @@ function Vitals() {
 			<div className="flex items-stretch divide-x divide-border grow min-h-0">
 				<div
 					className={cn(
-						"relative flex flex-col flex-2 px-4 pt-4 gap-4 overflow-y-scroll bg-background bottom-0 min-h-0 z-10",
+						"relative flex flex-col flex-2 px-4 pt-4 overflow-y-scroll bg-background bottom-0 min-h-0 z-10",
 						isFocused && "hidden",
 						"lg:flex",
 					)}
 				>
-					{unprocessed.length === 0 && (
-						<p className="text-center my-auto">No patients in queue</p>
-					)}
-					{unprocessed.map((patient) => {
-						const isSelected =
-							focusedPatient?.unprocessed.id === patient.unprocessed.id;
-						const sex = titleCase(patient.patients.sex);
-						return (
-							<Button
-								variant="ghost"
-								key={patient.unprocessed.id}
-								className={cn(
-									"flex gap-3 p-0 rounded-lg border-2 items-center overflow-clip bg-card h-auto",
-									isSelected && "border-primary",
-								)}
-								onClick={() => setFocusedPatient(patient)}
-							>
-								<span
-									className={cn(
-										"h-full content-center min-w-13 px-2 text-center",
-										"font-semibold tabular-nums tracking-tight text-lg transition-colors",
-										isSelected
-											? "bg-primary text-primary-foreground"
-											: "bg-accent text-accent-foreground",
-									)}
+					<div className="grow flex flex-col gap-4">
+						{unprocessed.length === 0 && (
+							<Empty>
+								<EmptyHeader>
+									<EmptyMedia variant="icon">
+										<ClipboardPlus />
+									</EmptyMedia>
+									<EmptyTitle>No unprocessed patients</EmptyTitle>
+									<EmptyDescription>
+										When new patients arrive, they will appear here.
+									</EmptyDescription>
+								</EmptyHeader>
+							</Empty>
+						)}
+						{unprocessed.map((patient) => {
+							const isSelected =
+								focusedPatient?.unprocessed.id === patient.unprocessed.id;
+							const sex = titleCase(patient.patients.sex);
+							return (
+								<TokenButton
+									variant="ghost"
+									key={patient.unprocessed.id}
+									token={patient.unprocessed.id.toString()}
+									selected={isSelected}
+									onClick={() => setFocusedPatient(patient)}
 								>
-									{patient.unprocessed.id}
-								</span>
-								<div className="flex grow flex-col items-start text-base py-2 pr-2">
-									<span className="whitespace-normal text-left">
-										{patient.patients.name}
-									</span>
-									<div className="flex justify-between w-full items-end">
-										<span className="text-muted-foreground font-medium text-left text-sm">
-											{sex}, {patient.patients.age} y.o.
-										</span>
-										<PatientTypeBadge type={patient.patients.type} />
+									<div className="flex flex-col items-start">
+										<TokenButtonTitle>{patient.patients.name}</TokenButtonTitle>
+										<div className="flex justify-between w-full items-end">
+											<span className="text-muted-foreground font-medium text-left text-sm">
+												{sex}, {patient.patients.age} y.o.
+											</span>
+											<PatientTypeBadge type={patient.patients.type} />
+										</div>
 									</div>
-								</div>
-							</Button>
-						);
-					})}
-					<div className="sticky flex flex-col flex-2 bottom-0 inset-x-0 bg-linear-to-t from-background to-transparent from-70% via-75% to-100% pb-4 pt-10">
+								</TokenButton>
+							);
+						})}
+					</div>
+					<div className="sticky flex flex-col bottom-0 bg-linear-to-t from-background to-transparent from-70% via-85% to-100% pb-4 pt-10">
 						<NewPatientDialog />
 					</div>
 				</div>
@@ -198,7 +203,7 @@ function Vitals() {
 						"lg:flex",
 					)}
 				>
-					{focusedPatient ? (
+					{focusedPatient && (
 						<form
 							className="flex flex-col gap-4 w-full"
 							action={handleCreateCase}
@@ -211,92 +216,15 @@ function Vitals() {
 								>
 									<ArrowLeft /> Queue
 								</Button>
-								<p className="italic text-muted-foreground">
-									Entering vitals for
-								</p>
-								<div className="flex items-stretch gap-3">
-									<PatientTypeBadge
-										key={focusedPatient.patients.id}
-										type={focusedPatient.patients.type}
-										className="text-3xl border px-3 tabular-nums tracking-tight font-semibold flex items-center min-w-14"
-									>
-										{focusedPatient.unprocessed.id}
-									</PatientTypeBadge>
-									<div className="flex flex-col gap-0.5">
-										<span className="text-3xl font-bold">
-											{focusedPatient.patients.name}
-										</span>
-										<span className="flex items-center gap-2">
-											<span className="text-muted-foreground font-medium text-lg">
-												{titleCase(focusedPatient.patients.sex)},{" "}
-												{focusedPatient.patients.age} year
-												{focusedPatient.patients.age !== 1 ? "s" : ""} old
-											</span>
-											<PatientTypeBadge type={focusedPatient.patients.type} />
-										</span>
-									</div>
-								</div>
+								<PatientDetails
+									patient={focusedPatient.patients}
+									token={focusedPatient.unprocessed.id}
+									label="Entering vitals for"
+								/>
 							</div>
 							<FieldSet>
 								<FieldGroup>
-									<div className="flex flex-wrap items-start gap-4">
-										<div className="flex flex-col gap-4 p-4 rounded-lg bg-pink-700/5 max-w-140">
-											<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-2">
-												<VitalField
-													label="Body Temperature"
-													unit="° F"
-													name="bodyTemperature"
-													placeholder="Body Temperature (optional)"
-												/>
-												<VitalField
-													label="Heart Rate"
-													unit="bpm"
-													name="heartRate"
-													placeholder="Heart Rate (optional)"
-												/>
-												<VitalField
-													label="Respiratory Rate"
-													unit="per minute"
-													name="respiratoryRate"
-													placeholder="Respiratory Rate (optional)"
-												/>
-												<VitalField
-													label="SpO2"
-													unit="%"
-													name="spo2"
-													placeholder="SpO2 (optional)"
-												/>
-											</div>
-											<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-4 border-t border-pink-700/40">
-												<VitalField
-													label="Blood Pressure (Systolic)"
-													unit="mm Hg"
-													name="bloodPressureSystolic"
-													placeholder="Blood Pressure (Systolic) (optional)"
-												/>
-												<VitalField
-													label="Blood Pressure (Diastolic)"
-													unit="mm Hg"
-													name="bloodPressureDiastolic"
-													placeholder="Blood Pressure (Diastolic) (optional)"
-												/>
-											</div>
-										</div>
-										<div className="grid grid-cols-1 gap-4 p-4 rounded-lg bg-purple-700/5 max-w-70">
-											<VitalField
-												label="Weight"
-												unit="kg"
-												name="weight"
-												placeholder="Weight (optional)"
-											/>
-											<VitalField
-												label="Blood Sugar"
-												unit="mg/dL"
-												name="bloodSugar"
-												placeholder="Blood Sugar (optional)"
-											/>
-										</div>
-									</div>
+									<VitalsCard />
 									<Separator className="hidden lg:inline my-2" />
 									<div className="flex items-end gap-4">
 										<Field>
@@ -335,10 +263,6 @@ function Vitals() {
 								</FieldGroup>
 							</FieldSet>
 						</form>
-					) : (
-						<p className="self-center text-center w-full">
-							No Patient Selected
-						</p>
 					)}
 				</div>
 			</div>
@@ -377,38 +301,5 @@ function NewPatientDialog() {
 				)}
 			</DialogContent>
 		</Dialog>
-	);
-}
-
-function PatientTypeBadge({
-	type,
-	className,
-	children,
-	...props
-}: React.PropsWithChildren<{
-	type: (typeof Route.types.loaderData.unprocessed)[number]["patients"]["type"];
-}> &
-	React.ComponentProps<typeof Badge>) {
-	let color: string;
-	switch (type) {
-		case "professor":
-		case "dependent":
-			color = "text-bits-light-blue border-bits-light-blue";
-			break;
-		case "visitor":
-			color = "text-bits-red border-bits-red";
-			break;
-		case "student":
-			color = "text-bits-green border-bits-green";
-			break;
-	}
-	return (
-		<Badge
-			variant="outline"
-			className={cn("border rounded-sm", color, className)}
-			{...props}
-		>
-			{children ?? type}
-		</Badge>
 	);
 }

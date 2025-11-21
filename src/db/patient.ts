@@ -1,24 +1,21 @@
 import {
+	date,
 	integer,
 	pgEnum,
 	pgTable,
 	uniqueIndex,
 	varchar,
 } from "drizzle-orm/pg-core";
+import { patientTypes } from "@/lib/types/patient";
 
-export const patientTypeEnum = pgEnum("patient_type", [
-	"student",
-	"professor",
-	"dependent",
-	"visitor",
-]);
+export const patientTypeEnum = pgEnum("patient_type", patientTypes);
 export const sexTypeEnum = pgEnum("sex_type", ["male", "female"]);
 
 export const patientsTable = pgTable("patients", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
 	name: varchar({ length: 255 }).notNull(),
 	type: patientTypeEnum("type").notNull(),
-	age: integer().notNull(),
+	birthdate: date().notNull(),
 	sex: sexTypeEnum("sex").notNull(),
 });
 

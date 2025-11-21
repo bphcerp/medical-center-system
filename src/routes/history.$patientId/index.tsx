@@ -4,6 +4,7 @@ import {
 	redirect,
 	useNavigate,
 } from "@tanstack/react-router";
+import { PatientDetails } from "@/components/patient-details";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,23 +16,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import useAuth from "@/lib/hooks/useAuth";
 import { client } from "../api/$";
 
 export const Route = createFileRoute("/history/$patientId/")({
 	loader: async ({ params }: { params: { patientId: string } }) => {
-		const res = await client.api.user.$get();
-		if (res.status !== 200) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-		const user = await res.json();
-		if ("error" in user) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-
 		const historyRes = await client.api.patientHistory[":patientId"].$get({
 			param: { patientId: params.patientId },
 		});
@@ -57,7 +46,6 @@ export const Route = createFileRoute("/history/$patientId/")({
 		const historyData = await historyRes.json();
 
 		return {
-			user,
 			patientId: params.patientId,
 			patient: historyData.patient,
 			cases: historyData.cases,
@@ -67,6 +55,7 @@ export const Route = createFileRoute("/history/$patientId/")({
 });
 
 function HistoryPage() {
+	useAuth(["doctor"]);
 	const { patient, cases, patientId } = Route.useLoaderData();
 	const navigate = useNavigate();
 
@@ -93,17 +82,7 @@ function HistoryPage() {
 			<div className="container mx-auto p-6">
 				<div className="mb-6 flex justify-between items-start">
 					<div>
-						<h1 className="text-3xl font-bold">Patient History</h1>
-						<div className="mt-2 space-y-1">
-							<p className="text-lg">
-								<span className="font-semibold">Name:</span> {patient.name}
-							</p>
-							<p className="text-muted-foreground">
-								<span className="font-semibold">Age:</span> {patient.age} |{" "}
-								<span className="font-semibold">Sex:</span> {patient.sex} |{" "}
-								<span className="font-semibold">Type:</span> {patient.type}
-							</p>
-						</div>
+						<PatientDetails patient={patient} label="Case history of" />
 					</div>
 					{latestCase && (
 						<Button

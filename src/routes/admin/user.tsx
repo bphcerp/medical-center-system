@@ -25,6 +25,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import useAuth from "@/lib/hooks/useAuth";
 import { client } from "../api/$";
 
 export const Route = createFileRoute("/admin/user")({
@@ -67,6 +68,7 @@ function handleUnauthorized(status: number) {
 }
 
 function Admin() {
+	useAuth(["admin"]);
 	const { users: allUsers, roles } = Route.useLoaderData();
 	const [users, setUsers] = useState(allUsers);
 

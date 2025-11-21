@@ -12,7 +12,7 @@ import {
 	statusEnums,
 } from "@/db/lab";
 import { patientsTable } from "@/db/patient";
-import { uploadFileService } from "./fileupload.service";
+import { uploadFileService } from "./files";
 import { db } from "./index";
 import { rbacCheck } from "./rbac";
 
@@ -110,6 +110,7 @@ const lab = new Hono()
 					caseId: casesTable.id,
 					patientId: casesTable.patient,
 					associatedUsers: casesTable.associatedUsers,
+					token: casesTable.token,
 				})
 				.from(casesTable)
 				.where(eq(casesTable.id, caseId));
@@ -152,7 +153,12 @@ const lab = new Hono()
 			);
 
 			const [patient] = await db
-				.select({ name: patientsTable.name })
+				.select({
+					name: patientsTable.name,
+					birthdate: patientsTable.birthdate,
+					sex: patientsTable.sex,
+					type: patientsTable.type,
+				})
 				.from(patientsTable)
 				.where(eq(patientsTable.id, caseDetail.patientId));
 
@@ -175,9 +181,9 @@ const lab = new Hono()
 			}));
 
 			return c.json({
-				success: true,
 				caseId,
-				patientName: patient?.name ?? "Unknown Patient",
+				token: caseDetail.token,
+				patient: patient,
 				doctorName: doctor?.name ?? "Unknown Doctor",
 				tests: testsWithFiles,
 			});

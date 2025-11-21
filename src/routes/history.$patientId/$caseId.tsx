@@ -1,163 +1,43 @@
 import { Label } from "@radix-ui/react-label";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import type { InferResponseType } from "hono/client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import DiagnosisCard from "@/components/diagnosis-card";
-import { OTPVerificationDialog } from "@/components/otp-verification-dialog";
+import {
+	OTPVerificationDialog,
+	useOTP,
+} from "@/components/otp-verification-dialog";
 import TopBar from "@/components/topbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import VitalField from "@/components/vital-field";
-import { client } from "../api/$";
+import VitalsCard from "@/components/vitals-card";
+import useAuth from "@/lib/hooks/useAuth";
 
 export const Route = createFileRoute("/history/$patientId/$caseId")({
-	loader: async ({
-		params,
-	}: {
-		params: { patientId: string; caseId: string };
-	}) => {
-		const res = await client.api.user.$get();
-		if (res.status !== 200) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-		const user = await res.json();
-		if ("error" in user) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-
-		// Return special state to indicate OTP is required
-		return {
-			user,
-			caseId: params.caseId,
-			patientId: params.patientId,
-		};
-	},
 	component: CaseDetailsPage,
 });
 
 function CaseDetailsPage() {
-	const { caseId, patientId } = Route.useLoaderData();
+	useAuth(["doctor"]);
+	const { caseId, patientId } = Route.useParams();
 	const navigate = useNavigate();
+	const {
+		caseRecord,
+		isSendingOtp,
+		isOtpDialogOpen,
+		handleVerifyOtp,
+		handleOverride,
+		isVerifying,
+		setIsOtpDialogOpen,
+		otpError,
+	} = useOTP(caseId);
 
 	// OTP verification state
-	const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(true);
-	const [isVerifying, setIsVerifying] = useState(false);
-	const [isSendingOtp, setIsSendingOtp] = useState(false);
-	const [otpError, setOtpError] = useState<string | null>(null);
-	const otpSentRef = useRef<boolean>(false);
-	const caseDetailsResponse =
-		client.api.patientHistory.otp[":caseId"].verify.$post;
-	type CaseDetail = InferResponseType<typeof caseDetailsResponse, 200>;
-	const [caseRecord, setCaseRecord] = useState<CaseDetail | null>(null);
 	const { caseDetail, prescriptions, diseases } = caseRecord || {
 		caseDetail: null,
 		prescriptions: [],
 		diseases: [],
-	};
-
-	const sendOtp = useCallback(async () => {
-		setIsSendingOtp(true);
-		setOtpError(null);
-		try {
-			const response = await client.api.patientHistory.otp[
-				":caseId"
-			].send.$post({
-				param: { caseId },
-			});
-
-			if (response.status === 200) {
-				setIsOtpDialogOpen(true);
-				setOtpError(null);
-			} else if (response.status === 404) {
-				setOtpError(
-					"Patient email not found. Use emergency override to access this case.",
-				);
-				setIsOtpDialogOpen(true);
-			} else {
-				const errorData = await response.json();
-				setOtpError(
-					`Failed to send OTP: ${(errorData as { error?: string })?.error || "Unknown error"}. Use emergency override if needed.`,
-				);
-				setIsOtpDialogOpen(true);
-			}
-		} catch (error) {
-			console.error("Failed to send OTP:", error);
-			setOtpError(
-				"Failed to send OTP due to network error. Use emergency override if needed.",
-			);
-			setIsOtpDialogOpen(true);
-		} finally {
-			setIsSendingOtp(false);
-		}
-	}, [caseId]);
-
-	// Auto-send OTP when OTP is required (only once)
-	useEffect(() => {
-		if (!otpSentRef.current && !isSendingOtp) {
-			otpSentRef.current = true;
-			sendOtp();
-		}
-	}, [isSendingOtp, sendOtp]);
-
-	const handleVerifyOtp = async (otp: string) => {
-		setIsVerifying(true);
-		setOtpError(null);
-		try {
-			const response = await client.api.patientHistory.otp[
-				":caseId"
-			].verify.$post({
-				param: { caseId },
-				json: { otp: Number(otp) },
-			});
-
-			if (response.status === 200) {
-				setIsOtpDialogOpen(false);
-				const data = await response.json();
-				setCaseRecord(data);
-			} else if (response.status === 400) {
-				setOtpError("Invalid OTP. Please try again.");
-			} else {
-				setOtpError("Failed to verify OTP. Please try again.");
-			}
-		} catch (error) {
-			console.error("Failed to verify OTP:", error);
-			setOtpError("Failed to verify OTP. Please try again.");
-		} finally {
-			setIsVerifying(false);
-		}
-	};
-
-	const handleOverride = async (reason: string) => {
-		setOtpError(null);
-		try {
-			const response = await client.api.patientHistory.otp[
-				":caseId"
-			].override.$post({
-				param: { caseId },
-				json: { reason },
-			});
-
-			if (response.status === 200) {
-				setIsOtpDialogOpen(false);
-				const data = await response.json();
-				setCaseRecord(data);
-			} else {
-				const errorData = await response.json();
-				setOtpError(
-					(errorData as { error?: string })?.error ||
-						"Failed to process override",
-				);
-			}
-		} catch (error) {
-			console.error("Failed to override:", error);
-			setOtpError("Failed to process override. Please try again.");
-		}
 	};
 
 	if (!caseDetail) {
@@ -251,40 +131,7 @@ function CaseDetailsPage() {
 					</div>
 				</Card>
 
-				<Card className="mb-2">
-					<div className="flex gap-4 mx-3">
-						<VitalField
-							label="Temperature"
-							value={caseDetail?.cases.temperature}
-						/>
-						<VitalField
-							label="Heart Rate"
-							value={caseDetail?.cases.heartRate}
-						/>
-						<VitalField
-							label="Respiratory Rate"
-							value={caseDetail?.cases.respiratoryRate}
-						/>
-					</div>
-					<div className="flex gap-4 mx-3">
-						<VitalField
-							label="Blood Pressure Systolic"
-							value={caseDetail?.cases.bloodPressureSystolic}
-						/>
-						<VitalField
-							label="Blood Pressure Diastolic"
-							value={caseDetail?.cases.bloodPressureDiastolic}
-						/>
-					</div>
-					<div className="flex gap-4 mx-3">
-						<VitalField
-							label="Blood Sugar"
-							value={caseDetail?.cases.bloodSugar}
-						/>
-						<VitalField label="SpO2" value={caseDetail?.cases.spo2} />
-						<VitalField label="Weight" value={caseDetail?.cases.weight} />
-					</div>
-				</Card>
+				<VitalsCard vitals={caseDetail.cases} />
 
 				<div className="grid grid-cols-3 mb-2">
 					<Card className="col-span-1 row-span-2 rounded-r-none rounded-bl-none px-2 pt-4 pb-2">

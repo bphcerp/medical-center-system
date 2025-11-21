@@ -3,6 +3,7 @@ import { useId, useState } from "react";
 import type { identifierTypes } from "@/db/case";
 import { client } from "@/routes/api/$";
 import { Button } from "./ui/button";
+import { DatePicker } from "./ui/date-picker";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import {
@@ -55,20 +56,19 @@ export function RegistrationForm({
 	const id = useId();
 	const nameId = useId();
 	const emailId = useId();
-	const ageId = useId();
 	const sexId = useId();
 
 	const [showDetails, setShowDetails] = useState(false);
 	const [disableForm, setDisableForm] = useState(false);
 
 	const [options, setOptions] = useState<
-		{ id: number; name: string; age: number; sex: string }[]
+		{ id: number; name: string; birthdate: Date; sex: string }[]
 	>([]);
 	const [patientId, setPatientId] = useState(-1);
 	const [identifier, setIdentifier] = useState("");
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
-	const [age, setAge] = useState(0);
+	const [birthdate, setBirthdate] = useState<Date>(new Date());
 	const [sex, setSex] = useState<"male" | "female" | undefined>(undefined);
 
 	const [registrationType, setRegistrationType] =
@@ -83,7 +83,7 @@ export function RegistrationForm({
 		setIdentifier("");
 		setName("");
 		setEmail("");
-		setAge(0);
+		setBirthdate(new Date());
 		setSex(undefined);
 	};
 
@@ -112,7 +112,12 @@ export function RegistrationForm({
 					json: {
 						name,
 						email,
-						age,
+						birthdate: `${birthdate.getFullYear()}-${(birthdate.getMonth() + 1)
+							.toString()
+							.padStart(2, "0")}-${birthdate
+							.getDate()
+							.toString()
+							.padStart(2, "0")}`,
 						sex: sex as "male" | "female",
 						phone: identifier as string,
 					},
@@ -170,19 +175,26 @@ export function RegistrationForm({
 		setDisableForm(true);
 		const data = await res.json();
 		if ("dependents" in data) {
+			if (data.dependents.length === 0) {
+				setPatientId(data.professor.id);
+				setName(data.professor.name);
+				setBirthdate(new Date(data.professor.birthdate));
+				setSex(data.professor.sex);
+				return;
+			}
 			setOptions(
 				[
 					{
 						id: data.professor.id,
 						name: data.professor.name,
-						age: data.professor.age,
+						birthdate: new Date(data.professor.birthdate),
 						sex: data.professor.sex,
 					},
 				].concat(
 					data.dependents.map((d) => ({
 						id: d.id,
 						name: d.name,
-						age: d.age,
+						birthdate: new Date(d.birthdate),
 						sex: d.sex,
 					})),
 				),
@@ -192,7 +204,7 @@ export function RegistrationForm({
 
 		setPatientId(data.id);
 		setName(data.name);
-		setAge(data.age);
+		setBirthdate(new Date(data.birthdate));
 		setSex(data.sex);
 		return;
 	};
@@ -246,7 +258,7 @@ export function RegistrationForm({
 										const option = JSON.parse(v);
 										setPatientId(option.id);
 										setName(option.name);
-										setAge(option.age);
+										setBirthdate(option.birthdate);
 										setSex(option.sex);
 									}}
 								>
@@ -256,9 +268,9 @@ export function RegistrationForm({
 									<SelectContent>
 										{options.map((option) => (
 											<SelectItem
-												key={`${option.id}|${option.name}|${option.age}|${option.sex}`}
+												key={`${option.id}|${option.name}|${option.birthdate}|${option.sex}`}
 												value={JSON.stringify(option)}
-											>{`${option.name} | ${option.age} | ${option.sex}`}</SelectItem>
+											>{`${option.name} | ${option.birthdate} | ${option.sex}`}</SelectItem>
 										))}
 									</SelectContent>
 								</Select>
@@ -288,16 +300,10 @@ export function RegistrationForm({
 								/>
 							</>
 						)}
-						<Label htmlFor={ageId}>Age</Label>
-						<Input
+						<DatePicker
 							disabled={disableForm}
-							id={ageId}
-							name="age"
-							placeholder="Age"
-							type="number"
-							value={age}
-							onChange={(e) => setAge(parseInt(e.target.value, 10))}
-							required
+							onChange={(date) => date && setBirthdate(date)}
+							value={birthdate}
 						/>
 						<Label htmlFor={sexId}>Sex</Label>
 						<Select

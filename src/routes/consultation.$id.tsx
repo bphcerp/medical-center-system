@@ -1,44 +1,26 @@
 import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { CloudCheck, RefreshCw, TriangleAlert } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import DiagnosisCard, { type DiagnosisItem } from "@/components/diagnosis-card";
+import { useState } from "react";
+import DiagnosisCard from "@/components/diagnosis-card";
 import FinalizeCaseCard, {
 	type FinalizeButtonValue,
 } from "@/components/finalize-case-card";
 import LabRequestModal from "@/components/lab-request-modal";
 import PrescriptionCard from "@/components/prescription/prescription-card";
-import type { PrescriptionItem } from "@/components/prescription/types";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import VitalField from "@/components/vital-field";
-import { useDebounce } from "@/lib/hooks/useDebounce";
+import VitalsCard from "@/components/vitals-card";
+import useAuth from "@/lib/hooks/useAuth";
+import { useAutosave } from "@/lib/hooks/useAutosave";
 import { client } from "./api/$";
-
-type AutosaveState = {
-	consultationNotes: string;
-	diagnosis: DiagnosisItem[];
-	prescriptions: PrescriptionItem[];
-};
 
 export const Route = createFileRoute("/consultation/$id")({
 	gcTime: 0,
 	loader: async ({ params }: { params: { id: string } }) => {
-		// Check if user is authenticated
-		const res = await client.api.user.$get();
-		if (res.status !== 200) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-		const user = await res.json();
-		if ("error" in user) {
-			throw redirect({
-				to: "/login",
-			});
-		}
 		const consultationRes = await client.api.doctor.consultation[
 			":caseId"
 		].$get({
@@ -96,7 +78,6 @@ export const Route = createFileRoute("/consultation/$id")({
 		const { tests } = await testsRes.json();
 
 		return {
-			user,
 			caseDetail,
 			medicines,
 			diseases,
@@ -109,6 +90,7 @@ export const Route = createFileRoute("/consultation/$id")({
 });
 
 function ConsultationPage() {
+	useAuth(["doctor"]);
 	const {
 		caseDetail,
 		medicines,
@@ -122,82 +104,23 @@ function ConsultationPage() {
 
 	const [finalizeButtonValue, setFinalizeButtonValue] =
 		useState<FinalizeButtonValue>("Finalize (OPD)");
-	const [diagnosisItems, setDiagnosisItems] = useState<DiagnosisItem[]>(
-		diagnosesFromCase || [],
-	);
-	const [consultationNotes, setConsultationNotes] = useState<string>(
-		caseDetail?.cases.consultationNotes || "",
-	);
-	const [prescriptionItems, setPrescriptionItems] = useState(
-		prescriptions || [],
-	);
 	const [labTestModalOpen, setLabTestModalOpen] = useState<boolean>(false);
-	const [autosaved, setAutoSaved] = useState<boolean>(false);
-	const [autosaveError, setAutosaveError] = useState<string | null>(null);
-	const debouncedConsultationNotes = useDebounce(consultationNotes, 500);
-	const debouncedPrescriptionItems = useDebounce(prescriptionItems, 500);
-	const prevAutosaveRef = useRef<AutosaveState | null>(null);
-
-	const autosave = useCallback(async () => {
-		if (
-			prevAutosaveRef.current &&
-			prevAutosaveRef.current.consultationNotes ===
-				debouncedConsultationNotes &&
-			prevAutosaveRef.current.diagnosis.length === diagnosisItems.length &&
-			prevAutosaveRef.current.diagnosis.every(
-				(d, i) => d.id === diagnosisItems[i]?.id,
-			) &&
-			JSON.stringify(prevAutosaveRef.current.prescriptions) ===
-				JSON.stringify(debouncedPrescriptionItems)
-		) {
-			// No changes since last autosave
-			return;
-		}
-		setAutoSaved(false);
-		setAutosaveError(null);
-		try {
-			await client.api.doctor.autosave.$post({
-				json: {
-					caseId: Number(id),
-					consultationNotes: debouncedConsultationNotes,
-					diagnosis: diagnosisItems.map((d) => d.id),
-					prescriptions: debouncedPrescriptionItems.map((item) => ({
-						...item.case_prescriptions,
-						caseId: Number(id),
-						medicineId: item.medicines.id,
-					})),
-				},
-			});
-		} catch (error) {
-			setAutosaveError("Failed to save");
-			setAutoSaved(false);
-			console.error("Autosave failed:", error);
-			throw error;
-		}
-		setAutoSaved(true);
-		prevAutosaveRef.current = {
-			consultationNotes: debouncedConsultationNotes,
-			diagnosis: diagnosisItems,
-			prescriptions: debouncedPrescriptionItems,
-		};
-	}, [
-		id,
+	const {
+		consultationNotes,
 		diagnosisItems,
-		debouncedConsultationNotes,
-		debouncedPrescriptionItems,
-	]);
-
-	useEffect(() => {
-		autosave().catch(() => {
-			console.error("Autosave failed");
-		});
-		const interval = setInterval(() => {
-			autosave().catch(() => {
-				console.error("Autosave failed");
-			});
-		}, 3000);
-		return () => clearInterval(interval);
-	}, [autosave]);
+		prescriptionItems,
+		setConsultationNotes,
+		setDiagnosisItems,
+		setPrescriptionItems,
+		autosaved,
+		autosaveError,
+		autosave,
+	} = useAutosave({
+		id,
+		diagnosesFromCase,
+		caseDetail,
+		prescriptions,
+	});
 
 	if (!caseDetail) {
 		return (
@@ -316,45 +239,22 @@ function ConsultationPage() {
 				{/* TODO: Standardize this vitals layout and make it a component also used in the vitals page */}
 				<Card className="mb-2">
 					<div className="flex gap-4 mx-3">
-						<VitalField label="Patient Name" value={caseDetail?.patient.name} />
-						<VitalField label="Age" value={caseDetail?.patient.age} />
-						<VitalField label="ID/PSRN/Phone" value={caseDetail?.identifier} />
+						<VitalField
+							label="Patient Name"
+							type="text"
+							value={caseDetail?.patient.name}
+							readonly
+						/>
+						<VitalField label="Age" value={caseDetail?.patient.age} readonly />
+						<VitalField
+							label="ID/PSRN/Phone"
+							type="text"
+							value={caseDetail?.identifier}
+							readonly
+						/>
 					</div>
 				</Card>
-				<Card className="mb-2">
-					<div className="flex gap-4 mx-3">
-						<VitalField
-							label="Temperature"
-							value={caseDetail?.cases.temperature}
-						/>
-						<VitalField
-							label="Heart Rate"
-							value={caseDetail?.cases.heartRate}
-						/>
-						<VitalField
-							label="Respiratory Rate"
-							value={caseDetail?.cases.respiratoryRate}
-						/>
-					</div>
-					<div className="flex gap-4 mx-3">
-						<VitalField
-							label="Blood Pressure Systolic"
-							value={caseDetail?.cases.bloodPressureSystolic}
-						/>
-						<VitalField
-							label="Blood Pressure Diastolic"
-							value={caseDetail?.cases.bloodPressureDiastolic}
-						/>
-					</div>
-					<div className="flex gap-4 mx-3">
-						<VitalField
-							label="Blood Sugar"
-							value={caseDetail?.cases.bloodSugar}
-						/>
-						<VitalField label="SpO2" value={caseDetail?.cases.spo2} />
-						<VitalField label="Weight" value={caseDetail?.cases.weight} />
-					</div>
-				</Card>
+				<VitalsCard vitals={caseDetail.cases} />
 				<div className="grid grid-cols-3 mb-2">
 					<Card className="col-span-1 row-span-2 rounded-r-none rounded-bl-none px-2 pt-4 pb-2">
 						<Label className="font-semibold text-lg">

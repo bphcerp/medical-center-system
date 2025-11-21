@@ -27,6 +27,7 @@ import {
 	studentsTable,
 	visitorsTable,
 } from "@/db/patient";
+import { getAge } from "@/lib/utils";
 import { db } from ".";
 import type { JWTPayload } from "./auth";
 import { rbacCheck } from "./rbac";
@@ -98,7 +99,17 @@ export const getCaseDetail = async (caseId: number) => {
 			.from(diseasesTable)
 			.where(inArray(diseasesTable.id, caseDetail.cases.diagnosis));
 	}
-	return { caseDetail, prescriptions, diseases };
+	return {
+		caseDetail: {
+			...caseDetail,
+			patient: {
+				...caseDetail.patient,
+				age: getAge(caseDetail.patient.birthdate),
+			},
+		},
+		prescriptions,
+		diseases,
+	};
 };
 
 const doctor = new Hono()
@@ -111,7 +122,7 @@ const doctor = new Hono()
 			.select({
 				caseId: casesTable.id,
 				patientName: patientsTable.name,
-				patientAge: patientsTable.age,
+				patientsBirthdate: patientsTable.birthdate,
 				patientSex: patientsTable.sex,
 				token: casesTable.token,
 				finalizedState: casesTable.finalizedState,
@@ -162,7 +173,7 @@ const doctor = new Hono()
 				return {
 					caseId: c.caseId,
 					patientName: c.patientName,
-					patientAge: c.patientAge,
+					patientAge: getAge(c.patientsBirthdate),
 					patientSex: c.patientSex,
 					token: c.token,
 					status,

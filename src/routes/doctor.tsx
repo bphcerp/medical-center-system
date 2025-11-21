@@ -10,6 +10,13 @@ import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+	Empty,
+	EmptyContent,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
+import {
 	Table,
 	TableBody,
 	TableCell,
@@ -17,6 +24,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import useAuth from "@/lib/hooks/useAuth";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/doctor")({
@@ -50,6 +58,7 @@ export const Route = createFileRoute("/doctor")({
 });
 
 function DoctorDashboard() {
+	useAuth(["doctor"]);
 	const { queue: initialQueue } = Route.useLoaderData();
 	const navigate = useNavigate();
 	const router = useRouter();
@@ -90,9 +99,17 @@ function DoctorDashboard() {
 					</CardHeader>
 					<CardContent>
 						{!initialQueue || initialQueue.length === 0 ? (
-							<div className="text-center py-8">
-								<p className="text-muted-foreground">No patients in queue</p>
-							</div>
+							<Empty>
+								<EmptyHeader>
+									<EmptyMedia variant="icon">
+										<Stethoscope />
+									</EmptyMedia>
+									<EmptyTitle>No patients in queue</EmptyTitle>
+									<EmptyContent>
+										When patients are assigned to you, they will appear here.
+									</EmptyContent>
+								</EmptyHeader>
+							</Empty>
 						) : (
 							<Table>
 								<TableHeader>
