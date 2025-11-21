@@ -14,25 +14,13 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import VitalField from "@/components/vital-field";
 import VitalsCard from "@/components/vitals-card";
+import useAuth from "@/lib/hooks/useAuth";
 import { useAutosave } from "@/lib/hooks/useAutosave";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/consultation/$id")({
 	gcTime: 0,
 	loader: async ({ params }: { params: { id: string } }) => {
-		// Check if user is authenticated
-		const res = await client.api.user.$get();
-		if (res.status !== 200) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-		const user = await res.json();
-		if ("error" in user) {
-			throw redirect({
-				to: "/login",
-			});
-		}
 		const consultationRes = await client.api.doctor.consultation[
 			":caseId"
 		].$get({
@@ -90,7 +78,6 @@ export const Route = createFileRoute("/consultation/$id")({
 		const { tests } = await testsRes.json();
 
 		return {
-			user,
 			caseDetail,
 			medicines,
 			diseases,
@@ -103,6 +90,7 @@ export const Route = createFileRoute("/consultation/$id")({
 });
 
 function ConsultationPage() {
+	useAuth(["doctor"]);
 	const {
 		caseDetail,
 		medicines,

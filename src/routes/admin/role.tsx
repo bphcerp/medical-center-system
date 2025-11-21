@@ -32,6 +32,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import useAuth from "@/lib/hooks/useAuth";
 import {
 	type Permission,
 	permissionDescriptions,
@@ -45,14 +46,13 @@ export const Route = createFileRoute("/admin/role")({
 	loader: async () => {
 		const data = await client.api.role.all.$get();
 		handleUnauthorized(data.status);
-
 		const roles = (await data.json()).roles;
-
 		return { roles };
 	},
 });
 
 function RolePage() {
+	useAuth(["admin"]);
 	const { roles } = Route.useLoaderData();
 	const router = useRouter();
 

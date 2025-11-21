@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight, Package2, SquarePlus } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { AddBatchModal } from "@/components/inventory/add-batch-modal";
@@ -17,6 +17,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import useAuth from "@/lib/hooks/useAuth";
 import { client } from "./api/$";
 
 // Maybe make this standard?
@@ -32,18 +33,6 @@ export type Medicine = {
 
 export const Route = createFileRoute("/inventory")({
 	loader: async () => {
-		const res = await client.api.user.$get();
-		if (res.status !== 200) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-		const user = await res.json();
-		if ("error" in user) {
-			throw redirect({
-				to: "/login",
-			});
-		}
 		const inventoryRes = await client.api.inventory.$get();
 
 		if (inventoryRes.status !== 200) {
@@ -72,6 +61,7 @@ export const Route = createFileRoute("/inventory")({
 });
 
 function InventoryPage() {
+	useAuth(["inventory"]);
 	const { inventory, medicines } = Route.useLoaderData();
 
 	const [inventoryQuery, setInventoryQuery] = useState<string>("");

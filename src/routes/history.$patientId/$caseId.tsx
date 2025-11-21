@@ -1,5 +1,5 @@
 import { Label } from "@radix-ui/react-label";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import DiagnosisCard from "@/components/diagnosis-card";
 import {
 	OTPVerificationDialog,
@@ -12,39 +12,15 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import VitalField from "@/components/vital-field";
 import VitalsCard from "@/components/vitals-card";
-import { client } from "../api/$";
+import useAuth from "@/lib/hooks/useAuth";
 
 export const Route = createFileRoute("/history/$patientId/$caseId")({
-	loader: async ({
-		params,
-	}: {
-		params: { patientId: string; caseId: string };
-	}) => {
-		const res = await client.api.user.$get();
-		if (res.status !== 200) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-		const user = await res.json();
-		if ("error" in user) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-
-		// Return special state to indicate OTP is required
-		return {
-			user,
-			caseId: params.caseId,
-			patientId: params.patientId,
-		};
-	},
 	component: CaseDetailsPage,
 });
 
 function CaseDetailsPage() {
-	const { caseId, patientId } = Route.useLoaderData();
+	useAuth(["doctor"]);
+	const { caseId, patientId } = Route.useParams();
 	const navigate = useNavigate();
 	const {
 		caseRecord,

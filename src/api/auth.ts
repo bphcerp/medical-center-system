@@ -2,7 +2,7 @@ import "dotenv/config";
 import { zValidator } from "@hono/zod-validator";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
-import { deleteCookie, setCookie } from "hono/cookie";
+import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { jwt, sign } from "hono/jwt";
 import z from "zod";
 import { rolesTable, usersTable } from "@/db/auth";
@@ -40,7 +40,12 @@ export type JWTPayload = {
 	email: string;
 	name: string;
 	phone: string;
+	fingerprintHash: string;
 };
+
+export interface CookieValues {
+	token: string | undefined;
+}
 
 export const unauthenticated = new Hono()
 	.post(
@@ -85,6 +90,7 @@ export const unauthenticated = new Hono()
 					400,
 				);
 			}
+			const fingerprint = Math.random().toString(36).substring(2);
 
 			const payload: JWTPayload = {
 				...user,
@@ -94,10 +100,18 @@ export const unauthenticated = new Hono()
 					name: string;
 					allowed: Permission[];
 				},
+				fingerprintHash: Bun.SHA256.hash(fingerprint, "base64url"),
 			};
 			const jwt = await sign(payload, env.JWT_SECRET);
 
 			setCookie(c, "token", jwt, {
+				path: "/",
+				httpOnly: false,
+				domain: env.FRONTEND_URL.replace("https://", "")
+					.replace("http://", "")
+					.split(":")[0],
+			});
+			setCookie(c, "fingerprint", fingerprint, {
 				path: "/",
 				httpOnly: true,
 				domain: env.FRONTEND_URL.replace("https://", "")
@@ -111,6 +125,13 @@ export const unauthenticated = new Hono()
 	)
 	.get("/logout", async (c) => {
 		deleteCookie(c, "token", {
+			path: "/",
+			httpOnly: false,
+			domain: env.FRONTEND_URL.replace("https://", "")
+				.replace("http://", "")
+				.split(":")[0],
+		});
+		deleteCookie(c, "fingerprint", {
 			path: "/",
 			httpOnly: true,
 			domain: env.FRONTEND_URL.replace("https://", "")
@@ -310,6 +331,20 @@ export const authenticated = new Hono()
 			secret: env.JWT_SECRET,
 		}),
 	)
+	.use(async (c, next) => {
+		const jwt: JWTPayload = c.get("jwtPayload");
+		const fingerprint = getCookie(c, "fingerprint") || "";
+		const fingerprintHash = Bun.SHA256.hash(fingerprint, "base64url");
+		if (jwt.fingerprintHash !== fingerprintHash) {
+			return c.json(
+				{
+					error: "Invalid Fingerprint",
+				},
+				401,
+			);
+		}
+		await next();
+	})
 	.route("/role", role)
 	.route("/user", user)
 	.route("/rbac", rbac)

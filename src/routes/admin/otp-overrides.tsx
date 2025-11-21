@@ -10,23 +10,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import useAuth from "@/lib/hooks/useAuth";
 import { client } from "../api/$";
 
 export const Route = createFileRoute("/admin/otp-overrides")({
 	loader: async () => {
-		const res = await client.api.user.$get();
-		if (res.status !== 200) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-		const user = await res.json();
-		if ("error" in user) {
-			throw redirect({
-				to: "/login",
-			});
-		}
-
 		const logsRes = await client.api.admin["otp-override-logs"].$get();
 		if (logsRes.status === 403) {
 			alert("You don't have permission to access this page.");
@@ -41,7 +29,6 @@ export const Route = createFileRoute("/admin/otp-overrides")({
 		const { logs } = await logsRes.json();
 
 		return {
-			user,
 			logs,
 		};
 	},
@@ -54,6 +41,7 @@ export const Route = createFileRoute("/admin/otp-overrides")({
 });
 
 function OTPOverridesPage() {
+	useAuth(["admin"]);
 	const { logs } = Route.useLoaderData();
 
 	const formatDate = (dateString: string) => {
