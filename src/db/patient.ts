@@ -6,13 +6,9 @@ import {
 	uniqueIndex,
 	varchar,
 } from "drizzle-orm/pg-core";
+import { patientTypes } from "@/lib/types/patient";
 
-export const patientTypeEnum = pgEnum("patient_type", [
-	"student",
-	"professor",
-	"dependent",
-	"visitor",
-]);
+export const patientTypeEnum = pgEnum("patient_type", patientTypes);
 export const sexTypeEnum = pgEnum("sex_type", ["male", "female"]);
 
 export const patientsTable = pgTable("patients", {

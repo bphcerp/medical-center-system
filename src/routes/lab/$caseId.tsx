@@ -1,15 +1,16 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { LabTestStatusBadge } from "@/components/lab-test-status-badge";
-import { Badge } from "@/components/ui/badge";
+import { PatientDetails } from "@/components/patient-details";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import type { statusEnums } from "@/db/lab";
 import useAuth from "@/lib/hooks/useAuth";
-import { cn, handleUnauthorized } from "@/lib/utils";
+import { cn, getAge, handleUnauthorized } from "@/lib/utils";
 import { client } from "../api/$";
 
 type TestUpdate = {
@@ -28,7 +29,14 @@ export const Route = createFileRoute("/lab/$caseId")({
 			throw redirect({ to: "/lab" });
 		}
 
-		return await res.json();
+		const data = await res.json();
+		return {
+			...data,
+			patient: {
+				...data.patient,
+				age: getAge(data.patient.birthdate),
+			},
+		};
 	},
 	component: TestEntry,
 });
@@ -38,8 +46,9 @@ function TestEntry() {
 	const navigate = useNavigate();
 	const {
 		caseId,
-		patientName,
+		patient,
 		doctorName,
+		token,
 		tests: initialTests,
 	} = Route.useLoaderData();
 
@@ -178,117 +187,87 @@ function TestEntry() {
 	});
 
 	return (
-		<div className="p-4">
-			<Card className="mb-4">
-				<CardHeader>
-					<CardTitle>Patient Details</CardTitle>
-				</CardHeader>
-				<CardContent className="grid grid-cols-3 gap-4">
-					<div>
-						<Label className="text-muted-foreground">Case ID</Label>
-						<div className="font-medium">{caseId}</div>
-					</div>
-					<div>
-						<Label className="text-muted-foreground">Patient Name</Label>
-						<div className="font-medium">{patientName}</div>
-					</div>
-					<div>
-						<Label className="text-muted-foreground">Doctor Name</Label>
-						<div className="font-medium">{doctorName}</div>
-					</div>
-				</CardContent>
-			</Card>
+		<div className="p-4 pb-0 lg:p-12 lg:pb-0 flex flex-col gap-6 h-full min-h-0 overflow-y-scroll">
+			<PatientDetails
+				patient={patient}
+				token={token}
+				label={
+					<>
+						Lab tests requested by{" "}
+						<span className="font-semibold">{doctorName}</span>
+					</>
+				}
+			/>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Lab Tests</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<div className="flex flex-col gap-6">
-						{tests.map((test) => (
-							<div
-								key={test.labTestReportId}
-								className="flex flex-col border rounded-lg overflow-clip"
-							>
-								<Label className="flex items-center gap-2 text-lg font-medium cursor-pointer w-full p-4 has-aria-checked:bg-accent hover:bg-accent transition-colors">
-									<Checkbox
-										id={`test-${test.labTestReportId}`}
-										className="size-6 [&>svg]:size-10"
-										checked={test.status !== "Requested"}
-										onCheckedChange={(checked) =>
-											handleCheckboxChange(
-												test.labTestReportId,
-												checked as boolean,
-											)
-										}
-									/>
-									{test.testName}
-									<LabTestStatusBadge status={test.status} />
+			<div className="grow flex flex-col gap-4 ">
+				{tests.map((test) => (
+					<div
+						key={test.labTestReportId}
+						className="flex flex-col border-2 rounded-lg overflow-clip"
+					>
+						<Label className="flex items-center gap-2 text-lg font-medium cursor-pointer w-full p-4 has-aria-checked:border-b hover:bg-accent transition-colors">
+							<Checkbox
+								id={`test-${test.labTestReportId}`}
+								className="size-6 [&>svg]:size-10"
+								checked={test.status !== "Requested"}
+								onCheckedChange={(checked) =>
+									handleCheckboxChange(test.labTestReportId, checked as boolean)
+								}
+							/>
+							{test.testName}
+							<LabTestStatusBadge status={test.status} />
+						</Label>
+
+						{test.status !== "Requested" && (
+							<div className="p-4 flex flex-col gap-2">
+								<Label className="min-h-6">
+									Upload Report
+									{uploading[test.labTestReportId] && (
+										<Spinner className="size-4" />
+									)}
+									{test.fileId !== null && (
+										<Check className="text-bits-green size-5" />
+									)}
 								</Label>
-
-								{test.status !== "Requested" && (
-									<div className="p-4 flex flex-col gap-2">
-										<Label className="flex flex-col items-start gap-3">
-											Upload Report
-											<div className="flex gap-2 w-full">
-												<Input
-													type="file"
-													accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-													className={cn(
-														"transition-colors hover:enabled:cursor-pointer hover:enabled:bg-accent file:mr-4 p-0 h-auto",
-														"file:px-4 file:py-6 file:items-center file:border-r-2 file:border-border file:text-sm file:font-semibold w-full",
-													)}
-													onChange={(e) => {
-														const file = e.target.files?.[0];
-														if (file) {
-															handleFileUpload(test.labTestReportId, file);
-														}
-													}}
-													disabled={
-														uploading[test.labTestReportId] || isSubmitting
-													}
-												/>
-											</div>
-										</Label>
-										{(test.fileId !== null ||
-											uploading[test.labTestReportId]) && (
-											<Badge
-												variant="outline"
-												className={cn(
-													test.fileId !== null
-														? "bg-bits-green-foreground text-bits-green"
-														: "bg-bits-yellow-foreground text-bits-yellow",
-													"rounded-lg border-0",
-												)}
-											>
-												{test.fileId !== null
-													? "File uploaded"
-													: "Uploading..."}
-											</Badge>
+								<div className="flex items-center gap-2 w-full">
+									<Input
+										type="file"
+										accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+										className={cn(
+											"transition-colors hover:enabled:cursor-pointer hover:enabled:bg-accent file:mr-4 p-0 h-auto",
+											"file:px-4 file:py-4 file:items-center file:border-r-2 file:border-border file:text-sm file:font-semibold w-full",
 										)}
-									</div>
-								)}
+										onChange={(e) => {
+											const file = e.target.files?.[0];
+											if (file) {
+												handleFileUpload(test.labTestReportId, file);
+											}
+										}}
+										disabled={uploading[test.labTestReportId] || isSubmitting}
+									/>
+								</div>
 							</div>
-						))}
+						)}
 					</div>
-
-					<div className="flex justify-end gap-3 mt-6">
-						<Button
-							variant="outline"
-							onClick={() => navigate({ to: "/lab" })}
-							disabled={isSubmitting}
-						>
-							Cancel
-						</Button>
-						<Button
-							onClick={handleSubmit}
-							disabled={!hasChanges || isSubmitting}
-						>
-							{isSubmitting ? "Updating..." : "Update Tests"}
-						</Button>
-					</div>
-				</CardContent>
-			</Card>
+				))}
+			</div>
+			<div
+				className={cn(
+					"sticky bottom-0 flex justify-end gap-3 py-4 lg:py-12",
+					"bg-linear-to-t from-background to-transparent from-80% via-90% to-100%",
+				)}
+			>
+				<Button
+					variant="outline"
+					onClick={() => navigate({ to: "/lab" })}
+					disabled={isSubmitting}
+				>
+					Cancel
+				</Button>
+				<Button onClick={handleSubmit} disabled={!hasChanges || isSubmitting}>
+					{isSubmitting ? "Updating..." : "Update Tests"}
+				</Button>
+			</div>
 		</div>
 	);
 }

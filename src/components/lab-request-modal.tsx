@@ -129,63 +129,61 @@ const LabRequestModal = ({
 					<DialogTitle>Request Lab Tests</DialogTitle>
 				</DialogHeader>
 				<div className="space-y-2">
-					<p className="text-sm text-muted-foreground">
+					<Label className="text-sm text-muted-foreground flex flex-col items-start">
 						Select the lab tests to request:
-					</p>
-
-					<Label className="font-semibold">Prescription: </Label>
-					<Popover open={searchOpen} onOpenChange={setSearchOpen}>
-						<PopoverTrigger asChild>
-							<Button
-								variant="outline"
-								role="combobox"
-								className="justify-between w-full"
+						<Popover open={searchOpen} onOpenChange={setSearchOpen}>
+							<PopoverTrigger asChild>
+								<Button
+									variant="outline"
+									role="combobox"
+									className="justify-between w-full"
+								>
+									Select a test...
+									<ChevronsUpDown className="ml-2 h-4 w-4" />
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent
+								className="p-0 sm:w-md lg:w-2xl w-sm"
+								align="start"
+								side="top"
 							>
-								Select a test...
-								<ChevronsUpDown className="ml-2 h-4 w-4" />
-							</Button>
-						</PopoverTrigger>
-						<PopoverContent
-							className="p-0 sm:w-md lg:w-2xl w-sm"
-							align="start"
-							side="top"
-						>
-							<Command shouldFilter={false}>
-								<CommandInput
-									placeholder="Type to search..."
-									value={searchQuery}
-									onValueChange={setSearchQuery}
-								/>
-								<CommandList>
-									<CommandEmpty>No tests found.</CommandEmpty>
-									<AutoSizer disableHeight>
-										{({ width }) =>
-											renderList(
-												filteredTests.map((item) => item.test),
-												(key, item, style) => (
-													<CommandItem
-														key={key}
-														style={style}
-														onSelect={() => {
-															handleAddTest(item);
-															setSearchOpen(false);
-														}}
-														className="flex w-full justify-between"
-													>
-														<span>{item.name}</span>
-														<span className="mx-1 text-muted-foreground text-right">
-															({item.category})
-														</span>
-													</CommandItem>
-												),
-												width,
-											)
-										}
-									</AutoSizer>
-								</CommandList>
-							</Command>
-						</PopoverContent>
-					</Popover>
+								<Command shouldFilter={false}>
+									<CommandInput
+										placeholder="Type to search..."
+										value={searchQuery}
+										onValueChange={setSearchQuery}
+									/>
+									<CommandList>
+										<CommandEmpty>No tests found.</CommandEmpty>
+										<AutoSizer disableHeight>
+											{({ width }) =>
+												renderList(
+													filteredTests.map((item) => item.test),
+													(key, item, style) => (
+														<CommandItem
+															key={key}
+															style={style}
+															onSelect={() => {
+																handleAddTest(item);
+																setSearchOpen(false);
+															}}
+															className="flex w-full justify-between"
+														>
+															<span>{item.name}</span>
+															<span className="mx-1 text-muted-foreground text-right">
+																({item.category})
+															</span>
+														</CommandItem>
+													),
+													width,
+												)
+											}
+										</AutoSizer>
+									</CommandList>
+								</Command>
+							</PopoverContent>
+						</Popover>
+					</Label>
 					{selectedLabTests.map((test) => (
 						<div
 							key={test.id}

@@ -34,6 +34,14 @@ export function handleUnauthorized(status: number) {
 	}
 }
 
+export function ageSexString(age?: number, sex?: "male" | "female") {
+	const s = sex ? titleCase(sex) : "";
+	const a = age !== undefined ? `${age} year${age === 1 ? "" : "s"} old` : "";
+	const sep = s && a ? ", " : "";
+
+	return `${s}${sep}${a}`;
+}
+
 export const getAge = (birthdate: string) => {
 	return Math.floor((Date.now() - new Date(birthdate).getTime()) / 31557600000);
 };
