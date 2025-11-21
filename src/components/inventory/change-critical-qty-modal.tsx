@@ -1,4 +1,3 @@
-import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +9,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { client } from "@/routes/api/$";
 import type { Medicine } from "@/routes/inventory";
 
 export function ChangeCriticalQtyModal({
@@ -22,8 +20,6 @@ export function ChangeCriticalQtyModal({
 	onOpenChange: (open: boolean) => void;
 	medicine: Medicine | null;
 }) {
-	const router = useRouter();
-
 	const [criticalQty, setCriticalQty] = useState<number>(0);
 	const [criticalQtyError, setCriticalQtyError] = useState<boolean>(false);
 	const [apiError, setApiError] = useState<boolean>(false);
@@ -42,30 +38,12 @@ export function ChangeCriticalQtyModal({
 			setCriticalQtyError(true);
 			return;
 		}
-
-		try {
-			const res = await client.api.inventory.changeCriticalQty.$post({
-				json: { medicineId: medicine.id, criticalQty },
-			});
-
-			if (res.status === 200) {
-				await router.invalidate();
-				resetState();
-				onOpenChange(false);
-			} else {
-				setApiError(true);
-			}
-		} catch (_error) {
-			setApiError(true);
-		}
 	};
 
 	const handleCancel = () => {
 		resetState();
 		onOpenChange(false);
 	};
-
-	if (!medicine) return null;
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -76,13 +54,13 @@ export function ChangeCriticalQtyModal({
 						{
 							<div className="w-full flex flex-wrap items-center gap-2">
 								<span className="font-bold">
-									{medicine?.company} {medicine?.brand}
+									{medicine.company} {medicine.brand}
 								</span>
 								<span className="text-muted-foreground text-sm">
-									({medicine?.drug}) - {medicine?.strength}
+									({medicine.drug}) - {medicine.strength}
 								</span>
 								<span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-									{medicine?.type}
+									{medicine.type}
 								</span>
 							</div>
 						}

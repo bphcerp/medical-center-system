@@ -236,7 +236,7 @@ const inventory = new Hono()
 				.returning();
 
 			if (updated.length === 0) {
-				throw new Error("Medicine not found in inventory");
+				return c.json({ error: "Medicines data not found" }, 404);
 			}
 			return c.json({
 				success: true,

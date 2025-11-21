@@ -1,5 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ChevronDown, ChevronRight, Package2, SquarePlus } from "lucide-react";
+import {
+	ChevronDown,
+	ChevronRight,
+	Package2,
+	Pencil,
+	SquarePlus,
+} from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { AddBatchModal } from "@/components/inventory/add-batch-modal";
 import { AddMedicinesModal } from "@/components/inventory/add-medicines-modal";
@@ -277,7 +283,7 @@ function InventoryPage() {
 											<Button
 												onClick={() => openChangeCriticalQty(item.medicine)}
 											>
-												&#9998;
+												<Pencil />
 											</Button>
 										</TableCell>
 										<TableCell
