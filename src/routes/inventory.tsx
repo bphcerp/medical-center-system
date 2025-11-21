@@ -221,7 +221,7 @@ function InventoryPage() {
 			<TopBar title="Inventory Dashboard" />
 			<div className="mx-6 my-2.5 flex items-center justify-between">
 				<h1 className="text-3xl font-bold">Medicine Inventory</h1>
-				<div className="flex items-center w-full max-w-xl">
+				<div className="flex items-center w-full max-w-3xl">
 					<Button className="mr-2" onClick={() => openAddMedicines()}>
 						<SquarePlus />
 						Add Medicine
