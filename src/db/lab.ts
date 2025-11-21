@@ -64,6 +64,7 @@ export const labTestFilesTable = pgTable(
 
 export const labTestsMasterTable = pgTable("lab_tests_master", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
+	testCode: varchar({ length: 255 }).notNull(),
 	name: varchar({ length: 255 }).notNull(),
 	category: varchar({ length: 255 }).notNull(),
 	isActive: boolean().notNull().default(true),
