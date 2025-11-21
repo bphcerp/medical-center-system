@@ -155,7 +155,7 @@ const lab = new Hono()
 			const [patient] = await db
 				.select({
 					name: patientsTable.name,
-					age: patientsTable.age,
+					birthdate: patientsTable.birthdate,
 					sex: patientsTable.sex,
 					type: patientsTable.type,
 				})

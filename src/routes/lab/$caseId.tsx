@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import type { statusEnums } from "@/db/lab";
 import useAuth from "@/lib/hooks/useAuth";
-import { cn, handleUnauthorized } from "@/lib/utils";
+import { cn, getAge, handleUnauthorized } from "@/lib/utils";
 import { client } from "../api/$";
 
 type TestUpdate = {
@@ -29,7 +29,14 @@ export const Route = createFileRoute("/lab/$caseId")({
 			throw redirect({ to: "/lab" });
 		}
 
-		return await res.json();
+		const data = await res.json();
+		return {
+			...data,
+			patient: {
+				...data.patient,
+				age: getAge(data.patient.birthdate),
+			},
+		};
 	},
 	component: TestEntry,
 });
