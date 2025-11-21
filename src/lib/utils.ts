@@ -33,3 +33,11 @@ export function handleUnauthorized(status: number) {
 			});
 	}
 }
+
+export function ageSexString(age?: number, sex?: "male" | "female") {
+	const s = sex ? titleCase(sex) : "";
+	const a = age !== undefined ? `${age} year${age === 1 ? "" : "s"} old` : "";
+	const sep = s && a ? ", " : "";
+
+	return `${s}${sep}${a}`;
+}

@@ -2,6 +2,7 @@ import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { LabTestStatusBadge } from "@/components/lab-test-status-badge";
+import { PatientDetails } from "@/components/patient-details";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -37,8 +38,9 @@ function TestEntry() {
 	const navigate = useNavigate();
 	const {
 		caseId,
-		patientName,
+		patient,
 		doctorName,
+		token,
 		tests: initialTests,
 	} = Route.useLoaderData();
 
@@ -177,26 +179,17 @@ function TestEntry() {
 	});
 
 	return (
-		<div className="p-4">
-			<Card className="mb-4">
-				<CardHeader>
-					<CardTitle>Patient Details</CardTitle>
-				</CardHeader>
-				<CardContent className="grid grid-cols-3 gap-4">
-					<div>
-						<Label className="text-muted-foreground">Case ID</Label>
-						<div className="font-medium">{caseId}</div>
-					</div>
-					<div>
-						<Label className="text-muted-foreground">Patient Name</Label>
-						<div className="font-medium">{patientName}</div>
-					</div>
-					<div>
-						<Label className="text-muted-foreground">Doctor Name</Label>
-						<div className="font-medium">{doctorName}</div>
-					</div>
-				</CardContent>
-			</Card>
+		<div className="p-4 flex flex-col gap-4">
+			<PatientDetails
+				patient={patient}
+				token={token}
+				label={
+					<>
+						Lab tests requested by{" "}
+						<span className="font-semibold">{doctorName}</span>
+					</>
+				}
+			/>
 
 			<Card>
 				<CardHeader>
@@ -207,9 +200,9 @@ function TestEntry() {
 						{tests.map((test) => (
 							<div
 								key={test.labTestReportId}
-								className="flex flex-col border rounded-lg overflow-clip"
+								className="flex flex-col border-2 rounded-lg overflow-clip"
 							>
-								<Label className="flex items-center gap-2 text-lg font-medium cursor-pointer w-full p-4 has-aria-checked:bg-accent hover:bg-accent transition-colors">
+								<Label className="flex items-center gap-2 text-lg font-medium cursor-pointer w-full p-4 has-aria-checked:border-b hover:bg-accent transition-colors">
 									<Checkbox
 										id={`test-${test.labTestReportId}`}
 										className="size-6 [&>svg]:size-10"

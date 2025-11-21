@@ -1,10 +1,10 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { Activity, ArrowLeft, Check, ClipboardPlus, Plus } from "lucide-react";
-import type React from "react";
 import { useId, useState } from "react";
+import { PatientDetails } from "@/components/patient-details";
+import { PatientTypeBadge } from "@/components/patient-type-badge";
 import { RegistrationForm } from "@/components/registration-card";
 import TopBar from "@/components/topbar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import {
@@ -243,31 +243,11 @@ function Vitals() {
 								>
 									<ArrowLeft /> Queue
 								</Button>
-								<p className="italic text-muted-foreground">
-									Entering vitals for
-								</p>
-								<div className="flex items-stretch gap-3">
-									<PatientTypeBadge
-										key={focusedPatient.patients.id}
-										type={focusedPatient.patients.type}
-										className="text-3xl border px-3 tabular-nums tracking-tight font-semibold flex items-center min-w-14"
-									>
-										{focusedPatient.unprocessed.id}
-									</PatientTypeBadge>
-									<div className="flex flex-col gap-0.5">
-										<span className="text-3xl font-bold">
-											{focusedPatient.patients.name}
-										</span>
-										<span className="flex items-center gap-2">
-											<span className="text-muted-foreground font-medium text-lg">
-												{titleCase(focusedPatient.patients.sex)},{" "}
-												{focusedPatient.patients.age} year
-												{focusedPatient.patients.age !== 1 ? "s" : ""} old
-											</span>
-											<PatientTypeBadge type={focusedPatient.patients.type} />
-										</span>
-									</div>
-								</div>
+								<PatientDetails
+									patient={focusedPatient.patients}
+									token={focusedPatient.unprocessed.id}
+									subtitle="Entering vitals for"
+								/>
 							</div>
 							<FieldSet>
 								<FieldGroup>
@@ -485,38 +465,5 @@ function NewPatientDialog() {
 				)}
 			</DialogContent>
 		</Dialog>
-	);
-}
-
-function PatientTypeBadge({
-	type,
-	className,
-	children,
-	...props
-}: React.PropsWithChildren<{
-	type: (typeof Route.types.loaderData.unprocessed)[number]["patients"]["type"];
-}> &
-	React.ComponentProps<typeof Badge>) {
-	let color: string;
-	switch (type) {
-		case "professor":
-		case "dependent":
-			color = "text-bits-light-blue border-bits-light-blue";
-			break;
-		case "visitor":
-			color = "text-bits-red border-bits-red";
-			break;
-		case "student":
-			color = "text-bits-green border-bits-green";
-			break;
-	}
-	return (
-		<Badge
-			variant="outline"
-			className={cn("border rounded-sm", color, className)}
-			{...props}
-		>
-			{children ?? type}
-		</Badge>
 	);
 }
