@@ -58,7 +58,7 @@ const inventory = new Hono()
 			)
 			.innerJoin(
 				medicinesTable,
-				eq(medicinesTable.id, inventoryMedicinesTable.medicine),
+				eq(medicinesTable.id, inventoryMedicinesTable.medicineId),
 			);
 
 		const inventoryMap = rows.reduce((acc, r) => {
@@ -232,7 +232,7 @@ const inventory = new Hono()
 			const updated = await db
 				.update(inventoryMedicinesTable)
 				.set({ criticalQty })
-				.where(eq(inventoryMedicinesTable.medicine, medicineId))
+				.where(eq(inventoryMedicinesTable.medicineId, medicineId))
 				.returning();
 
 			if (updated.length === 0) {
@@ -264,7 +264,7 @@ const inventory = new Hono()
 					await tx
 						.insert(inventoryMedicinesTable)
 						.values({
-							medicine: item.id,
+							medicineId: item.id,
 							criticalQty: 0,
 						})
 						.onConflictDoNothing();
