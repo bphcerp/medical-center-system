@@ -1,11 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import {
-	ChevronDown,
-	ChevronRight,
-	Package2,
-	Pencil,
-	SquarePlus,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, Package2, SquarePlus } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { AddBatchModal } from "@/components/inventory/add-batch-modal";
 import { AddMedicinesModal } from "@/components/inventory/add-medicines-modal";
@@ -227,7 +221,7 @@ function InventoryPage() {
 			<TopBar title="Inventory Dashboard" />
 			<div className="mx-6 my-2.5 flex items-center justify-between">
 				<h1 className="text-3xl font-bold">Medicine Inventory</h1>
-				<div className="flex items-center w-full max-w-xl">
+				<div className="flex items-center w-full max-w-3xl">
 					<Button className="mr-2" onClick={() => openAddMedicines()}>
 						<SquarePlus />
 						Add Medicine
@@ -273,8 +267,8 @@ function InventoryPage() {
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>Edit</TableHead>
 								<TableHead>Medicine</TableHead>
+								<TableHead>Critical Quantity</TableHead>
 								<TableHead>Total Quantity</TableHead>
 								<TableHead>Quick Actions</TableHead>
 							</TableRow>
@@ -284,7 +278,27 @@ function InventoryPage() {
 							{finalInventory.map((item) => (
 								<React.Fragment key={item.id}>
 									<TableRow>
+										<TableCell
+											onClick={() => toggleRow(item.id)}
+											className="cursor-pointer"
+										>
+											<div className="flex flex-wrap">
+												{expandedRows.has(item.id) ? (
+													<ChevronUp className="w-5 h-5 mr-2" />
+												) : (
+													<ChevronDown className="w-5 h-5 mr-2" />
+												)}
+												<span className="font-semibold">
+													{item.medicine.company} {item.medicine.brand}
+												</span>
+												<span className="mx-1 text-muted-foreground text-right">
+													({item.medicine.drug}) - {item.medicine.strength} -{" "}
+													{item.medicine.type}
+												</span>
+											</div>
+										</TableCell>
 										<TableCell>
+											<span className="mr-2">{item.criticalQty}</span>
 											<Button
 												onClick={() =>
 													openChangeCriticalQty(
@@ -293,27 +307,8 @@ function InventoryPage() {
 													)
 												}
 											>
-												<Pencil />
+												Edit
 											</Button>
-										</TableCell>
-										<TableCell
-											onClick={() => toggleRow(item.id)}
-											className="cursor-pointer"
-										>
-											<div className="flex flex-wrap">
-												<span className="font-semibold">
-													{item.medicine.company} {item.medicine.brand}
-												</span>
-												<span className="mx-1 text-muted-foreground text-right">
-													({item.medicine.drug}) - {item.medicine.strength} -{" "}
-													{item.medicine.type}
-												</span>
-												{expandedRows.has(item.id) ? (
-													<ChevronRight className="w-5 h-5" />
-												) : (
-													<ChevronDown className="w-5 h-5" />
-												)}
-											</div>
 										</TableCell>
 										<TableCell>{item.quantity}</TableCell>
 										<TableCell className="flex space-x-2">
@@ -339,6 +334,7 @@ function InventoryPage() {
 													<TableCell className="font-semibold">
 														Batch ID
 													</TableCell>
+													<TableCell></TableCell>
 													<TableCell className="font-semibold">
 														Quantity
 													</TableCell>
@@ -350,6 +346,7 @@ function InventoryPage() {
 												{item.batches.map((batch) => (
 													<TableRow key={batch.id}>
 														<TableCell>{batch.batchNum}</TableCell>
+														<TableCell></TableCell>
 														<TableCell>{batch.quantity}</TableCell>
 														<TableCell className="flex space-x-2">
 															<Button

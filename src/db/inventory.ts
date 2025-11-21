@@ -3,7 +3,7 @@ import { medicinesTable } from "./case";
 
 export const inventoryMedicinesTable = pgTable("inventory_medicines", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
-	medicine: integer()
+	medicineId: integer()
 		.references(() => medicinesTable.id)
 		.notNull(),
 	criticalQty: integer(),
