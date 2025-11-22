@@ -188,7 +188,7 @@ function TestEntry() {
 										accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
 										className={cn(
 											"transition-colors hover:enabled:cursor-pointer hover:enabled:bg-accent file:mr-4 p-0 h-auto",
-											"file:px-4 file:py-4 file:items-center file:border-r-2 file:border-border file:text-sm file:font-semibold w-full",
+											"file:px-4 file:h-10 file:items-center file:border-r-2 file:border-border file:text-sm file:font-semibold w-full",
 										)}
 										onChange={(e) => {
 											const file = e.target.files?.[0];
