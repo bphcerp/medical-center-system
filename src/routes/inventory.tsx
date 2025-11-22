@@ -57,20 +57,9 @@ function InventoryPage() {
 	const { inventory, medicines } = Route.useLoaderData();
 
 	const [inventoryQuery, setInventoryQuery] = useState<string>("");
-	const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 	const [filterMode, setFilterMode] = useState<
 		"all" | "lowStock" | "nearExpiry" | "expired"
 	>("all");
-
-	const toggleRow = (id: number) => {
-		const newSet = new Set(expandedRows);
-		if (newSet.has(id)) {
-			newSet.delete(id);
-		} else {
-			newSet.add(id);
-		}
-		setExpandedRows(newSet);
-	};
 
 	const [isOpenAddMedicines, setIsOpenAddMedicines] = useState<boolean>(false);
 
@@ -196,16 +185,6 @@ function InventoryPage() {
 		.sort((a, b) => b.count - a.count)
 		.map((f) => f.inventoryItem);
 
-	useEffect(() => {
-		if (inventoryQuery.trim() === "") {
-			setExpandedRows(new Set());
-			return;
-		}
-
-		const matched = new Set(finalInventory.map((f) => f.id));
-		setExpandedRows(matched);
-	}, [inventoryQuery, finalInventory]);
-
 	return (
 		<>
 			<TopBar title="Inventory Dashboard" />
@@ -268,16 +247,8 @@ function InventoryPage() {
 							{finalInventory.map((item) => (
 								<React.Fragment key={item.id}>
 									<TableRow>
-										<TableCell
-											onClick={() => toggleRow(item.id)}
-											className="cursor-pointer"
-										>
+										<TableCell className="cursor-pointer">
 											<div className="flex flex-wrap">
-												{expandedRows.has(item.id) ? (
-													<ChevronUp className="w-5 h-5 mr-2" />
-												) : (
-													<ChevronDown className="w-5 h-5 mr-2" />
-												)}
 												<span className="font-semibold">
 													{item.medicine.company} {item.medicine.brand}
 												</span>
@@ -308,10 +279,11 @@ function InventoryPage() {
 											>
 												Add Batch
 											</Button>
+											<Button className="flex-1 w-full">Show Batches</Button>
 										</TableCell>
 									</TableRow>
 
-									{expandedRows.has(item.id) &&
+									{/* {expandedRows.has(item.id) &&
 										(item.batches.length === 0 ? (
 											<TableRow>
 												<TableCell colSpan={3} className="text-center italic">
@@ -359,7 +331,7 @@ function InventoryPage() {
 													</TableRow>
 												))}
 											</>
-										))}
+										))} */}
 								</React.Fragment>
 							))}
 						</TableBody>
