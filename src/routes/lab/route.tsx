@@ -116,10 +116,10 @@ function LabDashboard() {
 										requested{" "}
 										{group.tests.length === 1 ? "this test:" : "these tests:"}
 									</div>
-									<div className="flex flex-col gap-2 pl-2">
-										{group.tests.map((test) => (
+									<div className="flex flex-col gap-2 pl-2 text-sm">
+										{group.tests.slice(0, 3).map((test) => (
 											<div
-												className="flex gap-2 items-center text-sm/6 font-normal"
+												className="flex gap-2 items-center font-normal"
 												key={test.labTestReportId}
 											>
 												<span className="line-clamp-2">{test.testName}</span>
@@ -132,6 +132,15 @@ function LabDashboard() {
 												<LabTestStatusBadge status={test.status} />
 											</div>
 										))}
+										{group.tests.length > 3 && (
+											<div className="text-muted-foreground italic">
+												and{" "}
+												<span className="font-semibold">
+													{group.tests.length - 3}
+												</span>{" "}
+												more test{group.tests.length - 3 !== 1 ? "s" : ""}...
+											</div>
+										)}
 									</div>
 								</div>
 							</TokenButton>
