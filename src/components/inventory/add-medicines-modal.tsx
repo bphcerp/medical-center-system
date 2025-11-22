@@ -24,9 +24,9 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import useVirtualList from "@/lib/hooks/useVirtualList";
+import type { Medicine } from "@/lib/types/inventory";
 import { handleErrors } from "@/lib/utils";
 import { client } from "@/routes/api/$";
-import type { Medicine } from "@/routes/inventory";
 
 export function AddMedicinesModal({
 	open,
