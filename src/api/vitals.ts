@@ -31,12 +31,9 @@ const vitals = createStrictHono()
 
 		return c.json({
 			success: true,
-			data: unprocessed.map((item) => ({
-				...item,
-				patients: {
-					...item,
-					age: getAge(item.birthdate),
-				},
+			data: unprocessed.map((patient) => ({
+				...patient,
+				age: getAge(patient.birthdate),
 			})),
 		});
 	})

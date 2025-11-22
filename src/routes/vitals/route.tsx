@@ -74,7 +74,7 @@ function Vitals() {
 						{unprocessed.map((patient) => {
 							const isSelected = patient.token === selectedToken;
 
-							const sex = titleCase(patient.patients.sex);
+							const sex = titleCase(patient.sex);
 							return (
 								<Link
 									to="/vitals/$token"
@@ -88,12 +88,10 @@ function Vitals() {
 										selected={isSelected}
 									>
 										<div className="flex flex-col items-start">
-											<TokenButtonTitle>
-												{patient.patients.name}
-											</TokenButtonTitle>
+											<TokenButtonTitle>{patient.name}</TokenButtonTitle>
 											<div className="flex justify-between w-full items-end">
 												<span className="text-muted-foreground font-medium text-left text-sm">
-													{sex}, {patient.patients.age} y.o.
+													{sex}, {patient.age} y.o.
 												</span>
 												<PatientTypeBadge type={patient.type} />
 											</div>

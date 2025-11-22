@@ -116,7 +116,7 @@ function RouteComponent() {
 					action={(e) => handleCreateCase(e, patient)}
 				>
 					<PatientDetails
-						patient={patient.patients}
+						patient={patient}
 						token={patient.token}
 						label="Entering vitals for"
 					/>
