@@ -10,9 +10,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { Medicine } from "@/lib/types/inventory";
 import { handleErrors } from "@/lib/utils";
 import { client } from "@/routes/api/$";
-import type { Medicine } from "@/routes/inventory";
 
 export function ChangeCriticalQtyModal({
 	open,

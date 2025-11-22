@@ -10,17 +10,19 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { Medicine } from "@/lib/types/inventory";
 import { handleErrors } from "@/lib/utils";
 import { client } from "@/routes/api/$";
-import type { Medicine } from "@/routes/inventory";
 
 export function AddBatchModal({
 	open,
 	onOpenChange,
+	inventoryId,
 	medicine,
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	inventoryId: number | null;
 	medicine: Medicine | null;
 }) {
 	const router = useRouter();
@@ -29,7 +31,7 @@ export function AddBatchModal({
 	const [expiry, setExpiry] = useState<string>("");
 	const [quantity, setQuantity] = useState<number>(0);
 
-	if (!medicine) return;
+	if (!medicine || !inventoryId) return;
 
 	const handleClose = () => {
 		setBatch("");
@@ -40,7 +42,7 @@ export function AddBatchModal({
 
 	const handleSubmit = async () => {
 		const res = await client.api.inventory.batch.$post({
-			json: { medicineId: medicine.id, batchNum: batch, expiry, quantity },
+			json: { medicineId: inventoryId, batchNum: batch, expiry, quantity },
 		});
 		const data = await handleErrors(res);
 		if (!data) {
