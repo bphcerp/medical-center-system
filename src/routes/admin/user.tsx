@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeftRight, Search } from "lucide-react";
+import { ArrowLeftRight, Search, ShieldUser } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,11 @@ export const Route = createFileRoute("/admin/user")({
 			rolesMap[role.id] = role.name;
 		}
 		return { roles, rolesMap, users };
+	},
+	// biome-ignore lint/suspicious/noDuplicateObjectKeys: Not sure why the child route is counted as overridden
+	staticData: {
+		icon: ShieldUser,
+		name: "User Management",
 	},
 });
 

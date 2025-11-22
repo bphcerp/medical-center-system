@@ -30,6 +30,10 @@ export const Route = createFileRoute("/admin/otp-overrides")({
 		return { logs };
 	},
 	component: OTPOverridesPage,
+	staticData: {
+		icon: ShieldCheck,
+		name: "OTP Override Audit Logs",
+	},
 });
 
 function OTPOverridesPage() {

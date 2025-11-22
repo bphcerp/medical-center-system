@@ -1,6 +1,13 @@
 import { SelectTrigger } from "@radix-ui/react-select";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { ArrowLeftRight, Pencil, Plus, Trash, X } from "lucide-react";
+import {
+	ArrowLeftRight,
+	Pencil,
+	Plus,
+	ShieldUser,
+	Trash,
+	X,
+} from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +53,10 @@ export const Route = createFileRoute("/admin/role")({
 		const res = await client.api.role.all.$get();
 		const data = await handleErrors(res);
 		return { roles: data ?? [] };
+	},
+	staticData: {
+		icon: ShieldUser,
+		name: "Role Management",
 	},
 });
 

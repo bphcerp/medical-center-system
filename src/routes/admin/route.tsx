@@ -1,5 +1,11 @@
-import { createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	Outlet,
+	useLocation,
+	useRouter,
+} from "@tanstack/react-router";
 import { ShieldUser } from "lucide-react";
+import { useEffect } from "react";
 import TopBar from "@/components/topbar";
 import {
 	Sidebar,
@@ -32,27 +38,37 @@ function AdminRoot() {
 	);
 }
 
-const items = [
-	{
-		title: "User Management",
-		url: "/admin/user",
-		icon: ShieldUser,
-	},
-	{
-		title: "Role Management",
-		url: "/admin/role",
-		icon: ShieldUser,
-	},
-	{
-		title: "OTP Override Logs",
-		url: "/admin/otp-overrides",
-		icon: ShieldUser,
-	},
-];
-
 function AdminDashboard() {
-	const { navigate } = useRouter();
+	const { flatRoutes, navigate } = useRouter();
+	const location = useLocation();
 	const { open } = useSidebar();
+
+	const childRoutes = flatRoutes.filter(
+		(route) =>
+			route.fullPath.startsWith("/admin") &&
+			route.fullPath !== "/admin" &&
+			!route.id.includes("$"),
+	);
+
+	const items = childRoutes.map((route) => ({
+		title:
+			route.options.staticData?.name ??
+			(route.path
+				? route.path
+						.charAt(0)
+						.toUpperCase()
+						.concat(route.path.slice(1))
+						.replace(/-/g, " ")
+				: "Unknown"),
+		url: route.fullPath,
+		icon: route.options.staticData?.icon ?? ShieldUser,
+	}));
+
+	useEffect(() => {
+		if (location.pathname === "/admin" && items.length > 0) {
+			navigate({ to: items[0].url, replace: true });
+		}
+	}, [location.pathname, items, navigate]);
 
 	return (
 		<div className="w-full">
@@ -66,7 +82,10 @@ function AdminDashboard() {
 								<SidebarMenu>
 									{items.map((item) => (
 										<SidebarMenuItem key={item.title}>
-											<SidebarMenuButton asChild>
+											<SidebarMenuButton
+												asChild
+												className={`cursor-pointer transition duration-200 ${item.url === location.pathname ? "bg-muted" : ""}`}
+											>
 												<button
 													key={item.url}
 													type="button"
