@@ -25,11 +25,11 @@ import { client } from "../api/$";
 export const Route = createFileRoute("/lab")({
 	loader: async () => {
 		const res = await client.api.lab.pending.$get();
-		const reports = await handleErrors(res);
-		if (!reports) {
-			return { reports: [] };
+		const cases = await handleErrors(res);
+		if (!cases) {
+			return { cases: [] };
 		}
-		return { reports };
+		return { cases };
 	},
 	component: LabDashboard,
 	staticData: {
@@ -41,45 +41,19 @@ export const Route = createFileRoute("/lab")({
 
 function LabDashboard() {
 	useAuth(["lab"]);
-	const { reports } = Route.useLoaderData();
+	const { cases } = Route.useLoaderData();
 	// group reports by case
-	const caseGroups = reports.reduce(
-		(acc, report) => {
-			if (!acc[report.caseId]) {
-				acc[report.caseId] = {
-					caseId: report.caseId,
-					patientName: report.patientName,
-					doctorName: report.doctorName,
-					token: report.token,
-					tests: [],
-				};
-			}
-			acc[report.caseId].tests.push(report);
-			return acc;
-		},
-		{} as Record<
-			number,
-			{
-				caseId: number;
-				patientName: string;
-				doctorName: string;
-				token: number;
-				tests: typeof reports;
-			}
-		>,
-	);
-	const caseList = Object.values(caseGroups);
 	const { navigate } = useRouter();
 
 	useEffect(() => {
-		if (caseList.length > 0 && caseList[0].caseId) {
+		if (cases.length > 0 && cases[0].caseId) {
 			navigate({
 				to: "/lab/$caseId",
-				params: { caseId: caseList[0].caseId.toString() },
+				params: { caseId: cases[0].caseId.toString() },
 				replace: true,
 			});
 		}
-	}, [navigate, caseList]);
+	}, [navigate, cases]);
 
 	const caseId = useParams({
 		from: "/lab/$caseId",
@@ -97,7 +71,7 @@ function LabDashboard() {
 						caseId !== undefined && "hidden lg:flex",
 					)}
 				>
-					{caseList.length === 0 && (
+					{cases.length === 0 && (
 						<Empty>
 							<EmptyHeader>
 								<EmptyMedia variant="icon">
@@ -110,7 +84,7 @@ function LabDashboard() {
 							</EmptyHeader>
 						</Empty>
 					)}
-					{caseList.map((group) => (
+					{cases.map((group) => (
 						<Link
 							to="/lab/$caseId"
 							params={{ caseId: group.caseId.toString() }}
@@ -133,9 +107,9 @@ function LabDashboard() {
 										{group.tests.map((test) => (
 											<div
 												className="flex gap-2 items-center text-sm/6 font-normal"
-												key={test.labTestReportId}
+												key={test.id}
 											>
-												<span className="text-wrap">{test.testName}</span>
+												<span className="text-wrap">{test.name}</span>
 												<span
 													className={cn(
 														"h-0 border-t-3 grow border-dotted transition-colors",
