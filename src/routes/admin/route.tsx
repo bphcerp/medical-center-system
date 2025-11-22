@@ -17,7 +17,6 @@ import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
-	SidebarProvider,
 	useSidebar,
 } from "@/components/ui/sidebar";
 
@@ -27,16 +26,8 @@ export const Route = createFileRoute("/admin")({
 		icon: ShieldUser,
 		name: "Admin Dashboard",
 	},
-	component: AdminRoot,
+	component: AdminDashboard,
 });
-
-function AdminRoot() {
-	return (
-		<SidebarProvider>
-			<AdminDashboard />
-		</SidebarProvider>
-	);
-}
 
 function AdminDashboard() {
 	const { flatRoutes, navigate } = useRouter();
