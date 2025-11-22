@@ -344,7 +344,7 @@ export const strictValidator = <
 				{
 					success: false,
 					error: {
-						message: "Validation Error",
+						message: z.prettifyError(result.error),
 						details: z.treeifyError(result.error),
 					},
 				},
