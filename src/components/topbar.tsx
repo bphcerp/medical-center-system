@@ -1,4 +1,4 @@
-import { useRouter } from "@tanstack/react-router";
+import { useLocation, useRouter } from "@tanstack/react-router";
 import { House, User } from "lucide-react";
 import useAuth from "@/lib/hooks/useAuth";
 import { Button } from "./ui/button";
@@ -12,13 +12,14 @@ import {
 
 const TopBar = ({ title }: { title: string }) => {
 	const { navigate } = useRouter();
+	const location = useLocation();
 	const { allowedRoutes } = useAuth();
 	document.title = title;
 
 	return (
 		<div className="p-4 flex justify-between items-center border-b border-border">
 			<div className="flex gap-4 items-center">
-				{allowedRoutes.length > 1 && (
+				{allowedRoutes.length > 1 && location.pathname !== "/" && (
 					<Button
 						variant="outline"
 						className="p-4 aspect-square"
