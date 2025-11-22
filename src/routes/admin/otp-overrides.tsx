@@ -61,7 +61,7 @@ function OTPOverridesPage() {
 				</p>
 			</div>
 			{logs.length === 0 ? (
-				<Empty>
+				<Empty className="mt-36">
 					<EmptyHeader>
 						<EmptyMedia variant="icon">
 							<ShieldCheck />
