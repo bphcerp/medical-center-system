@@ -256,9 +256,10 @@ const doctor = createStrictHono()
 		strictValidator(
 			"json",
 			z.object({
-				caseId: z.number().int(),
+				caseId: z.number().int().positive(),
 				consultationNotes: z.string().optional(),
-				diagnosis: z.array(z.number().int()).optional(),
+				// Allow empty array to clear diagnosis and prescriptions
+				diagnosis: z.array(z.number().int().positive()).optional(),
 				prescriptions: z
 					.array(createInsertSchema(casePrescriptionsTable))
 					.optional(),
@@ -315,7 +316,7 @@ const doctor = createStrictHono()
 		strictValidator(
 			"json",
 			z.object({
-				caseId: z.number().int(),
+				caseId: z.number().int().positive(),
 				finalizedState: z.enum(["opd", "admitted", "referred"]),
 			}),
 		),
@@ -359,8 +360,8 @@ const doctor = createStrictHono()
 		strictValidator(
 			"json",
 			z.object({
-				caseId: z.number().int(),
-				testIds: z.array(z.number().int()).min(1),
+				caseId: z.number().int().positive(),
+				testIds: z.array(z.number().int().positive()).min(1),
 			}),
 		),
 		async (c) => {

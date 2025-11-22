@@ -343,7 +343,7 @@ export const unauthenticated = createStrictHono()
 			z.object({
 				identifierType: z.enum(identifierTypes),
 				identifier: z.string().min(1),
-				patientId: z.number().int(),
+				patientId: z.number().int().positive(),
 			}),
 		),
 		async (c) => {

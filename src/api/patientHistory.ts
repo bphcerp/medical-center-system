@@ -74,7 +74,10 @@ const patientHistory = createStrictHono()
 	})
 	.post(
 		"/otp/:caseId/send",
-		strictValidator("param", z.object({ caseId: z.coerce.number() })),
+		strictValidator(
+			"param",
+			z.object({ caseId: z.coerce.number().int().positive() }),
+		),
 		async (c) => {
 			const { caseId } = c.req.valid("param");
 			const payload = c.get("jwtPayload");
@@ -217,8 +220,14 @@ const patientHistory = createStrictHono()
 	)
 	.post(
 		"/otp/:caseId/verify",
-		strictValidator("param", z.object({ caseId: z.coerce.number() })),
-		strictValidator("json", z.object({ otp: z.coerce.number() })),
+		strictValidator(
+			"param",
+			z.object({ caseId: z.coerce.number().int().positive() }),
+		),
+		strictValidator(
+			"json",
+			z.object({ otp: z.coerce.number().int().positive() }),
+		),
 		async (c) => {
 			const { caseId } = c.req.valid("param");
 			const { otp } = c.req.valid("json");
@@ -254,7 +263,10 @@ const patientHistory = createStrictHono()
 	)
 	.post(
 		"/otp/:caseId/override",
-		strictValidator("param", z.object({ caseId: z.coerce.number() })),
+		strictValidator(
+			"param",
+			z.object({ caseId: z.coerce.number().int().positive() }),
+		),
 		strictValidator(
 			"json",
 			z.object({

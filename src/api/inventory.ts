@@ -122,7 +122,7 @@ const inventory = createStrictHono()
 		strictValidator(
 			"json",
 			z.object({
-				batchId: z.number().int(),
+				batchId: z.number().int().positive(),
 				quantity: z.number().int().positive(),
 			}),
 		),
@@ -156,7 +156,7 @@ const inventory = createStrictHono()
 		strictValidator(
 			"json",
 			z.object({
-				batchId: z.number().int(),
+				batchId: z.number().int().positive(),
 				quantity: z.number().int().positive(),
 			}),
 		),
@@ -245,6 +245,7 @@ const inventory = createStrictHono()
 			}),
 		),
 		async (c) => {
+			// TODO: Is a 0 critical quantity allowed? Should we change it to null instead?
 			const { medicineId, criticalQty } = c.req.valid("json");
 
 			const updated = await db
@@ -272,11 +273,13 @@ const inventory = createStrictHono()
 		strictValidator(
 			"json",
 			z.object({
-				medicines: z.array(
-					z.object({
-						id: z.number().int().positive(),
-					}),
-				),
+				medicines: z
+					.array(
+						z.object({
+							id: z.number().int().positive(),
+						}),
+					)
+					.min(1),
 			}),
 		),
 		async (c) => {

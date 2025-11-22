@@ -25,7 +25,10 @@ const role = createStrictHono()
 	})
 	.post(
 		"/:id",
-		strictValidator("param", z.object({ id: z.coerce.number().int() })),
+		strictValidator(
+			"param",
+			z.object({ id: z.coerce.number().int().positive() }),
+		),
 		strictValidator("json", roleType),
 		async (c) => {
 			const { id } = c.req.valid("param");
@@ -74,7 +77,10 @@ const role = createStrictHono()
 	})
 	.delete(
 		"/:id",
-		strictValidator("param", z.object({ id: z.coerce.number().int() })),
+		strictValidator(
+			"param",
+			z.object({ id: z.coerce.number().int().positive() }),
+		),
 		async (c) => {
 			const { id } = c.req.valid("param");
 

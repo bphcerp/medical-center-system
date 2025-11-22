@@ -16,16 +16,6 @@ import { uploadFileService } from "./files";
 import { db } from "./index";
 import { rbacCheck } from "./rbac";
 
-const testUpdateSchema = z.object({
-	labTestReportId: z.number().int(),
-	status: z.enum(statusEnums),
-	fileId: z.number().int().optional(),
-});
-
-const batchUpdateSchema = z.object({
-	tests: z.array(testUpdateSchema),
-});
-
 const lab = createStrictHono()
 	.use(rbacCheck({ permissions: ["lab"] }))
 	.get("/pending", async (c) => {
@@ -99,7 +89,10 @@ const lab = createStrictHono()
 	})
 	.get(
 		"/details/:caseId",
-		strictValidator("param", z.object({ caseId: z.coerce.number().int() })),
+		strictValidator(
+			"param",
+			z.object({ caseId: z.coerce.number().int().positive() }),
+		),
 		async (c) => {
 			const { caseId } = c.req.valid("param");
 
@@ -198,8 +191,24 @@ const lab = createStrictHono()
 	)
 	.post(
 		"/update-tests/:caseId",
-		strictValidator("param", z.object({ caseId: z.coerce.number().int() })),
-		strictValidator("json", batchUpdateSchema),
+		strictValidator(
+			"param",
+			z.object({ caseId: z.coerce.number().int().positive() }),
+		),
+		strictValidator(
+			"json",
+			z.object({
+				tests: z
+					.array(
+						z.object({
+							labTestReportId: z.number().int().positive(),
+							status: z.enum(statusEnums),
+							fileId: z.number().int().positive().optional(),
+						}),
+					)
+					.min(1),
+			}),
+		),
 		async (c) => {
 			const { caseId } = c.req.valid("param");
 			const { tests } = c.req.valid("json");
@@ -303,7 +312,7 @@ const lab = createStrictHono()
 			"form",
 			z.object({
 				file: z.instanceof(File),
-				labTestReportId: z.coerce.number().int(),
+				labTestReportId: z.coerce.number().int().positive(),
 			}),
 		),
 		async (c) => {

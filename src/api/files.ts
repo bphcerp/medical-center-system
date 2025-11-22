@@ -40,7 +40,7 @@ const app = createStrictHono().get(
 	strictValidator(
 		"param",
 		z.object({
-			id: z.coerce.number(),
+			id: z.coerce.number().int().positive(),
 		}),
 	),
 	async (c) => {

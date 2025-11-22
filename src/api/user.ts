@@ -47,13 +47,13 @@ const user = createStrictHono()
 		strictValidator(
 			"param",
 			z.object({
-				id: z.coerce.number().int(),
+				id: z.coerce.number().int().positive(),
 			}),
 		),
 		strictValidator(
 			"json",
 			z.object({
-				role: z.number().int(),
+				role: z.number().int().positive(),
 			}),
 		),
 		async (c) => {
