@@ -203,6 +203,12 @@ const inventory = createStrictHono()
 		),
 		async (c) => {
 			const { medicineId, batchNum, expiry, quantity } = c.req.valid("json");
+			if (new Date(expiry) <= new Date()) {
+				return c.json(
+					{ success: false, error: { message: "Expiry date is in the past" } },
+					400,
+				);
+			}
 
 			const [duplicateBatch] = await db
 				.select()
