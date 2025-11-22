@@ -3,10 +3,8 @@ import {
 	Link,
 	Outlet,
 	useParams,
-	useRouter,
 } from "@tanstack/react-router";
 import { FlaskConical } from "lucide-react";
-import { useEffect } from "react";
 import { LabTestStatusBadge } from "@/components/lab-test-status-badge";
 import { TokenButton, TokenButtonTitle } from "@/components/token-button";
 import TopBar from "@/components/topbar";
@@ -42,18 +40,6 @@ export const Route = createFileRoute("/lab")({
 function LabDashboard() {
 	useAuth(["lab"]);
 	const { cases } = Route.useLoaderData();
-	// group reports by case
-	const { navigate } = useRouter();
-
-	useEffect(() => {
-		if (cases.length > 0 && cases[0].caseId) {
-			navigate({
-				to: "/lab/$caseId",
-				params: { caseId: cases[0].caseId.toString() },
-				replace: true,
-			});
-		}
-	}, [navigate, cases]);
 
 	const caseId = useParams({
 		from: "/lab/$caseId",
@@ -62,9 +48,9 @@ function LabDashboard() {
 	});
 
 	return (
-		<div className="h-screen flex flex-col">
+		<div className="h-dvh flex flex-col">
 			<TopBar title="Lab Dashboard" />
-			<div className="flex items-stretch divide-x divide-border grow min-h-0">
+			<div className="flex items-stretch divide-x divide-border grow min-h-0 h-after-topbar">
 				<div
 					className={cn(
 						"flex flex-col flex-2 p-4 gap-4 overflow-y-scroll bottom-0 min-h-0",
@@ -103,22 +89,31 @@ function LabDashboard() {
 										requested{" "}
 										{group.tests.length === 1 ? "this test:" : "these tests:"}
 									</div>
-									<div className="flex flex-col gap-3 pl-2">
-										{group.tests.map((test) => (
+									<div className="flex flex-col gap-2 pl-2 text-sm">
+										{group.tests.slice(0, 3).map((test) => (
 											<div
-												className="flex gap-2 items-center text-sm/6 font-normal"
+												className="flex gap-2 items-center font-normal"
 												key={test.id}
 											>
-												<span className="text-wrap">{test.name}</span>
+												<span className="line-clamp-2">{test.name}</span>
 												<span
 													className={cn(
-														"h-0 border-t-3 grow border-dotted transition-colors",
+														"h-0 min-w-10 border-t grow transition-colors",
 														getBorderColor(test.status),
 													)}
 												/>
 												<LabTestStatusBadge status={test.status} />
 											</div>
 										))}
+										{group.tests.length > 3 && (
+											<div className="text-muted-foreground italic">
+												and{" "}
+												<span className="font-semibold">
+													{group.tests.length - 3}
+												</span>{" "}
+												more test{group.tests.length - 3 !== 1 ? "s" : ""}...
+											</div>
+										)}
 									</div>
 								</div>
 							</TokenButton>

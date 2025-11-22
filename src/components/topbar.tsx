@@ -34,8 +34,10 @@ const TopBar = ({
 	const { allowedRoutes } = useAuth();
 	document.title = title;
 
+	// We use h-18 to fix the height of the topbar to 4.5rem. This value is used in the tailwind class `h-after-topbar`.
+	// If you change this height, make sure to update the CSS variable --spacing-after-topbar in src/styles/app.css accordingly.
 	return (
-		<div className="p-4 flex justify-between items-center border-b border-border">
+		<div className="p-4 flex justify-between items-center border-b border-border box-border h-18">
 			<div className="flex gap-4 items-center">
 				{allowedRoutes.length > 1 && location.pathname !== "/" && actionButton}
 				<span className="text-2xl lg:text-3xl font-bold">{title}</span>
