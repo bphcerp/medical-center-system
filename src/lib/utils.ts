@@ -55,6 +55,7 @@ export const handleErrors = async <
 				redirect({ to: "/" });
 				break;
 			default:
+				console.error("API Error:", json.error);
 				toast.error(json.error.message);
 		}
 		return undefined;
