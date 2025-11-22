@@ -37,6 +37,23 @@ export interface CookieValues {
 	token: string | undefined;
 }
 
+const clearAuthCookies = (c: Context) => {
+	deleteCookie(c, "token", {
+		path: "/",
+		httpOnly: false,
+		domain: env.FRONTEND_URL.replace("https://", "")
+			.replace("http://", "")
+			.split(":")[0],
+	});
+	deleteCookie(c, "fingerprint", {
+		path: "/",
+		httpOnly: true,
+		domain: env.FRONTEND_URL.replace("https://", "")
+			.replace("http://", "")
+			.split(":")[0],
+	});
+};
+
 export const unauthenticated = createStrictHono()
 	.post(
 		"/login",
@@ -125,20 +142,7 @@ export const unauthenticated = createStrictHono()
 		},
 	)
 	.get("/logout", async (c) => {
-		deleteCookie(c as Context, "token", {
-			path: "/",
-			httpOnly: false,
-			domain: env.FRONTEND_URL.replace("https://", "")
-				.replace("http://", "")
-				.split(":")[0],
-		});
-		deleteCookie(c as Context, "fingerprint", {
-			path: "/",
-			httpOnly: true,
-			domain: env.FRONTEND_URL.replace("https://", "")
-				.replace("http://", "")
-				.split(":")[0],
-		});
+		clearAuthCookies(c as Context);
 		return c.redirect("/login");
 	})
 	.post(
@@ -356,16 +360,8 @@ const authMiddleware: StrictHandler = async (c, next) => {
 	const fingerprint = getCookie(c as Context, "fingerprint") || "";
 	const fingerprintHash = Bun.SHA256.hash(fingerprint, "base64url");
 	if (jwt.fingerprintHash !== fingerprintHash) {
-		return c.json(
-			{
-				success: false,
-				error: {
-					message: "Invalid fingerprint",
-					details: { expected: jwt.fingerprintHash, received: fingerprintHash },
-				},
-			},
-			401,
-		);
+		clearAuthCookies(c as Context);
+		return c.redirect("/login");
 	}
 	await next();
 };
