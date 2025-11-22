@@ -3,8 +3,10 @@ import {
 	Link,
 	Outlet,
 	useParams,
+	useRouter,
 } from "@tanstack/react-router";
 import { FlaskConical } from "lucide-react";
+import { useEffect } from "react";
 import { LabTestStatusBadge } from "@/components/lab-test-status-badge";
 import { TokenButton, TokenButtonTitle } from "@/components/token-button";
 import TopBar from "@/components/topbar";
@@ -67,6 +69,17 @@ function LabDashboard() {
 		>,
 	);
 	const caseList = Object.values(caseGroups);
+	const { navigate } = useRouter();
+
+	useEffect(() => {
+		if (caseList.length > 0 && caseList[0].caseId) {
+			navigate({
+				to: "/lab/$caseId",
+				params: { caseId: caseList[0].caseId.toString() },
+				replace: true,
+			});
+		}
+	}, [navigate, caseList]);
 
 	const caseId = useParams({
 		from: "/lab/$caseId",
@@ -116,13 +129,13 @@ function LabDashboard() {
 										requested{" "}
 										{group.tests.length === 1 ? "this test:" : "these tests:"}
 									</div>
-									<div className="flex flex-col gap-1 pl-2">
+									<div className="flex flex-col gap-3 pl-2">
 										{group.tests.map((test) => (
 											<div
-												className="flex gap-2 items-center text-sm/1 font-normal"
+												className="flex gap-2 items-center text-sm/6 font-normal"
 												key={test.labTestReportId}
 											>
-												{test.testName}
+												<span className="text-wrap">{test.testName}</span>
 												<span
 													className={cn(
 														"h-0 border-t-3 grow border-dotted transition-colors",
