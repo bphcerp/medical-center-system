@@ -293,6 +293,16 @@ export const unauthenticated = createStrictHono()
 		),
 		async (c) => {
 			const { name, birthdate, sex, phone, email } = c.req.valid("json");
+			const birthdateObj = new Date(birthdate);
+			if (birthdateObj > new Date()) {
+				return c.json(
+					{
+						success: false,
+						error: { message: "Birthdate cannot be in the future" },
+					},
+					400,
+				);
+			}
 			const token = await db.transaction(async (tx) => {
 				const patient = await tx
 					.insert(patientsTable)
