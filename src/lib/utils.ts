@@ -2,6 +2,7 @@ import { redirect } from "@tanstack/react-router";
 import { type ClassValue, clsx } from "clsx";
 import type { ClientResponse } from "hono/client";
 import { twMerge } from "tailwind-merge";
+import type { ApiResponse } from "./types/api";
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
@@ -22,7 +23,7 @@ export function titleCase(str: string) {
 }
 
 export const handleErrors = async <
-	R extends ClientResponse<unknown, number, "json">,
+	R extends ClientResponse<ApiResponse, number, "json">,
 >(
 	res: R,
 ): Promise<
@@ -30,7 +31,7 @@ export const handleErrors = async <
 		? Extract<T, { success: true }> | undefined
 		: never
 > => {
-	let json: unknown = null;
+	let json: ApiResponse | null = null;
 	try {
 		json = await res.json();
 	} catch {
@@ -43,12 +44,7 @@ export const handleErrors = async <
 		return undefined as never;
 	}
 
-	if (
-		typeof json === "object" &&
-		json !== null &&
-		"success" in json &&
-		json.success
-	) {
+	if (json.success) {
 		return json as never;
 	}
 
@@ -61,10 +57,7 @@ export const handleErrors = async <
 			redirect({ to: "/" });
 			break;
 		default:
-			if (typeof json === "object" && json !== null && "error" in json) {
-				const errorJson = json as { error: { message: string } };
-				alert(`Error: ${errorJson.error.message}`);
-			}
+			alert(`Error: ${json.error.message}`);
 	}
 	return undefined as never;
 };
