@@ -20,7 +20,7 @@ function App() {
 		<>
 			<TopBar title="Medical Center System" />
 			<div className="flex justify-center pt-8">
-				<div className="grid grid-cols-1 sm:grid-cols-2 gap-8 justify-items-stretch w-2/3">
+				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 justify-items-stretch xl:w-2/3 w-full px-6">
 					{allowedRoutes.map((route) => (
 						<Button
 							key={route.path}
@@ -33,7 +33,7 @@ function App() {
 							{route.options.staticData?.icon && (
 								<route.options.staticData.icon className="ml-2 size-24" />
 							)}
-							<span className="mt-4 text-lg font-semibold">
+							<span className="mt-4 text-lg text-wrap font-semibold">
 								{route.options.staticData?.name || route.path}
 							</span>
 						</Button>
