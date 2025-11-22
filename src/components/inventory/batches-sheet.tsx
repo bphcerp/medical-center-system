@@ -64,10 +64,6 @@ export function MedicineBatchesSheet({
 								<span>
 									{medicine.drug} ({medicine.strength}) - {medicine.type}
 								</span>
-								{/* <span className="flex items-center gap-1 font-medium text-foreground">
-								<PackageIcon className="h-4 w-4 text-muted-foreground" />
-								Total Stock: {medicine.quantity}
-							</span> */}
 							</div>
 						</SheetDescription>
 					</SheetHeader>
