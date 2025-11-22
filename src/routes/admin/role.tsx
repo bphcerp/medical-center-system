@@ -4,7 +4,6 @@ import { Pencil, Plus, ShieldUser, Trash, X } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import DeletableBadge from "@/components/deleteable-badge";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
