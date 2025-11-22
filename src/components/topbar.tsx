@@ -10,8 +10,26 @@ import {
 	DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 
-const TopBar = ({ title }: { title: string }) => {
+const DefaultHomeButton = () => {
 	const { navigate } = useRouter();
+	return (
+		<Button
+			variant="outline"
+			className="p-4 aspect-square"
+			onClick={() => navigate({ to: "/" })}
+		>
+			<House className="size-4" />
+		</Button>
+	);
+};
+
+const TopBar = ({
+	title,
+	actionButton = <DefaultHomeButton />,
+}: {
+	title: string;
+	actionButton?: React.ReactNode;
+}) => {
 	const location = useLocation();
 	const { allowedRoutes } = useAuth();
 	document.title = title;
@@ -19,15 +37,7 @@ const TopBar = ({ title }: { title: string }) => {
 	return (
 		<div className="p-4 flex justify-between items-center border-b border-border">
 			<div className="flex gap-4 items-center">
-				{allowedRoutes.length > 1 && location.pathname !== "/" && (
-					<Button
-						variant="outline"
-						className="p-4 aspect-square"
-						onClick={() => navigate({ to: "/" })}
-					>
-						<House className="size-4" />
-					</Button>
-				)}
+				{allowedRoutes.length > 1 && location.pathname !== "/" && actionButton}
 				<span className="text-2xl lg:text-3xl font-bold">{title}</span>
 			</div>
 			<DropdownMenu>
