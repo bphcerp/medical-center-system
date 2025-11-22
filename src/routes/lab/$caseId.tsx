@@ -1,6 +1,7 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { LabTestStatusBadge } from "@/components/lab-test-status-badge";
 import { PatientDetails } from "@/components/patient-details";
 import { Button } from "@/components/ui/button";
@@ -116,7 +117,7 @@ function TestEntry() {
 		}
 
 		if (updates.length === 0) {
-			alert("No changes to submit");
+			toast.info("No changes to submit");
 			setIsSubmitting(false);
 			return;
 		}

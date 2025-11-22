@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { handleErrors } from "@/lib/utils";
 import { client } from "@/routes/api/$";
 import type { Medicine } from "@/routes/inventory";
 
@@ -29,8 +30,6 @@ export function ChangeCriticalQtyModal({
 	const [criticalQty, setCriticalQty] = useState<number>(
 		currentCriticalQty ?? 0,
 	);
-	const [criticalQtyError, setCriticalQtyError] = useState<boolean>(false);
-	const [apiError, setApiError] = useState<boolean>(false);
 
 	useEffect(() => {
 		if (open && currentCriticalQty !== undefined) {
@@ -40,35 +39,21 @@ export function ChangeCriticalQtyModal({
 
 	if (!medicine) return;
 
-	const resetState = () => {
+	const handleClose = () => {
 		setCriticalQty(0);
-		setCriticalQtyError(false);
-		setApiError(false);
+		onOpenChange(false);
 	};
 
 	const handleSubmit = async () => {
-		if (criticalQty == null || criticalQty < 0) {
-			resetState();
-			setCriticalQtyError(true);
-			return;
-		}
-
 		const res = await client.api.inventory.changeCriticalQty.$post({
 			json: { medicineId: medicine.id, criticalQty },
 		});
-
-		if (res.status === 200) {
-			await router.invalidate();
-			resetState();
-			onOpenChange(false);
-		} else {
-			setApiError(true);
+		const data = await handleErrors(res);
+		if (!data) {
+			return;
 		}
-	};
-
-	const handleCancel = () => {
-		resetState();
-		onOpenChange(false);
+		await router.invalidate();
+		handleClose();
 	};
 
 	return (
@@ -101,26 +86,13 @@ export function ChangeCriticalQtyModal({
 							placeholder="Enter critical quantity"
 							value={criticalQty}
 							onChange={(e) => setCriticalQty(parseInt(e.target.value, 10))}
+							required
 						/>
 					</div>
-					<Button
-						className="my-2 mr-2"
-						onClick={handleCancel}
-						variant="outline"
-					>
+					<Button className="my-2 mr-2" onClick={handleClose} variant="outline">
 						Cancel
 					</Button>
 					<Button onClick={handleSubmit}>Submit</Button>
-					{criticalQtyError && (
-						<p className="text-destructive">
-							Error: Quantity cannot be negative!
-						</p>
-					)}
-					{apiError && (
-						<p className="text-destructive">
-							Error: Failed to update critical quantity
-						</p>
-					)}
 				</div>
 			</DialogContent>
 		</Dialog>

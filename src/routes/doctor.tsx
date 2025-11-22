@@ -53,11 +53,8 @@ function DoctorDashboard() {
 
 	const handleRefresh = async () => {
 		setIsRefreshing(true);
-		try {
-			await router.invalidate();
-		} finally {
-			setIsRefreshing(false);
-		}
+		await router.invalidate();
+		setIsRefreshing(false);
 	};
 
 	const handleRowClick = (caseId: number) => {

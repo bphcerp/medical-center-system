@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeftRight, Search } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import {
@@ -156,7 +157,7 @@ function RoleSelect({
 		} else {
 			// change this to some toast thing in the future
 			setEagerRoleId(roleId);
-			alert("Failed to update role");
+			toast.error("Failed to update role");
 		}
 	};
 

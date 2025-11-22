@@ -2,6 +2,7 @@
 
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { CookiesProvider } from "react-cookie";
+import { Toaster } from "@/components/ui/sonner";
 import appCss from "@/styles/app.css?url";
 
 export const Route = createRootRoute({
@@ -38,6 +39,14 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			<body className="bg-background">
 				<CookiesProvider>{children}</CookiesProvider>
 				<Scripts />
+				<Toaster
+					position="top-right"
+					richColors
+					theme="light"
+					toastOptions={{
+						classNames: {},
+					}}
+				/>
 			</body>
 		</html>
 	);

@@ -2,6 +2,7 @@ import { Label } from "@radix-ui/react-label";
 import { ChevronsUpDown, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AutoSizer } from "react-virtualized";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -86,7 +87,7 @@ const DiagnosisCard = ({
 
 	const handleAddDisease = (disease: (typeof diseases)[0]) => {
 		if (diagnosisItems.some((item) => item.id === disease.id)) {
-			alert("This disease is already in the diagnosis");
+			toast.error("This disease is already in the diagnosis");
 			return;
 		}
 

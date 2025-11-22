@@ -9,6 +9,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { handleErrors } from "@/lib/utils";
 import { client } from "@/routes/api/$";
 
 export function AddQuantityModal({
@@ -25,41 +26,24 @@ export function AddQuantityModal({
 	const router = useRouter();
 
 	const [quantity, setQuantity] = useState<number>(0);
-	const [quantityError, setQuantityError] = useState<boolean>(false);
-	const [apiError, setApiError] = useState<boolean>(false);
 
-	const resetState = () => {
+	const handleClose = () => {
 		setQuantity(0);
-		setQuantityError(false);
-		setApiError(false);
+		onOpenChange(false);
 	};
 
 	const handleSubmit = async () => {
 		if (!batchId) return;
-
-		if (quantity == null || quantity <= 0) {
-			resetState();
-			setQuantityError(true);
-			return;
-		}
-
 		const res = await client.api.inventory.addQuantity.$post({
 			json: { batchId, quantity },
 		});
-
-		if (res.status === 200) {
-			await router.invalidate();
-			onOpenChange(false);
-			resetState();
-		} else {
-			resetState();
-			setApiError(true);
+		const data = await handleErrors(res);
+		if (!data) {
+			return;
 		}
-	};
 
-	const handleCancel = () => {
-		onOpenChange(false);
-		resetState();
+		await router.invalidate();
+		handleClose();
 	};
 
 	return (
@@ -78,23 +62,12 @@ export function AddQuantityModal({
 						placeholder="Enter quantity"
 						value={quantity}
 						onChange={(e) => setQuantity(parseInt(e.target.value, 10))}
+						required
 					/>
-					<Button
-						className="my-2 mr-2"
-						onClick={handleCancel}
-						variant="outline"
-					>
+					<Button className="my-2 mr-2" onClick={handleClose} variant="outline">
 						Cancel
 					</Button>
 					<Button onClick={handleSubmit}>Submit</Button>
-					{quantityError && (
-						<p className="text-destructive">
-							Error: Quantity cannot be negative or zero!
-						</p>
-					)}
-					{apiError && (
-						<p className="text-destructive">Error: Failed to add quantity</p>
-					)}
 				</div>
 			</DialogContent>
 		</Dialog>

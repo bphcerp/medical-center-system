@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import type { DiagnosisItem } from "@/components/diagnosis-card";
 import type { PrescriptionItem } from "@/components/prescription/types";
 import type { CaseDetail } from "@/components/vitals-card";
@@ -89,12 +90,14 @@ export const useAutosave = ({
 	]);
 
 	useEffect(() => {
-		autosave().catch(() => {
-			console.error("Autosave failed");
+		autosave().catch((e) => {
+			toast.warning("Autosave failed");
+			console.error("Autosave failed", e);
 		});
 		const interval = setInterval(() => {
-			autosave().catch(() => {
-				console.error("Autosave failed");
+			autosave().catch((e) => {
+				toast.warning("Autosave failed");
+				console.error("Autosave failed", e);
 			});
 		}, 3000);
 		return () => clearInterval(interval);

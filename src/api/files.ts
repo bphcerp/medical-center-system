@@ -8,7 +8,6 @@ import { db } from "./index";
 
 export async function uploadFileService(file: File, allowed: number[] = []) {
 	const { fid, url } = await seaweedfs.uploadFile(file);
-
 	try {
 		const [fileRecord] = await db
 			.insert(filesTable)
@@ -28,7 +27,8 @@ export async function uploadFileService(file: File, allowed: number[] = []) {
 		return { ...fileRecord, fid, filename: file.name };
 	} catch (error) {
 		// Clean up orphaned file in SeaweedFS
-		await seaweedfs.deleteFile(fid).catch(console.error);
+		console.error("Error uploading file record to DB:", error);
+		await seaweedfs.deleteFile(fid);
 		throw error;
 	}
 }
@@ -74,7 +74,6 @@ const app = createStrictHono().get(
 		const fileResponse = await fetch(file.url);
 
 		if (!fileResponse.body) {
-			console.error(`Fetched file from storage but body was null`);
 			return c.json(
 				{
 					success: false,

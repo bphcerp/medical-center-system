@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { ChevronsUpDown, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AutoSizer } from "react-virtualized";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -86,7 +87,7 @@ const LabRequestModal = ({
 
 	const handleRequestLabTests = async () => {
 		if (selectedLabTests.length === 0) {
-			alert("Please select at least one lab test");
+			toast.error("Please select at least one lab test");
 			return;
 		}
 
@@ -102,7 +103,7 @@ const LabRequestModal = ({
 			return;
 		}
 
-		alert("Lab tests requested successfully");
+		toast.success("Lab tests requested successfully");
 		setLabTestModalOpen(false);
 		setSelectedLabTests([]);
 		navigate({ to: "/doctor" });
@@ -110,7 +111,7 @@ const LabRequestModal = ({
 
 	const handleAddTest = (test: (typeof tests)[number]) => {
 		if (selectedLabTests.some((t) => t.id === test.id)) {
-			alert("Lab test already selected");
+			toast.error("Lab test already selected");
 			return;
 		}
 		setSelectedLabTests([...selectedLabTests, test]);

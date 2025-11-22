@@ -213,96 +213,78 @@ const lab = createStrictHono()
 			const { caseId } = c.req.valid("param");
 			const { tests } = c.req.valid("json");
 
-			try {
-				await db.transaction(async (tx) => {
-					const caseTests = await tx
-						.select({ id: caseLabReportsTable.id })
-						.from(caseLabReportsTable)
-						.where(eq(caseLabReportsTable.caseId, caseId));
+			await db.transaction(async (tx) => {
+				const caseTests = await tx
+					.select({ id: caseLabReportsTable.id })
+					.from(caseLabReportsTable)
+					.where(eq(caseLabReportsTable.caseId, caseId));
 
-					const validIds = new Set(caseTests.map((t) => t.id));
-					const allValid = tests.every((t) => validIds.has(t.labTestReportId));
+				const validIds = new Set(caseTests.map((t) => t.id));
+				const allValid = tests.every((t) => validIds.has(t.labTestReportId));
 
-					if (!allValid) {
-						throw new Error("Some test IDs do not belong to this case");
-					}
+				if (!allValid) {
+					throw new Error("Some test IDs do not belong to this case");
+				}
 
-					const [caseData] = await tx
-						.select({ associatedUsers: casesTable.associatedUsers })
-						.from(casesTable)
-						.where(eq(casesTable.id, caseId));
+				const [caseData] = await tx
+					.select({ associatedUsers: casesTable.associatedUsers })
+					.from(casesTable)
+					.where(eq(casesTable.id, caseId));
 
-					if (!caseData) {
-						throw new Error("Case not found");
-					}
+				if (!caseData) {
+					throw new Error("Case not found");
+				}
 
-					for (const test of tests) {
-						await tx
-							.update(caseLabReportsTable)
-							.set({
-								status: test.status,
-								updatedAt: new Date(),
-							})
-							.where(eq(caseLabReportsTable.id, test.labTestReportId));
+				for (const test of tests) {
+					await tx
+						.update(caseLabReportsTable)
+						.set({
+							status: test.status,
+							updatedAt: new Date(),
+						})
+						.where(eq(caseLabReportsTable.id, test.labTestReportId));
 
-						if (test.fileId) {
-							const [file] = await tx
-								.select({ id: filesTable.id })
-								.from(filesTable)
+					if (test.fileId) {
+						const [file] = await tx
+							.select({ id: filesTable.id })
+							.from(filesTable)
+							.where(eq(filesTable.id, test.fileId));
+
+						if (!file) {
+							throw new Error(`File ${test.fileId} not found`);
+						}
+
+						const [existing] = await tx
+							.select()
+							.from(labTestFilesTable)
+							.where(
+								and(
+									eq(labTestFilesTable.caseLabReportId, test.labTestReportId),
+									eq(labTestFilesTable.fileId, test.fileId),
+								),
+							);
+
+						if (!existing) {
+							await tx.insert(labTestFilesTable).values({
+								caseLabReportId: test.labTestReportId,
+								fileId: test.fileId,
+							});
+
+							await tx
+								.update(filesTable)
+								.set({ allowed: caseData.associatedUsers })
 								.where(eq(filesTable.id, test.fileId));
-
-							if (!file) {
-								throw new Error(`File ${test.fileId} not found`);
-							}
-
-							const [existing] = await tx
-								.select()
-								.from(labTestFilesTable)
-								.where(
-									and(
-										eq(labTestFilesTable.caseLabReportId, test.labTestReportId),
-										eq(labTestFilesTable.fileId, test.fileId),
-									),
-								);
-
-							if (!existing) {
-								await tx.insert(labTestFilesTable).values({
-									caseLabReportId: test.labTestReportId,
-									fileId: test.fileId,
-								});
-
-								await tx
-									.update(filesTable)
-									.set({ allowed: caseData.associatedUsers })
-									.where(eq(filesTable.id, test.fileId));
-							}
 						}
 					}
-				});
+				}
+			});
 
-				return c.json({
-					success: true,
-					data: {
-						message: "Tests updated successfully",
-					},
-				});
-			} catch (error) {
-				console.error("Batch update error:", error);
-				return c.json(
-					{
-						success: false,
-						error: {
-							message: error instanceof Error ? error.message : "Update failed",
-							details: {
-								caseId,
-								tests,
-								error: error,
-							},
-						},
-					},
-					400,
-				);
-			}
+			return c.json({
+				success: true,
+				data: {
+					message: "Tests updated successfully",
+				},
+			});
 		},
 	)
 
@@ -342,7 +324,7 @@ const lab = createStrictHono()
 					data: fileRecord,
 				});
 			} catch (error) {
-				console.error("File upload error in lab module:", error);
+				console.error("File upload failed:", error);
 				return c.json(
 					{
 						success: false,

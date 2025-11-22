@@ -1,6 +1,7 @@
 import { useRouter } from "@tanstack/react-router";
 import { decode } from "hono/jwt";
 import { useCookies } from "react-cookie";
+import { toast } from "sonner";
 import type { CookieValues } from "@/api/auth";
 import type { JWTPayload } from "@/lib/types/api";
 import type { Permission } from "../types/permissions";
@@ -26,11 +27,14 @@ const useAuth = (requiredPermissions: Permission[] = []) => {
 		);
 		if (!hasRequiredPermissions) {
 			navigate({ to: "/" });
-			alert("You do not have the required permissions to access this page.");
+			toast.error(
+				"You do not have the required permissions to access this page.",
+			);
 		}
 
 		return { allowedRoutes };
 	} catch (e) {
+		toast.error("Error decoding token in useAuth");
 		console.error("Error decoding token in useAuth:", e);
 		navigate({ to: "/login" });
 		return { allowedRoutes: [] };

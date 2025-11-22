@@ -9,6 +9,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { handleErrors } from "@/lib/utils";
 import { client } from "@/routes/api/$";
 
 export function DispenseModal({
@@ -25,37 +26,23 @@ export function DispenseModal({
 	const router = useRouter();
 
 	const [quantity, setQuantity] = useState<number>();
-	const [quantityError, setQuantityError] = useState<boolean>(false);
-	const [apiError, setApiError] = useState<boolean>(false);
+
+	const handleClose = async () => {
+		setQuantity(undefined);
+		onOpenChange(false);
+	};
 
 	const handleSubmit = async () => {
 		if (!batchId || quantity == null) return;
-
-		if (quantity <= 0) {
-			setQuantityError(true);
-		}
-
 		const res = await client.api.inventory.dispense.$post({
 			json: { batchId, quantity },
 		});
-
-		if (res.status === 200) {
-			await router.invalidate();
-			onOpenChange(false);
-			setQuantity(undefined);
-			setQuantityError(false);
-			setApiError(false);
-		} else {
-			setQuantity(undefined);
-			setApiError(true);
+		const data = await handleErrors(res);
+		if (!data) {
+			return;
 		}
-	};
-
-	const handleCancel = async () => {
-		onOpenChange(false);
-		setQuantity(undefined);
-		setQuantityError(false);
-		setApiError(false);
+		await router.invalidate();
+		handleClose();
 	};
 
 	return (
@@ -74,25 +61,12 @@ export function DispenseModal({
 						placeholder="Enter quantity"
 						value={quantity}
 						onChange={(e) => setQuantity(parseInt(e.target.value, 10))}
+						required
 					/>
-					<Button
-						className="my-2 mr-2"
-						onClick={handleCancel}
-						variant="outline"
-					>
+					<Button className="my-2 mr-2" onClick={handleClose} variant="outline">
 						Cancel
 					</Button>
 					<Button onClick={handleSubmit}>Submit</Button>
-					{quantityError && (
-						<p className="text-destructive">
-							Error: Quantity cannot be negative or zero!
-						</p>
-					)}
-					{apiError && (
-						<p className="text-destructive">
-							Error: Failed to dispense quantity
-						</p>
-					)}
 				</div>
 			</DialogContent>
 		</Dialog>

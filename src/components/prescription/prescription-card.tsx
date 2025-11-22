@@ -2,6 +2,7 @@ import { Label } from "@radix-ui/react-label";
 import { ChevronsUpDown, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AutoSizer } from "react-virtualized";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -112,7 +113,7 @@ const PrescriptionCard = ({
 	const handleAddMedicine = (medicine: (typeof medicines)[0]) => {
 		//heck if medicine already exists in the prescription
 		if (prescriptionItems.some((item) => item.medicines.id === medicine.id)) {
-			alert("This medicine is already in the prescription");
+			toast.error("This medicine is already in the prescription");
 			return;
 		}
 

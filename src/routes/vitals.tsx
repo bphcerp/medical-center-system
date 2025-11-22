@@ -1,6 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Activity, ArrowLeft, Check, ClipboardPlus, Plus } from "lucide-react";
 import { useId, useState } from "react";
+import { toast } from "sonner";
 import { PatientDetails } from "@/components/patient-details";
 import { PatientTypeBadge } from "@/components/patient-type-badge";
 import { RegistrationForm } from "@/components/registration-card";
@@ -61,7 +62,7 @@ function Vitals() {
 
 	const handleCreateCase = async (formData: FormData) => {
 		if (focusedPatient === null || assignedDoctor === null) {
-			alert("Please select a patient and assign a doctor.");
+			toast.error("Please select a patient and assign a doctor.");
 			return;
 		}
 		// Get all form inputs and put them into an object
@@ -112,7 +113,7 @@ function Vitals() {
 		if (!data) {
 			return;
 		}
-		alert("Case created successfully!");
+		toast.success("Case created successfully!");
 		router.invalidate();
 	};
 

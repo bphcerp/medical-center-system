@@ -1,6 +1,7 @@
 import { redirect } from "@tanstack/react-router";
 import { type ClassValue, clsx } from "clsx";
 import type { ClientResponse } from "hono/client";
+import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
 import type { ApiResponse } from "./types/api";
 
@@ -50,15 +51,16 @@ export const handleErrors = async <
 				window.location.assign("/api/logout");
 				break;
 			case 403:
-				alert("You don't have the permission to perform this action.");
+				toast.error("You don't have the permission to perform this action.");
 				redirect({ to: "/" });
 				break;
 			default:
-				alert(`Error: ${json.error.message}`);
+				toast.error(json.error.message);
 		}
 		return undefined;
-	} catch {
-		alert("An unexpected error occurred. Please try again.");
+	} catch (error) {
+		toast.error("An unexpected error occurred. Please try again.");
+		console.error("Error handling API response:", error);
 		return undefined;
 	}
 };

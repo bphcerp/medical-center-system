@@ -138,11 +138,8 @@ export function OTPVerificationDialog({
 		e.preventDefault();
 		if (overrideReason.length >= 10 && onOverride) {
 			setIsOverriding(true);
-			try {
-				await onOverride(overrideReason);
-			} finally {
-				setIsOverriding(false);
-			}
+			await onOverride(overrideReason);
+			setIsOverriding(false);
 		}
 	};
 

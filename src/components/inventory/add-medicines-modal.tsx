@@ -2,6 +2,7 @@ import { useRouter } from "@tanstack/react-router";
 import { ChevronsUpDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AutoSizer } from "react-virtualized";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -23,6 +24,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import useVirtualList from "@/lib/hooks/useVirtualList";
+import { handleErrors } from "@/lib/utils";
 import { client } from "@/routes/api/$";
 import type { Medicine } from "@/routes/inventory";
 
@@ -36,12 +38,9 @@ export function AddMedicinesModal({
 	medicines: Medicine[];
 }) {
 	const router = useRouter();
-
-	const [apiError, setApiError] = useState<boolean>(false);
-	const [emptyError, setEmptyError] = useState<boolean>(false);
-
 	const [medicinesSearchOpen, setMedicinesSearchOpen] =
 		useState<boolean>(false);
+	const [medicineItems, setMedicineItems] = useState<Medicine[]>([]);
 	const [medicineQuery, setMedicineQuery] = useState<string>("");
 	const { renderList } = useVirtualList<Medicine>(300, 48);
 
@@ -87,11 +86,9 @@ export function AddMedicinesModal({
 		[medicines, medicineQuery],
 	);
 
-	const [medicineItems, setMedicineItems] = useState<Medicine[]>([]);
-
 	const handleAddMedicineItem = (medicine: Medicine) => {
 		if (medicineItems.some((item) => item.id === medicine.id)) {
-			alert("This medicine is already in the list");
+			toast.error("This medicine is already in the list");
 			return;
 		}
 
@@ -100,16 +97,16 @@ export function AddMedicinesModal({
 		setMedicinesSearchOpen(false);
 	};
 
-	const resetState = () => {
+	const handleClose = () => {
+		setMedicineQuery("");
+		setMedicinesSearchOpen(false);
 		setMedicineItems([]);
-		setEmptyError(false);
-		setApiError(false);
+		onOpenChange(false);
 	};
 
 	const handleSubmit = async () => {
 		if (medicineItems.length === 0) {
-			resetState();
-			setEmptyError(true);
+			toast.error("Please select at least one medicine");
 			return;
 		}
 
@@ -117,20 +114,13 @@ export function AddMedicinesModal({
 		const res = await client.api.inventory.addMedicines.$post({
 			json: { medicines },
 		});
-
-		if (res.status === 200) {
-			await router.invalidate();
-			resetState();
-			onOpenChange(false);
-		} else {
-			resetState();
-			setApiError(true);
+		const data = await handleErrors(res);
+		if (!data) {
+			return;
 		}
-	};
 
-	const handleCancel = () => {
-		resetState();
-		onOpenChange(false);
+		await router.invalidate();
+		handleClose();
 	};
 
 	if (!medicines) return null;
@@ -217,22 +207,10 @@ export function AddMedicinesModal({
 					<p>No medicines have been added</p>
 				)}
 				<div>
-					<Button
-						className="mb-2 mr-2"
-						onClick={handleCancel}
-						variant="outline"
-					>
+					<Button className="mb-2 mr-2" onClick={handleClose} variant="outline">
 						Cancel
 					</Button>
 					<Button onClick={handleSubmit}>Submit</Button>
-					{apiError && (
-						<p className="text-destructive">Error: Failed to add a batch</p>
-					)}
-					{emptyError && (
-						<p className="text-destructive">
-							Error: Medicines have not been selected
-						</p>
-					)}
 				</div>
 			</DialogContent>
 		</Dialog>

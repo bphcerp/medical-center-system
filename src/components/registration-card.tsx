@@ -1,5 +1,6 @@
 import { ArrowRight, CheckIcon } from "lucide-react";
 import { useId, useState } from "react";
+import { toast } from "sonner";
 import type { identifierTypes } from "@/db/case";
 import { handleErrors } from "@/lib/utils";
 import { client } from "@/routes/api/$";
@@ -170,7 +171,7 @@ export function RegistrationForm({
 				"tryVisitorRegistration" in existing &&
 				existing.tryVisitorRegistration
 			) {
-				alert(
+				toast.warning(
 					"No existing record found. Please register as a visitor temporarily.",
 				);
 				setVisitor();

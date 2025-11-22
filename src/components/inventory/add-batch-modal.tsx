@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { handleErrors } from "@/lib/utils";
 import { client } from "@/routes/api/$";
 import type { Medicine } from "@/routes/inventory";
 
@@ -27,59 +28,27 @@ export function AddBatchModal({
 	const [batch, setBatch] = useState<string>("");
 	const [expiry, setExpiry] = useState<string>("");
 	const [quantity, setQuantity] = useState<number>(0);
-	const [batchError, setBatchError] = useState<boolean>(false);
-	const [expiryError, setExpiryError] = useState<boolean>(false);
-	const [quantityError, setQuantityError] = useState<boolean>(false);
-	const [apiError, setApiError] = useState<boolean>(false);
 
 	if (!medicine) return;
 
-	const resetState = () => {
+	const handleClose = () => {
 		setBatch("");
-		setBatchError(false);
 		setExpiry("");
-		setExpiryError(false);
 		setQuantity(0);
-		setQuantityError(false);
-		setApiError(false);
+		onOpenChange(false);
 	};
 
 	const handleSubmit = async () => {
-		if (quantity == null || quantity <= 0) {
-			resetState();
-			setQuantityError(true);
-			return;
-		}
-
-		if (batch == null) {
-			resetState();
-			setBatchError(true);
-			return;
-		}
-
-		if (expiry === "") {
-			resetState();
-			setExpiryError(true);
-			return;
-		}
-
 		const res = await client.api.inventory.batch.$post({
 			json: { medicineId: medicine.id, batchNum: batch, expiry, quantity },
 		});
-
-		if (res.status === 200) {
-			await router.invalidate();
-			resetState();
-			onOpenChange(false);
-		} else {
-			resetState();
-			setApiError(true);
+		const data = await handleErrors(res);
+		if (!data) {
+			return;
 		}
-	};
 
-	const handleCancel = () => {
-		resetState();
-		onOpenChange(false);
+		await router.invalidate();
+		handleClose();
 	};
 
 	if (!medicine) return null;
@@ -114,6 +83,7 @@ export function AddBatchModal({
 							placeholder="Enter batch ID"
 							value={batch}
 							onChange={(e) => setBatch(e.target.value)}
+							required
 						/>
 
 						<Label className="font-bold">Expiry</Label>
@@ -121,6 +91,7 @@ export function AddBatchModal({
 							type="date"
 							value={expiry}
 							onChange={(e) => setExpiry(e.target.value)}
+							required
 						/>
 
 						<Label className="font-bold">Quantity</Label>
@@ -129,30 +100,13 @@ export function AddBatchModal({
 							placeholder="Enter quantity"
 							value={quantity}
 							onChange={(e) => setQuantity(parseInt(e.target.value, 10))}
+							required
 						/>
 					</div>
-					<Button
-						className="my-2 mr-2"
-						onClick={handleCancel}
-						variant="outline"
-					>
+					<Button className="my-2 mr-2" onClick={handleClose} variant="outline">
 						Cancel
 					</Button>
 					<Button onClick={handleSubmit}>Submit</Button>
-					{batchError && (
-						<p className="text-destructive">Error: Batch ID cannot be empty!</p>
-					)}
-					{expiryError && (
-						<p className="text-destructive">Error: Date cannot be empty!</p>
-					)}
-					{quantityError && (
-						<p className="text-destructive">
-							Error: Quantity cannot be negative or zero!
-						</p>
-					)}
-					{apiError && (
-						<p className="text-destructive">Error: Failed to add a batch</p>
-					)}
 				</div>
 			</DialogContent>
 		</Dialog>

@@ -2,6 +2,7 @@ import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { CloudCheck, RefreshCw, TriangleAlert } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import DiagnosisCard from "@/components/diagnosis-card";
 import FinalizeCaseCard, {
 	type FinalizeButtonValue,
@@ -129,7 +130,7 @@ function ConsultationPage() {
 				finalizedState = "referred";
 				break;
 			default:
-				console.error(
+				toast.error(
 					"Finalized state not matching any of the types Finalize (OPD), Admit, or Referral",
 				);
 				return;
@@ -138,8 +139,9 @@ function ConsultationPage() {
 		// autosave endpoint -> finalize the case
 		try {
 			await autosave();
-		} catch (_error) {
-			alert("Failed to save case data");
+		} catch (error) {
+			toast.error("Failed to save case data");
+			console.error("Error saving case data:", error);
 			return;
 		}
 
