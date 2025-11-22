@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ShieldCheck } from "lucide-react";
+import { ScrollText, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Empty,
@@ -31,8 +31,8 @@ export const Route = createFileRoute("/admin/otp-overrides")({
 	},
 	component: OTPOverridesPage,
 	staticData: {
-		icon: ShieldCheck,
-		name: "OTP Override Audit Logs",
+		icon: ScrollText,
+		name: "OTP Override Logs",
 	},
 });
 
