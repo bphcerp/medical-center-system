@@ -10,8 +10,13 @@ const useAuth = (requiredPermissions: Permission[] = []) => {
 	const { flatRoutes, navigate } = useRouter();
 	const [cookies] = useCookies<"token", CookieValues>(["token"]);
 
+	if (!cookies.token) {
+		navigate({ to: "/login" });
+		return { allowedRoutes: [] };
+	}
+
 	try {
-		const { header: _, payload } = decode(cookies.token || "");
+		const { header: _, payload } = decode(cookies.token);
 		const payloadTyped = payload as JWTPayload;
 
 		const allowedRoutes = flatRoutes.filter(
