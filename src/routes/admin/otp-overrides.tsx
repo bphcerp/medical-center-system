@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ShieldAlert, ShieldCheck } from "lucide-react";
-import TopBar from "@/components/topbar";
+import { ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Empty,
@@ -31,11 +30,6 @@ export const Route = createFileRoute("/admin/otp-overrides")({
 		return { logs };
 	},
 	component: OTPOverridesPage,
-	staticData: {
-		requiredPermissions: ["admin"],
-		icon: ShieldAlert,
-		name: "OTP Override Logs",
-	},
 });
 
 function OTPOverridesPage() {
@@ -55,79 +49,76 @@ function OTPOverridesPage() {
 
 	return (
 		<>
-			<TopBar title="OTP Override Logs" />
-			<div className="container mx-auto p-6">
-				<div className="mb-6">
-					<h1 className="text-3xl font-bold">OTP Override Audit Logs</h1>
-					<p className="text-muted-foreground mt-2">
-						Review all instances where doctors bypassed OTP verification to
-						access patient history.
-					</p>
-				</div>
-				{logs.length === 0 ? (
-					<Empty>
-						<EmptyHeader>
-							<EmptyMedia variant="icon">
-								<ShieldCheck />
-							</EmptyMedia>
-							<EmptyTitle>No OTP override logs found</EmptyTitle>
-							<EmptyContent>
-								All access has been through proper OTP verification.
-							</EmptyContent>
-						</EmptyHeader>
-					</Empty>
-				) : (
-					<Card>
-						<CardHeader>
-							<CardTitle>Override History ({logs.length} total)</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<div className="overflow-x-auto">
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>Date & Time</TableHead>
-											<TableHead>Doctor</TableHead>
-											<TableHead>Case ID</TableHead>
-											<TableHead>Patient</TableHead>
-											<TableHead>Reason</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{logs.map((log) => (
-											<TableRow key={log.id}>
-												<TableCell className="whitespace-nowrap">
-													{formatDate(log.createdAt)}
-												</TableCell>
-												<TableCell>
-													<div>
-														<div className="font-medium">{log.doctorName}</div>
-														<div className="text-sm text-muted-foreground">
-															@{log.doctorUsername}
-														</div>
-													</div>
-												</TableCell>
-												<TableCell>{log.caseId}</TableCell>
-												<TableCell>
-													<div>
-														<div className="font-medium">{log.patientName}</div>
-														<div className="text-sm text-muted-foreground">
-															ID: {log.patientId}
-														</div>
-													</div>
-												</TableCell>
-												<TableCell className="max-w-md">
-													<div className="text-sm">{log.reason}</div>
-												</TableCell>
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-							</div>
-						</CardContent>
-					</Card>
-				)}
+			<div className="mb-6">
+				<h1 className="text-3xl font-bold">OTP Override Audit Logs</h1>
+				<p className="text-muted-foreground mt-2">
+					Review all instances where doctors bypassed OTP verification to access
+					patient history.
+				</p>
 			</div>
+			{logs.length === 0 ? (
+				<Empty>
+					<EmptyHeader>
+						<EmptyMedia variant="icon">
+							<ShieldCheck />
+						</EmptyMedia>
+						<EmptyTitle>No OTP override logs found</EmptyTitle>
+						<EmptyContent>
+							All access has been through proper OTP verification.
+						</EmptyContent>
+					</EmptyHeader>
+				</Empty>
+			) : (
+				<Card>
+					<CardHeader>
+						<CardTitle>Override History ({logs.length} total)</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<div className="overflow-x-auto">
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Date & Time</TableHead>
+										<TableHead>Doctor</TableHead>
+										<TableHead>Case ID</TableHead>
+										<TableHead>Patient</TableHead>
+										<TableHead>Reason</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{logs.map((log) => (
+										<TableRow key={log.id}>
+											<TableCell className="whitespace-nowrap">
+												{formatDate(log.createdAt)}
+											</TableCell>
+											<TableCell>
+												<div>
+													<div className="font-medium">{log.doctorName}</div>
+													<div className="text-sm text-muted-foreground">
+														@{log.doctorUsername}
+													</div>
+												</div>
+											</TableCell>
+											<TableCell>{log.caseId}</TableCell>
+											<TableCell>
+												<div>
+													<div className="font-medium">{log.patientName}</div>
+													<div className="text-sm text-muted-foreground">
+														ID: {log.patientId}
+													</div>
+												</div>
+											</TableCell>
+											<TableCell className="max-w-md">
+												<div className="text-sm">{log.reason}</div>
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</div>
+					</CardContent>
+				</Card>
+			)}
 		</>
 	);
 }

@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeftRight, Search } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import {
 	InputGroup,
@@ -82,57 +81,54 @@ function Admin() {
 
 	return (
 		<>
-			<TopBar title="Admin Dashboard" />
-			<div className="flex flex-col p-4 lg:p-10 lg:w-3/4">
-				<div className="flex flex-wrap items-center gap-4 justify-between mb-3">
-					<h1 className="font-bold text-2xl">User Management</h1>
-					<div className="flex gap-4 items-center">
-						<Link to="/admin/role">
-							<Button variant="link" className="p-0">
-								<ArrowLeftRight /> Manage roles
-							</Button>
-						</Link>
-						<InputGroup className="w-80">
-							<InputGroupAddon>
-								<Search />
-							</InputGroupAddon>
-							<InputGroupInput
-								type="search"
-								placeholder="Search by name or username"
-								onChange={(e) => handleFilter(e.target.value)}
-							/>
-						</InputGroup>
-					</div>
+			<div className="flex flex-wrap items-center gap-4 justify-between mb-3">
+				<h1 className="font-bold text-2xl">User Management</h1>
+				<div className="flex gap-4 items-center">
+					<Link to="/admin/role">
+						<Button variant="link" className="p-0">
+							<ArrowLeftRight /> Manage roles
+						</Button>
+					</Link>
+					<InputGroup className="w-80">
+						<InputGroupAddon>
+							<Search />
+						</InputGroupAddon>
+						<InputGroupInput
+							type="search"
+							placeholder="Search by name or username"
+							onChange={(e) => handleFilter(e.target.value)}
+						/>
+					</InputGroup>
 				</div>
-				<Table>
-					<TableHeader>
-						<TableRow>
-							<TableHead className="w-2/5 whitespace-break-spaces">
-								Name
-							</TableHead>
-							<TableHead className="w-2/5">Username</TableHead>
-							<TableHead className="w-1/5">Role</TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{users.map((user) => (
-							<TableRow key={user.username}>
-								<TableCell className="whitespace-break-spaces">
-									{user.name}
-								</TableCell>
-								<TableCell className="font-mono">{user.username}</TableCell>
-								<TableCell>
-									<RoleSelect
-										role={user.role.toString()}
-										roles={roles}
-										setRole={(id) => handleRoleChange(user.id, id)}
-									/>
-								</TableCell>
-							</TableRow>
-						))}
-					</TableBody>
-				</Table>
 			</div>
+			<Table>
+				<TableHeader>
+					<TableRow>
+						<TableHead className="w-2/5 whitespace-break-spaces">
+							Name
+						</TableHead>
+						<TableHead className="w-2/5">Username</TableHead>
+						<TableHead className="w-1/5">Role</TableHead>
+					</TableRow>
+				</TableHeader>
+				<TableBody>
+					{users.map((user) => (
+						<TableRow key={user.username}>
+							<TableCell className="whitespace-break-spaces">
+								{user.name}
+							</TableCell>
+							<TableCell className="font-mono">{user.username}</TableCell>
+							<TableCell>
+								<RoleSelect
+									role={user.role.toString()}
+									roles={roles}
+									setRole={(id) => handleRoleChange(user.id, id)}
+								/>
+							</TableCell>
+						</TableRow>
+					))}
+				</TableBody>
+			</Table>
 		</>
 	);
 }
