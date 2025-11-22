@@ -86,8 +86,8 @@ function AdminDashboard() {
 					) : undefined
 				}
 			/>
-			<div className="flex">
-				<Sidebar className="relative h-[calc(100dvh-4.5rem)]">
+			<div className="flex h-after-topbar">
+				<Sidebar className="relative h-full">
 					<SidebarContent>
 						<SidebarGroup>
 							{isMobile && (
