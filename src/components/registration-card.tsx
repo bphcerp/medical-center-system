@@ -124,6 +124,9 @@ export function RegistrationForm({
 					},
 				});
 		const registered = await handleErrors(res);
+		if (res.status === 400) {
+			return;
+		}
 		if (!registered) {
 			resetState();
 			return;
