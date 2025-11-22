@@ -1,8 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeftRight, Search, ShieldUser } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { Search, ShieldUser } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import {
 	InputGroup,
 	InputGroupAddon,
@@ -46,7 +45,6 @@ export const Route = createFileRoute("/admin/user")({
 		}
 		return { roles, rolesMap, users };
 	},
-	// biome-ignore lint/suspicious/noDuplicateObjectKeys: Not sure why the child route is counted as overridden
 	staticData: {
 		icon: ShieldUser,
 		name: "User Management",
@@ -89,11 +87,6 @@ function Admin() {
 			<div className="flex flex-wrap items-center gap-4 justify-between mb-3">
 				<h1 className="font-bold text-2xl">User Management</h1>
 				<div className="flex gap-4 items-center">
-					<Link to="/admin/role">
-						<Button variant="link" className="p-0">
-							<ArrowLeftRight /> Manage roles
-						</Button>
-					</Link>
 					<InputGroup className="w-80">
 						<InputGroupAddon>
 							<Search />

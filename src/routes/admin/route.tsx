@@ -4,9 +4,10 @@ import {
 	useLocation,
 	useRouter,
 } from "@tanstack/react-router";
-import { ShieldUser } from "lucide-react";
+import { House, Menu, ShieldUser } from "lucide-react";
 import { useEffect } from "react";
 import TopBar from "@/components/topbar";
+import { Button } from "@/components/ui/button";
 import {
 	Sidebar,
 	SidebarContent,
@@ -17,7 +18,6 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 	SidebarProvider,
-	SidebarTrigger,
 	useSidebar,
 } from "@/components/ui/sidebar";
 
@@ -41,7 +41,7 @@ function AdminRoot() {
 function AdminDashboard() {
 	const { flatRoutes, navigate } = useRouter();
 	const location = useLocation();
-	const { open } = useSidebar();
+	const { setOpenMobile, isMobile } = useSidebar();
 
 	const childRoutes = flatRoutes.filter(
 		(route) =>
@@ -72,11 +72,34 @@ function AdminDashboard() {
 
 	return (
 		<div className="w-full">
-			<TopBar title="Admin Dashboard" />
+			<TopBar
+				title="Admin Dashboard"
+				actionButton={
+					isMobile ? (
+						<Button
+							variant="outline"
+							className="p-4 aspect-square"
+							onClick={() => setOpenMobile(true)}
+						>
+							<Menu className="size-4" />
+						</Button>
+					) : undefined
+				}
+			/>
 			<div className="flex">
 				<Sidebar className="relative h-[calc(100dvh-4.5rem)]">
 					<SidebarContent>
 						<SidebarGroup>
+							{isMobile && (
+								<Button
+									variant="outline"
+									className="p-4 flex font-semibold h-12 w-full mb-4"
+									onClick={() => navigate({ to: "/" })}
+								>
+									<House className="size-4" />
+									Go Home
+								</Button>
+							)}
 							<SidebarGroupLabel>Admin Panel</SidebarGroupLabel>
 							<SidebarGroupContent>
 								<SidebarMenu>
@@ -105,7 +128,6 @@ function AdminDashboard() {
 					</SidebarContent>
 				</Sidebar>
 				<main className="w-full px-6 py-4">
-					{open || <SidebarTrigger />}
 					<Outlet />
 				</main>
 			</div>

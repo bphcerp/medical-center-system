@@ -1,13 +1,6 @@
 import { SelectTrigger } from "@radix-ui/react-select";
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import {
-	ArrowLeftRight,
-	Pencil,
-	Plus,
-	ShieldUser,
-	Trash,
-	X,
-} from "lucide-react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { Pencil, Plus, ShieldUser, Trash, X } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -109,16 +102,11 @@ function RolePage() {
 
 	return (
 		<>
-			<div className="flex items-center justify-between">
+			<div className="flex items-center justify-between mb-3">
 				<span className="flex gap-4 items-center">
 					<h1 className="text-2xl font-bold inline">Role Management</h1>
 					<CreateRoleButton onCreate={handleCreateRole} />
 				</span>
-				<Link to="/admin/user">
-					<Button variant="link" className="p-0">
-						<ArrowLeftRight /> Manage users
-					</Button>
-				</Link>
 			</div>
 			<Table>
 				<TableHeader>
