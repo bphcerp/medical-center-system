@@ -23,11 +23,11 @@ import { client } from "../api/$";
 export const Route = createFileRoute("/lab")({
 	loader: async () => {
 		const res = await client.api.lab.pending.$get();
-		const reports = await handleErrors(res);
-		if (!reports) {
-			return { reports: [] };
+		const cases = await handleErrors(res);
+		if (!cases) {
+			return { cases: [] };
 		}
-		return { reports };
+		return { cases };
 	},
 	component: LabDashboard,
 	staticData: {
@@ -39,34 +39,7 @@ export const Route = createFileRoute("/lab")({
 
 function LabDashboard() {
 	useAuth(["lab"]);
-	const { reports } = Route.useLoaderData();
-	// group reports by case
-	const caseGroups = reports.reduce(
-		(acc, report) => {
-			if (!acc[report.caseId]) {
-				acc[report.caseId] = {
-					caseId: report.caseId,
-					patientName: report.patientName,
-					doctorName: report.doctorName,
-					token: report.token,
-					tests: [],
-				};
-			}
-			acc[report.caseId].tests.push(report);
-			return acc;
-		},
-		{} as Record<
-			number,
-			{
-				caseId: number;
-				patientName: string;
-				doctorName: string;
-				token: number;
-				tests: typeof reports;
-			}
-		>,
-	);
-	const caseList = Object.values(caseGroups);
+	const { cases } = Route.useLoaderData();
 
 	const caseId = useParams({
 		from: "/lab/$caseId",
@@ -84,7 +57,7 @@ function LabDashboard() {
 						caseId !== undefined && "hidden lg:flex",
 					)}
 				>
-					{caseList.length === 0 && (
+					{cases.length === 0 && (
 						<Empty>
 							<EmptyHeader>
 								<EmptyMedia variant="icon">
@@ -97,7 +70,7 @@ function LabDashboard() {
 							</EmptyHeader>
 						</Empty>
 					)}
-					{caseList.map((group) => (
+					{cases.map((group) => (
 						<Link
 							to="/lab/$caseId"
 							params={{ caseId: group.caseId.toString() }}
@@ -120,9 +93,9 @@ function LabDashboard() {
 										{group.tests.slice(0, 3).map((test) => (
 											<div
 												className="flex gap-2 items-center font-normal"
-												key={test.labTestReportId}
+												key={test.id}
 											>
-												<span className="line-clamp-2">{test.testName}</span>
+												<span className="line-clamp-2">{test.name}</span>
 												<span
 													className={cn(
 														"h-0 min-w-10 border-t grow transition-colors",

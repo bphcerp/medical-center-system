@@ -70,6 +70,12 @@ function AdminDashboard() {
 		}
 	}, [location.pathname, items, navigate]);
 
+	useEffect(() => {
+		if (isMobile) {
+			setOpenMobile(true);
+		}
+	}, [isMobile, setOpenMobile]);
+
 	return (
 		<div className="w-full">
 			<TopBar
@@ -114,6 +120,9 @@ function AdminDashboard() {
 													type="button"
 													onClick={() => {
 														navigate({ to: item.url, replace: true });
+														if (isMobile) {
+															setOpenMobile(false);
+														}
 													}}
 												>
 													<item.icon />

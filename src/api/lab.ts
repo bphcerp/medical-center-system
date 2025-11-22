@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 import z from "zod";
 import { usersTable } from "@/db/auth";
 import { casesTable } from "@/db/case";
@@ -21,15 +21,13 @@ const lab = createStrictHono()
 	.get("/pending", async (c) => {
 		const pendingReports = await db
 			.select({
+				id: caseLabReportsTable.id,
 				caseId: caseLabReportsTable.caseId,
-				testId: caseLabReportsTable.testId,
 				status: caseLabReportsTable.status,
-				updatedAt: caseLabReportsTable.updatedAt,
-				labTestReportId: caseLabReportsTable.id,
 				token: casesTable.token,
-				patientId: casesTable.patient,
 				associatedUsers: casesTable.associatedUsers,
 				testName: labTestsMasterTable.name,
+				patientName: patientsTable.name,
 			})
 			.from(caseLabReportsTable)
 			.innerJoin(
@@ -37,30 +35,20 @@ const lab = createStrictHono()
 				eq(caseLabReportsTable.testId, labTestsMasterTable.id),
 			)
 			.innerJoin(casesTable, eq(caseLabReportsTable.caseId, casesTable.id))
-			.where(inArray(caseLabReportsTable.status, statusEnums.slice(0, 2)));
+			.innerJoin(patientsTable, eq(casesTable.patient, patientsTable.id))
+			.where(ne(caseLabReportsTable.status, "Complete"));
 
 		if (pendingReports.length === 0) {
 			return c.json({ success: true, data: [] });
 		}
 
-		const patientIds = Array.from(
-			new Set(pendingReports.map((r) => r.patientId)),
-		);
 		const doctorIds = Array.from(
 			new Set(
 				pendingReports
 					.map((r) => r.associatedUsers.at(0))
-					.filter((id): id is number => typeof id === "number"),
+					.filter((id) => id !== undefined),
 			),
 		);
-
-		const patients =
-			patientIds.length > 0
-				? await db
-						.select({ id: patientsTable.id, name: patientsTable.name })
-						.from(patientsTable)
-						.where(inArray(patientsTable.id, patientIds))
-				: [];
 
 		const doctors =
 			doctorIds.length > 0
@@ -70,22 +58,42 @@ const lab = createStrictHono()
 						.where(inArray(usersTable.id, doctorIds))
 				: [];
 
-		const patientMap = new Map(patients.map((p) => [p.id, p.name]));
 		const doctorMap = new Map(doctors.map((d) => [d.id, d.name]));
 
-		const reports = pendingReports.map((report) => ({
-			labTestReportId: report.labTestReportId,
-			caseId: report.caseId,
-			token: report.token,
-			testName: report.testName,
-			status: report.status,
-			patientName: patientMap.get(report.patientId) ?? "Unknown Patient",
-			doctorName:
-				(report.associatedUsers.at(0) != null
-					? doctorMap.get(report.associatedUsers.at(0) ?? 0)
-					: null) ?? "Unknown Doctor",
-		}));
-		return c.json({ success: true, data: reports });
+		interface Case {
+			caseId: number;
+			patientName: string;
+			doctorName: string;
+			token: number;
+			tests: {
+				id: number;
+				name: string;
+				status: (typeof statusEnums)[number];
+			}[];
+		}
+		const cases = pendingReports.reduce((acc: Case[], report) => {
+			let caseEntry = acc.find((c) => c.caseId === report.caseId);
+			if (!caseEntry) {
+				caseEntry = {
+					caseId: report.caseId,
+					patientName: report.patientName,
+					doctorName:
+						(report.associatedUsers.at(0) != null
+							? doctorMap.get(report.associatedUsers.at(0) ?? 0)
+							: null) ?? "Unknown Doctor",
+					token: report.token,
+					tests: [],
+				};
+				acc.push(caseEntry);
+			}
+			caseEntry.tests.push({
+				id: report.id,
+				name: report.testName,
+				status: report.status,
+			});
+			return acc;
+		}, []);
+		return c.json({ success: true, data: cases });
 	})
 	.get(
 		"/details/:caseId",

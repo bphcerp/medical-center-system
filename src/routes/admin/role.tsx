@@ -3,6 +3,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Pencil, Plus, ShieldUser, Trash, X } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
+import DeletableBadge from "@/components/deleteable-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -263,7 +264,7 @@ function RowItem({
 			<TableCell className="pl-2">
 				<div className="flex flex-1 flex-wrap gap-2 items-center">
 					{perms.map((perm) => (
-						<PermBadge
+						<DeletableBadge
 							key={perm}
 							onClick={() => handleDeletePerm(perm)}
 							className="group"
@@ -272,7 +273,7 @@ function RowItem({
 								{perm}
 							</span>
 							<X className="transition-opacity opacity-0 group-hover:opacity-100" />
-						</PermBadge>
+						</DeletableBadge>
 					))}
 				</div>
 			</TableCell>
@@ -372,30 +373,6 @@ function RenameButton({
 				</form>
 			</DialogContent>
 		</Dialog>
-	);
-}
-
-function PermBadge({
-	onClick,
-	className,
-	children,
-	...props
-}: React.PropsWithChildren<{ onClick?: () => void }> &
-	React.ComponentProps<typeof Badge>) {
-	return (
-		<Badge
-			variant="outline"
-			onClick={onClick}
-			className={cn(
-				"font-medium py-1 px-1 text-sm/1 transition-colors flex gap-2 select-none",
-				"[&>svg]:size-4 hover:cursor-pointer",
-				"hover:bg-destructive hover:text-destructive-foreground hover:border-destructive",
-				className,
-			)}
-			{...props}
-		>
-			{children}
-		</Badge>
 	);
 }
 
