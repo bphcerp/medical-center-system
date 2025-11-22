@@ -75,6 +75,7 @@ function Vitals() {
 		const bloodSugar = formData.get("bloodSugar");
 		const weight = formData.get("weight");
 
+		// TODO: For some reason this form resets on bad input
 		// Create a new case
 		const res = await client.api.vitals.createCase.$post({
 			json: {
