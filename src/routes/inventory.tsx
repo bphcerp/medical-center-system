@@ -42,10 +42,7 @@ export const Route = createFileRoute("/inventory")({
 		if (!inventory || !medicines) {
 			return { inventory: [], medicines: [] };
 		}
-		return {
-			inventory: inventory.data.inventory,
-			medicines: medicines.data.medicines,
-		};
+		return { inventory, medicines };
 	},
 	staticData: {
 		requiredPermissions: ["inventory"],

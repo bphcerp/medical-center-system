@@ -129,7 +129,7 @@ export function RegistrationForm({
 			return;
 		}
 
-		setToken(registered.data.token);
+		setToken(registered.token);
 		resetState();
 	};
 
@@ -162,13 +162,10 @@ export function RegistrationForm({
 		}
 
 		// If existing record not found, proceed to details form
-		if (
-			existing.data.exists === false ||
-			"tryVisitorRegistration" in existing.data
-		) {
+		if (existing.exists === false || "tryVisitorRegistration" in existing) {
 			if (
-				"tryVisitorRegistration" in existing.data &&
-				existing.data.tryVisitorRegistration
+				"tryVisitorRegistration" in existing &&
+				existing.tryVisitorRegistration
 			) {
 				alert(
 					"No existing record found. Please register as a visitor temporarily.",
@@ -180,28 +177,26 @@ export function RegistrationForm({
 			return;
 		}
 
-		const data = existing.data;
-
 		setShowDetails(true);
 		setDisableForm(true);
-		if ("dependents" in data) {
-			if (data.dependents.length === 0) {
-				setPatientId(data.professor.id);
-				setName(data.professor.name);
-				setBirthdate(new Date(data.professor.birthdate));
-				setSex(data.professor.sex);
+		if ("dependents" in existing) {
+			if (existing.dependents.length === 0) {
+				setPatientId(existing.professor.id);
+				setName(existing.professor.name);
+				setBirthdate(new Date(existing.professor.birthdate));
+				setSex(existing.professor.sex);
 				return;
 			}
 			setOptions(
 				[
 					{
-						id: data.professor.id,
-						name: data.professor.name,
-						birthdate: new Date(data.professor.birthdate),
-						sex: data.professor.sex,
+						id: existing.professor.id,
+						name: existing.professor.name,
+						birthdate: new Date(existing.professor.birthdate),
+						sex: existing.professor.sex,
 					},
 				].concat(
-					data.dependents.map((d) => ({
+					existing.dependents.map((d) => ({
 						id: d.id,
 						name: d.name,
 						birthdate: new Date(d.birthdate),
@@ -212,10 +207,10 @@ export function RegistrationForm({
 			return;
 		}
 
-		setPatientId(data.id);
-		setName(data.name);
-		setBirthdate(new Date(data.birthdate));
-		setSex(data.sex);
+		setPatientId(existing.id);
+		setName(existing.name);
+		setBirthdate(new Date(existing.birthdate));
+		setSex(existing.sex);
 		return;
 	};
 

@@ -23,15 +23,13 @@ const vitals = createStrictHono()
 
 		return c.json({
 			success: true,
-			data: {
-				unprocessed: unprocessed.map((item) => ({
-					...item,
-					patients: {
-						...item.patients,
-						age: getAge(item.patients.birthdate),
-					},
-				})),
-			},
+			data: unprocessed.map((item) => ({
+				...item,
+				patients: {
+					...item.patients,
+					age: getAge(item.patients.birthdate),
+				},
+			})),
 		});
 	})
 	.get("/availableDoctors", async (c) => {
@@ -42,7 +40,7 @@ const vitals = createStrictHono()
 			.innerJoin(rolesTable, eq(usersTable.role, rolesTable.id))
 			.where(arrayContains(rolesTable.allowed, ["doctor"]));
 
-		return c.json({ success: true, data: { doctors } });
+		return c.json({ success: true, data: doctors });
 	})
 	.post(
 		"/createCase",
@@ -94,7 +92,7 @@ const vitals = createStrictHono()
 			return c.json(
 				{
 					success: true,
-					data: { message: "Case created successfully", case: result },
+					data: result,
 				},
 				201,
 			);

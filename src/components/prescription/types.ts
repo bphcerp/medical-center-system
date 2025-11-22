@@ -11,7 +11,7 @@ const medicinesResponse = client.api.doctor.medicines.$get;
 export type MedicineItem = InferResponseType<
 	typeof medicinesResponse,
 	200
->["data"]["medicines"][number];
+>["data"][number];
 
 export interface PrescriptionItemProps {
 	item: PrescriptionItem;

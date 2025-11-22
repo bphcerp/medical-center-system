@@ -27,8 +27,7 @@ export const Route = createFileRoute("/lab")({
 		if (!reports) {
 			return { reports: [] };
 		}
-
-		return { reports: reports.data.reports };
+		return { reports };
 	},
 	component: LabDashboard,
 	staticData: {

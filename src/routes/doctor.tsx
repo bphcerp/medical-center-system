@@ -34,7 +34,7 @@ export const Route = createFileRoute("/doctor")({
 		if (!queue) {
 			return { queue: [] };
 		}
-		return { queue: queue.data.queue };
+		return { queue };
 	},
 	component: DoctorDashboard,
 	staticData: {

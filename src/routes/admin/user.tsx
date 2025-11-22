@@ -37,23 +37,14 @@ export const Route = createFileRoute("/admin/user")({
 		const users = await handleErrors(usersRes);
 		const roles = await handleErrors(rolesRes);
 		if (!users || !roles) {
-			return {
-				roles: [],
-				rolesMap: {},
-				users: [],
-			};
+			return { roles: [], rolesMap: {}, users: [] };
 		}
 
 		const rolesMap: { [key: number]: string } = {};
-		for (const role of roles.data) {
+		for (const role of roles) {
 			rolesMap[role.id] = role.name;
 		}
-
-		return {
-			roles: roles.data,
-			rolesMap: rolesMap,
-			users: users.data.users,
-		};
+		return { roles, rolesMap, users };
 	},
 });
 

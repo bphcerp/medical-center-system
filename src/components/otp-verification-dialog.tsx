@@ -76,7 +76,7 @@ export const useOTP = (caseId: string) => {
 		}
 
 		setIsOtpDialogOpen(false);
-		setCaseRecord(data.data);
+		setCaseRecord(data);
 		setIsVerifying(false);
 	};
 
@@ -95,7 +95,7 @@ export const useOTP = (caseId: string) => {
 		}
 
 		setIsOtpDialogOpen(false);
-		setCaseRecord(data.data);
+		setCaseRecord(data);
 	};
 
 	return {

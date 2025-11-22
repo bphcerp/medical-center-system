@@ -26,13 +26,9 @@ export const Route = createFileRoute("/admin/otp-overrides")({
 		const logsRes = await client.api.admin["otp-override-logs"].$get();
 		const logs = await handleErrors(logsRes);
 		if (!logs) {
-			return {
-				logs: [],
-			};
+			return { logs: [] };
 		}
-		return {
-			logs: logs.data,
-		};
+		return { logs };
 	},
 	component: OTPOverridesPage,
 	staticData: {

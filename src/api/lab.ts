@@ -50,7 +50,7 @@ const lab = createStrictHono()
 			.where(inArray(caseLabReportsTable.status, statusEnums.slice(0, 2)));
 
 		if (pendingReports.length === 0) {
-			return c.json({ success: true, data: { reports: [] } });
+			return c.json({ success: true, data: [] });
 		}
 
 		const patientIds = Array.from(
@@ -95,7 +95,7 @@ const lab = createStrictHono()
 					? doctorMap.get(report.associatedUsers.at(0) ?? 0)
 					: null) ?? "Unknown Doctor",
 		}));
-		return c.json({ success: true, data: { reports } });
+		return c.json({ success: true, data: reports });
 	})
 	.get(
 		"/details/:caseId",
@@ -330,9 +330,7 @@ const lab = createStrictHono()
 
 				return c.json({
 					success: true,
-					data: {
-						file: fileRecord,
-					},
+					data: fileRecord,
 				});
 			} catch (error) {
 				console.error("File upload error in lab module:", error);

@@ -26,8 +26,8 @@ export const Route = createFileRoute("/history/$patientId/")({
 		}
 		return {
 			patientId: params.patientId,
-			patient: history.data.patient,
-			cases: history.data.cases,
+			patient: history.patient,
+			cases: history.cases,
 		};
 	},
 	component: HistoryPage,

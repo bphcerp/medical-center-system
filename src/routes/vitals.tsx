@@ -33,17 +33,11 @@ export const Route = createFileRoute("/vitals")({
 		const unprocessedRes = await client.api.vitals.unprocessed.$get();
 		const doctorsRes = await client.api.vitals.availableDoctors.$get();
 		const unprocessed = await handleErrors(unprocessedRes);
-		const doctors = await handleErrors(doctorsRes);
-		if (!unprocessed || !doctors) {
-			return {
-				unprocessed: [],
-				availableDoctors: [],
-			};
+		const availableDoctors = await handleErrors(doctorsRes);
+		if (!unprocessed || !availableDoctors) {
+			return { unprocessed: [], availableDoctors: [] };
 		}
-		return {
-			unprocessed: unprocessed.data.unprocessed,
-			availableDoctors: doctors.data.doctors,
-		};
+		return { unprocessed, availableDoctors };
 	},
 	component: Vitals,
 	staticData: {

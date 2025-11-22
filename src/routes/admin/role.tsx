@@ -46,7 +46,7 @@ export const Route = createFileRoute("/admin/role")({
 	loader: async () => {
 		const res = await client.api.role.all.$get();
 		const data = await handleErrors(res);
-		return { roles: data ? data.data : [] };
+		return { roles: data ?? [] };
 	},
 });
 

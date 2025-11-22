@@ -29,9 +29,7 @@ export const Route = createFileRoute("/lab/$caseId")({
 			throw redirect({ to: "/lab" });
 		}
 
-		return {
-			...reports.data,
-		};
+		return { ...reports };
 	},
 	component: TestEntry,
 });
@@ -74,8 +72,8 @@ function TestEntry() {
 				labTestReportId: testId,
 			},
 		});
-		const data = await handleErrors(res);
-		if (!data) {
+		const uploaded = await handleErrors(res);
+		if (!uploaded) {
 			setUploading((prev) => ({ ...prev, [testId]: false }));
 			return;
 		}
@@ -85,7 +83,7 @@ function TestEntry() {
 				test.labTestReportId === testId
 					? {
 							...test,
-							fileId: data.data.file.id,
+							fileId: uploaded.id,
 							status: "Complete",
 						}
 					: test,

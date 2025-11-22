@@ -178,7 +178,7 @@ const doctor = createStrictHono()
 				};
 			});
 
-		return c.json({ success: true, data: { queue } });
+		return c.json({ success: true, data: queue });
 	})
 	.get("/consultation/:caseId", async (c) => {
 		const payload = c.get("jwtPayload");
@@ -237,7 +237,7 @@ const doctor = createStrictHono()
 			);
 		}
 
-		return c.json({ success: true, data: { medicines } });
+		return c.json({ success: true, data: medicines });
 	})
 	.get("/diseases", async (c) => {
 		const diseases = await db.select().from(diseasesTable);
@@ -249,7 +249,7 @@ const doctor = createStrictHono()
 			);
 		}
 
-		return c.json({ success: true, data: { diseases } });
+		return c.json({ success: true, data: diseases });
 	})
 	.post(
 		"/autosave",
@@ -438,7 +438,7 @@ const doctor = createStrictHono()
 			.from(labTestsMasterTable)
 			.where(eq(labTestsMasterTable.isActive, true));
 
-		return c.json({ success: true, data: { tests: activeTests } });
+		return c.json({ success: true, data: activeTests });
 	});
 
 export default doctor;

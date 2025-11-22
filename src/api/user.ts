@@ -38,7 +38,7 @@ const user = createStrictHono()
 			.from(usersTable)
 			.orderBy(desc(role));
 
-		return c.json({ success: true, data: { users } });
+		return c.json({ success: true, data: users });
 	})
 	// probably will have more to edit than just roles in the future
 	.post(

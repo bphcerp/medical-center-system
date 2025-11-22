@@ -48,7 +48,7 @@ export const Route = createFileRoute("/consultation/$id")({
 			caseDetail,
 			prescriptions,
 			diseases: diagnosesFromCase,
-		} = consultation.data;
+		} = consultation;
 
 		if (caseDetail.cases.finalizedState !== null) {
 			throw redirect({
@@ -65,9 +65,9 @@ export const Route = createFileRoute("/consultation/$id")({
 			prescriptions,
 			diagnosesFromCase,
 
-			medicines: medicines.data.medicines,
-			diseases: diseases.data.diseases,
-			tests: tests.data.tests,
+			medicines: medicines,
+			diseases: diseases,
+			tests: tests,
 		};
 	},
 	component: ConsultationPage,

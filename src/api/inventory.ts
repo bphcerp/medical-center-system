@@ -102,7 +102,7 @@ const inventory = createStrictHono()
 
 		return c.json({
 			success: true,
-			data: { inventory: Array.from(inventoryMap.values()) },
+			data: Array.from(inventoryMap.values()),
 		});
 	})
 	.get("/medicines", async (c) => {
@@ -115,7 +115,7 @@ const inventory = createStrictHono()
 			);
 		}
 
-		return c.json({ success: true, data: { medicines } });
+		return c.json({ success: true, data: medicines });
 	})
 	.post(
 		"/addQuantity",
