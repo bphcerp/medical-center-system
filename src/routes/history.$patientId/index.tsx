@@ -1,8 +1,16 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { ClipboardClock } from "lucide-react";
 import { PatientDetails } from "@/components/patient-details";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
 import {
 	Table,
 	TableBody,
@@ -43,6 +51,9 @@ function HistoryPage() {
 		const dateB = new Date(b.updatedAt).getTime();
 		return dateB - dateA;
 	});
+	const finalizedCases = sortedCases.filter(
+		(caseItem) => caseItem.finalizedState !== null,
+	);
 
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);
@@ -80,30 +91,35 @@ function HistoryPage() {
 				</div>
 
 				<Card>
-					<CardHeader>
-						<CardTitle>Case History</CardTitle>
-					</CardHeader>
-					<CardContent>
-						{sortedCases.length === 0 ? (
-							<div className="text-center py-8">
-								<p className="text-muted-foreground">
-									No cases found for this patient
-								</p>
-							</div>
-						) : (
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Case ID</TableHead>
-										<TableHead>Finalized State</TableHead>
-										<TableHead>Created</TableHead>
-										<TableHead>Last Updated</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{sortedCases
-										.filter((caseItem) => caseItem.finalizedState)
-										.map((caseItem) => (
+					{finalizedCases.length === 0 ? (
+						<Empty>
+							<EmptyHeader>
+								<EmptyMedia variant="icon">
+									<ClipboardClock />
+								</EmptyMedia>
+								<EmptyTitle>No case records found for this patient</EmptyTitle>
+								<EmptyDescription>
+									When cases are finalized, they will appear here.
+								</EmptyDescription>
+							</EmptyHeader>
+						</Empty>
+					) : (
+						<>
+							<CardHeader>
+								<CardTitle>Case History</CardTitle>
+							</CardHeader>
+							<CardContent>
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead>Case ID</TableHead>
+											<TableHead>Finalized State</TableHead>
+											<TableHead>Created</TableHead>
+											<TableHead>Last Updated</TableHead>
+										</TableRow>
+									</TableHeader>
+									<TableBody>
+										{finalizedCases.map((caseItem) => (
 											<TableRow
 												key={caseItem.caseId}
 												className="cursor-pointer hover:bg-muted/50"
@@ -119,10 +135,11 @@ function HistoryPage() {
 												<TableCell>{formatDate(caseItem.updatedAt)}</TableCell>
 											</TableRow>
 										))}
-								</TableBody>
-							</Table>
-						)}
-					</CardContent>
+									</TableBody>
+								</Table>
+							</CardContent>
+						</>
+					)}
 				</Card>
 			</div>
 			<Outlet />

@@ -119,9 +119,9 @@ function Vitals() {
 	};
 
 	return (
-		<div className="flex flex-col items-stretch h-screen">
+		<div className="flex flex-col items-stretch h-dvh">
 			<TopBar title="Patient Queue" />
-			<div className="flex items-stretch divide-x divide-border grow min-h-0">
+			<div className="flex items-stretch divide-x divide-border grow min-h-0 h-after-topbar">
 				<div
 					className={cn(
 						"relative flex flex-col flex-2 px-4 pt-4 overflow-y-scroll bg-background bottom-0 min-h-0 z-10",

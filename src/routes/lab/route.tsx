@@ -3,10 +3,8 @@ import {
 	Link,
 	Outlet,
 	useParams,
-	useRouter,
 } from "@tanstack/react-router";
 import { FlaskConical } from "lucide-react";
-import { useEffect } from "react";
 import { LabTestStatusBadge } from "@/components/lab-test-status-badge";
 import { TokenButton, TokenButtonTitle } from "@/components/token-button";
 import TopBar from "@/components/topbar";
@@ -69,17 +67,6 @@ function LabDashboard() {
 		>,
 	);
 	const caseList = Object.values(caseGroups);
-	const { navigate } = useRouter();
-
-	useEffect(() => {
-		if (caseList.length > 0 && caseList[0].caseId) {
-			navigate({
-				to: "/lab/$caseId",
-				params: { caseId: caseList[0].caseId.toString() },
-				replace: true,
-			});
-		}
-	}, [navigate, caseList]);
 
 	const caseId = useParams({
 		from: "/lab/$caseId",
@@ -88,9 +75,9 @@ function LabDashboard() {
 	});
 
 	return (
-		<div className="h-screen flex flex-col">
+		<div className="h-dvh flex flex-col">
 			<TopBar title="Lab Dashboard" />
-			<div className="flex items-stretch divide-x divide-border grow min-h-0">
+			<div className="flex items-stretch divide-x divide-border grow min-h-0 h-after-topbar">
 				<div
 					className={cn(
 						"flex flex-col flex-2 p-4 gap-4 overflow-y-scroll bottom-0 min-h-0",
@@ -129,16 +116,16 @@ function LabDashboard() {
 										requested{" "}
 										{group.tests.length === 1 ? "this test:" : "these tests:"}
 									</div>
-									<div className="flex flex-col gap-3 pl-2">
+									<div className="flex flex-col gap-2 pl-2">
 										{group.tests.map((test) => (
 											<div
 												className="flex gap-2 items-center text-sm/6 font-normal"
 												key={test.labTestReportId}
 											>
-												<span className="text-wrap">{test.testName}</span>
+												<span className="line-clamp-2">{test.testName}</span>
 												<span
 													className={cn(
-														"h-0 border-t-3 grow border-dotted transition-colors",
+														"h-0 min-w-10 border-t grow transition-colors",
 														getBorderColor(test.status),
 													)}
 												/>

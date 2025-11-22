@@ -19,8 +19,8 @@ function App() {
 	return (
 		<>
 			<TopBar title="Medical Center System" />
-			<div className="flex justify-center pt-8">
-				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 justify-items-stretch xl:w-2/3 w-full px-6">
+			<div className="flex justify-center h-after-topbar">
+				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 justify-items-stretch xl:w-2/3 w-full px-6 mt-16 mb-auto">
 					{allowedRoutes.map((route) => (
 						<Button
 							key={route.path}

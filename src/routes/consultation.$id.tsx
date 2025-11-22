@@ -162,7 +162,7 @@ function ConsultationPage() {
 
 	return (
 		<>
-			<TopBar title={`Consultation Page`} />
+			<TopBar title="Consultation Page" />
 			<div className="p-6">
 				<div className="flex justify-between items-start mb-4">
 					<div>
