@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Empty,
-	EmptyContent,
+	EmptyDescription,
 	EmptyHeader,
 	EmptyMedia,
 	EmptyTitle,
@@ -89,9 +89,9 @@ function DoctorDashboard() {
 										<Stethoscope />
 									</EmptyMedia>
 									<EmptyTitle>No patients in queue</EmptyTitle>
-									<EmptyContent>
+									<EmptyDescription>
 										When patients are assigned to you, they will appear here.
-									</EmptyContent>
+									</EmptyDescription>
 								</EmptyHeader>
 							</Empty>
 						) : (
