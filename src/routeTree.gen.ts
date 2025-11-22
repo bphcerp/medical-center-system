@@ -9,14 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VitalsRouteImport } from './routes/vitals'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as DoctorRouteImport } from './routes/doctor'
+import { Route as VitalsRouteRouteImport } from './routes/vitals/route'
 import { Route as LabRouteRouteImport } from './routes/lab/route'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VitalsTokenRouteImport } from './routes/vitals/$token'
 import { Route as LabCaseIdRouteImport } from './routes/lab/$caseId'
 import { Route as ConsultationIdRouteImport } from './routes/consultation.$id'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
@@ -26,11 +27,6 @@ import { Route as AdminOtpOverridesRouteImport } from './routes/admin/otp-overri
 import { Route as HistoryPatientIdIndexRouteImport } from './routes/history.$patientId/index'
 import { Route as HistoryPatientIdCaseIdRouteImport } from './routes/history.$patientId/$caseId'
 
-const VitalsRoute = VitalsRouteImport.update({
-  id: '/vitals',
-  path: '/vitals',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -51,6 +47,11 @@ const DoctorRoute = DoctorRouteImport.update({
   path: '/doctor',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VitalsRouteRoute = VitalsRouteRouteImport.update({
+  id: '/vitals',
+  path: '/vitals',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LabRouteRoute = LabRouteRouteImport.update({
   id: '/lab',
   path: '/lab',
@@ -65,6 +66,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const VitalsTokenRoute = VitalsTokenRouteImport.update({
+  id: '/$token',
+  path: '/$token',
+  getParentRoute: () => VitalsRouteRoute,
 } as any)
 const LabCaseIdRoute = LabCaseIdRouteImport.update({
   id: '/$caseId',
@@ -111,17 +117,18 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/lab': typeof LabRouteRouteWithChildren
+  '/vitals': typeof VitalsRouteRouteWithChildren
   '/doctor': typeof DoctorRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/vitals': typeof VitalsRoute
   '/admin/otp-overrides': typeof AdminOtpOverridesRoute
   '/admin/role': typeof AdminRoleRoute
   '/admin/user': typeof AdminUserRoute
   '/api/$': typeof ApiSplatRoute
   '/consultation/$id': typeof ConsultationIdRoute
   '/lab/$caseId': typeof LabCaseIdRoute
+  '/vitals/$token': typeof VitalsTokenRoute
   '/history/$patientId/$caseId': typeof HistoryPatientIdCaseIdRoute
   '/history/$patientId': typeof HistoryPatientIdIndexRoute
 }
@@ -129,17 +136,18 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/lab': typeof LabRouteRouteWithChildren
+  '/vitals': typeof VitalsRouteRouteWithChildren
   '/doctor': typeof DoctorRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/vitals': typeof VitalsRoute
   '/admin/otp-overrides': typeof AdminOtpOverridesRoute
   '/admin/role': typeof AdminRoleRoute
   '/admin/user': typeof AdminUserRoute
   '/api/$': typeof ApiSplatRoute
   '/consultation/$id': typeof ConsultationIdRoute
   '/lab/$caseId': typeof LabCaseIdRoute
+  '/vitals/$token': typeof VitalsTokenRoute
   '/history/$patientId/$caseId': typeof HistoryPatientIdCaseIdRoute
   '/history/$patientId': typeof HistoryPatientIdIndexRoute
 }
@@ -148,17 +156,18 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/lab': typeof LabRouteRouteWithChildren
+  '/vitals': typeof VitalsRouteRouteWithChildren
   '/doctor': typeof DoctorRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/vitals': typeof VitalsRoute
   '/admin/otp-overrides': typeof AdminOtpOverridesRoute
   '/admin/role': typeof AdminRoleRoute
   '/admin/user': typeof AdminUserRoute
   '/api/$': typeof ApiSplatRoute
   '/consultation/$id': typeof ConsultationIdRoute
   '/lab/$caseId': typeof LabCaseIdRoute
+  '/vitals/$token': typeof VitalsTokenRoute
   '/history/$patientId/$caseId': typeof HistoryPatientIdCaseIdRoute
   '/history/$patientId/': typeof HistoryPatientIdIndexRoute
 }
@@ -168,17 +177,18 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/lab'
+    | '/vitals'
     | '/doctor'
     | '/inventory'
     | '/login'
     | '/register'
-    | '/vitals'
     | '/admin/otp-overrides'
     | '/admin/role'
     | '/admin/user'
     | '/api/$'
     | '/consultation/$id'
     | '/lab/$caseId'
+    | '/vitals/$token'
     | '/history/$patientId/$caseId'
     | '/history/$patientId'
   fileRoutesByTo: FileRoutesByTo
@@ -186,17 +196,18 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/lab'
+    | '/vitals'
     | '/doctor'
     | '/inventory'
     | '/login'
     | '/register'
-    | '/vitals'
     | '/admin/otp-overrides'
     | '/admin/role'
     | '/admin/user'
     | '/api/$'
     | '/consultation/$id'
     | '/lab/$caseId'
+    | '/vitals/$token'
     | '/history/$patientId/$caseId'
     | '/history/$patientId'
   id:
@@ -204,17 +215,18 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/lab'
+    | '/vitals'
     | '/doctor'
     | '/inventory'
     | '/login'
     | '/register'
-    | '/vitals'
     | '/admin/otp-overrides'
     | '/admin/role'
     | '/admin/user'
     | '/api/$'
     | '/consultation/$id'
     | '/lab/$caseId'
+    | '/vitals/$token'
     | '/history/$patientId/$caseId'
     | '/history/$patientId/'
   fileRoutesById: FileRoutesById
@@ -223,11 +235,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   LabRouteRoute: typeof LabRouteRouteWithChildren
+  VitalsRouteRoute: typeof VitalsRouteRouteWithChildren
   DoctorRoute: typeof DoctorRoute
   InventoryRoute: typeof InventoryRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
-  VitalsRoute: typeof VitalsRoute
   ApiSplatRoute: typeof ApiSplatRoute
   ConsultationIdRoute: typeof ConsultationIdRoute
   HistoryPatientIdCaseIdRoute: typeof HistoryPatientIdCaseIdRoute
@@ -236,13 +248,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/vitals': {
-      id: '/vitals'
-      path: '/vitals'
-      fullPath: '/vitals'
-      preLoaderRoute: typeof VitalsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -271,6 +276,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DoctorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vitals': {
+      id: '/vitals'
+      path: '/vitals'
+      fullPath: '/vitals'
+      preLoaderRoute: typeof VitalsRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lab': {
       id: '/lab'
       path: '/lab'
@@ -291,6 +303,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/vitals/$token': {
+      id: '/vitals/$token'
+      path: '/$token'
+      fullPath: '/vitals/$token'
+      preLoaderRoute: typeof VitalsTokenRouteImport
+      parentRoute: typeof VitalsRouteRoute
     }
     '/lab/$caseId': {
       id: '/lab/$caseId'
@@ -379,15 +398,27 @@ const LabRouteRouteWithChildren = LabRouteRoute._addFileChildren(
   LabRouteRouteChildren,
 )
 
+interface VitalsRouteRouteChildren {
+  VitalsTokenRoute: typeof VitalsTokenRoute
+}
+
+const VitalsRouteRouteChildren: VitalsRouteRouteChildren = {
+  VitalsTokenRoute: VitalsTokenRoute,
+}
+
+const VitalsRouteRouteWithChildren = VitalsRouteRoute._addFileChildren(
+  VitalsRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
   LabRouteRoute: LabRouteRouteWithChildren,
+  VitalsRouteRoute: VitalsRouteRouteWithChildren,
   DoctorRoute: DoctorRoute,
   InventoryRoute: InventoryRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
-  VitalsRoute: VitalsRoute,
   ApiSplatRoute: ApiSplatRoute,
   ConsultationIdRoute: ConsultationIdRoute,
   HistoryPatientIdCaseIdRoute: HistoryPatientIdCaseIdRoute,

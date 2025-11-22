@@ -13,7 +13,15 @@ const vitals = createStrictHono()
 	.use(rbacCheck({ permissions: ["vitals"] }))
 	.get("/unprocessed", async (c) => {
 		const unprocessed = await db
-			.select()
+			.select({
+				name: patientsTable.name,
+				birthdate: patientsTable.birthdate,
+				sex: patientsTable.sex,
+				token: unprocessedTable.id,
+				id: patientsTable.id,
+				type: patientsTable.type,
+				identifierType: unprocessedTable.identifierType,
+			})
 			.from(unprocessedTable)
 			.innerJoin(
 				patientsTable,
@@ -23,12 +31,9 @@ const vitals = createStrictHono()
 
 		return c.json({
 			success: true,
-			data: unprocessed.map((item) => ({
-				...item,
-				patients: {
-					...item.patients,
-					age: getAge(item.patients.birthdate),
-				},
+			data: unprocessed.map((patient) => ({
+				...patient,
+				age: getAge(patient.birthdate),
 			})),
 		});
 	})

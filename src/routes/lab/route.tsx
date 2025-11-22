@@ -73,6 +73,7 @@ function LabDashboard() {
 					{cases.map((group) => (
 						<Link
 							to="/lab/$caseId"
+							replace
 							params={{ caseId: group.caseId.toString() }}
 							key={group.caseId}
 						>
@@ -120,7 +121,9 @@ function LabDashboard() {
 						</Link>
 					))}
 				</div>
-				<div className={cn("flex-5", !caseId && "hidden lg:block")}>
+				<div
+					className={cn("flex-5", caseId === undefined && "hidden lg:block")}
+				>
 					<Outlet />
 				</div>
 			</div>

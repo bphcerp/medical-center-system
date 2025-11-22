@@ -3,7 +3,7 @@ import { ScrollText, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Empty,
-	EmptyContent,
+	EmptyDescription,
 	EmptyHeader,
 	EmptyMedia,
 	EmptyTitle,
@@ -67,9 +67,9 @@ function OTPOverridesPage() {
 							<ShieldCheck />
 						</EmptyMedia>
 						<EmptyTitle>No OTP override logs found</EmptyTitle>
-						<EmptyContent>
+						<EmptyDescription>
 							All access has been through proper OTP verification.
-						</EmptyContent>
+						</EmptyDescription>
 					</EmptyHeader>
 				</Empty>
 			) : (

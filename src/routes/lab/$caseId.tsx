@@ -1,8 +1,9 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { LabTestStatusBadge } from "@/components/lab-test-status-badge";
+import { NotFound } from "@/components/not-found";
 import { PatientDetails } from "@/components/patient-details";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -27,11 +28,12 @@ export const Route = createFileRoute("/lab/$caseId")({
 		});
 		const reports = await handleErrors(res);
 		if (res.status === 404 || !reports) {
-			throw redirect({ to: "/lab" });
+			throw notFound();
 		}
 
 		return { ...reports };
 	},
+	notFoundComponent: () => <NotFound title="Lab case not found" />,
 	component: TestEntry,
 });
 
