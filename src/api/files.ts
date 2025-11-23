@@ -6,13 +6,21 @@ import { SeaweedFSClient } from "@/lib/seaweedfs";
 import { createStrictHono, strictValidator } from "@/lib/types/api";
 import { db } from "./index";
 
-export async function uploadFileService(file: File, allowed: number[] = []) {
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+export async function uploadFileService(
+	tx: Transaction,
+	file: File,
+	allowed: number[] = [],
+) {
 	const { fid, url } = await seaweedfs.uploadFile(file);
 	try {
-		const [fileRecord] = await db
+		const [fileRecord] = await tx
 			.insert(filesTable)
 			.values({
 				url: url,
+				fid: fid,
+				filename: file.name,
 				allowed: allowed,
 			})
 			.returning({

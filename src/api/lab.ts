@@ -1,4 +1,4 @@
-import { and, eq, inArray, ne } from "drizzle-orm";
+import { and, count, eq, inArray, ne } from "drizzle-orm";
 import z from "zod";
 import { usersTable } from "@/db/auth";
 import { casesTable } from "@/db/case";
@@ -12,7 +12,7 @@ import {
 import { patientsTable } from "@/db/patient";
 import { createStrictHono, strictValidator } from "@/lib/types/api";
 import { getAge } from "@/lib/utils";
-import { uploadFileService } from "./files";
+import { seaweedfs, uploadFileService } from "./files";
 import { db } from "./index";
 import { rbacCheck } from "./rbac";
 
@@ -104,67 +104,70 @@ const lab = createStrictHono()
 		async (c) => {
 			const { caseId } = c.req.valid("param");
 
-			const [caseDetail] = await db
-				.select({
-					caseId: casesTable.id,
-					patientId: casesTable.patient,
-					associatedUsers: casesTable.associatedUsers,
-					token: casesTable.token,
-				})
-				.from(casesTable)
-				.where(eq(casesTable.id, caseId));
-
-			if (!caseDetail) {
-				return c.json(
-					{ success: false, error: { message: "Case not found" } },
-					404,
-				);
-			}
-
 			const tests = await db
 				.select({
-					labTestReportId: caseLabReportsTable.id,
+					id: caseLabReportsTable.id,
 					testId: caseLabReportsTable.testId,
 					testName: labTestsMasterTable.name,
 					status: caseLabReportsTable.status,
 					metadata: caseLabReportsTable.metadata,
+					patient: patientsTable,
+					token: casesTable.token,
+					associatedUsers: casesTable.associatedUsers,
 				})
 				.from(caseLabReportsTable)
 				.innerJoin(
 					labTestsMasterTable,
 					eq(caseLabReportsTable.testId, labTestsMasterTable.id),
 				)
+				.innerJoin(casesTable, eq(caseLabReportsTable.caseId, casesTable.id))
+				.innerJoin(patientsTable, eq(casesTable.patient, patientsTable.id))
 				.where(eq(caseLabReportsTable.caseId, caseId));
 
-			const labTestReportIds = tests.map((t) => t.labTestReportId);
+			if (tests.length === 0) {
+				return c.json(
+					{ success: false, error: { message: "No tests found" } },
+					404,
+				);
+			}
+
+			const patient = tests[0].patient;
+			const token = tests[0].token;
+
+			const ids = tests.map((t) => t.id);
 			const fileLinks =
-				labTestReportIds.length > 0
+				ids.length > 0
 					? await db
 							.select({
-								labTestReportId: labTestFilesTable.caseLabReportId,
+								id: labTestFilesTable.caseLabReportId,
 								fileId: labTestFilesTable.fileId,
+								filename: filesTable.filename,
 							})
 							.from(labTestFilesTable)
-							.where(
-								inArray(labTestFilesTable.caseLabReportId, labTestReportIds),
+							.where(inArray(labTestFilesTable.caseLabReportId, ids))
+							.innerJoin(
+								filesTable,
+								eq(labTestFilesTable.fileId, filesTable.id),
 							)
 					: [];
 
-			const fileMap = new Map(
-				fileLinks.map((f) => [f.labTestReportId, f.fileId]),
-			);
+			interface FileLink {
+				fileId: number;
+				filename: string;
+			}
 
-			const [patient] = await db
-				.select({
-					name: patientsTable.name,
-					birthdate: patientsTable.birthdate,
-					sex: patientsTable.sex,
-					type: patientsTable.type,
-				})
-				.from(patientsTable)
-				.where(eq(patientsTable.id, caseDetail.patientId));
+			const fileMap = new Map<number, FileLink[]>();
+			for (const link of fileLinks) {
+				if (!fileMap.has(link.id)) {
+					fileMap.set(link.id, []);
+				}
+				fileMap.get(link.id)?.push({
+					fileId: link.fileId,
+					filename: link.filename,
+				});
+			}
 
-			const primaryDoctorId = caseDetail.associatedUsers.at(0);
+			const primaryDoctorId = tests[0].associatedUsers.at(0);
 			const [doctor] =
 				primaryDoctorId != null
 					? await db
@@ -174,19 +177,19 @@ const lab = createStrictHono()
 					: [];
 
 			const testsWithFiles = tests.map((test) => ({
-				labTestReportId: test.labTestReportId,
+				id: test.id,
 				testId: test.testId,
 				testName: test.testName,
 				status: test.status,
 				metadata: test.metadata,
-				fileId: fileMap.get(test.labTestReportId) ?? null,
+				files: fileMap.get(test.id) ?? [],
 			}));
 
 			return c.json({
 				success: true,
 				data: {
 					caseId,
-					token: caseDetail.token,
+					token,
 					patient: {
 						...patient,
 						age: getAge(patient.birthdate),
@@ -198,123 +201,54 @@ const lab = createStrictHono()
 		},
 	)
 	.post(
-		"/update-tests/:caseId",
+		"/update/:testId",
 		strictValidator(
 			"param",
-			z.object({ caseId: z.coerce.number().int().positive() }),
+			z.object({ testId: z.coerce.number().int().positive() }),
 		),
-		strictValidator(
-			"json",
-			z.object({
-				tests: z
-					.array(
-						z.object({
-							labTestReportId: z.number().int().positive(),
-							status: z.enum(statusEnums),
-							fileId: z.number().int().positive().optional(),
-						}),
-					)
-					.min(1),
-			}),
-		),
-		async (c) => {
-			const { caseId } = c.req.valid("param");
-			const { tests } = c.req.valid("json");
-
-			await db.transaction(async (tx) => {
-				const caseTests = await tx
-					.select({ id: caseLabReportsTable.id })
-					.from(caseLabReportsTable)
-					.where(eq(caseLabReportsTable.caseId, caseId));
-
-				const validIds = new Set(caseTests.map((t) => t.id));
-				const allValid = tests.every((t) => validIds.has(t.labTestReportId));
-
-				if (!allValid) {
-					throw new Error("Some test IDs do not belong to this case");
-				}
-
-				const [caseData] = await tx
-					.select({ associatedUsers: casesTable.associatedUsers })
-					.from(casesTable)
-					.where(eq(casesTable.id, caseId));
-
-				if (!caseData) {
-					throw new Error("Case not found");
-				}
-
-				for (const test of tests) {
-					await tx
-						.update(caseLabReportsTable)
-						.set({
-							status: test.status,
-							updatedAt: new Date(),
-						})
-						.where(eq(caseLabReportsTable.id, test.labTestReportId));
-
-					if (test.fileId) {
-						const [file] = await tx
-							.select({ id: filesTable.id })
-							.from(filesTable)
-							.where(eq(filesTable.id, test.fileId));
-
-						if (!file) {
-							throw new Error(`File ${test.fileId} not found`);
-						}
-
-						const [existing] = await tx
-							.select()
-							.from(labTestFilesTable)
-							.where(
-								and(
-									eq(labTestFilesTable.caseLabReportId, test.labTestReportId),
-									eq(labTestFilesTable.fileId, test.fileId),
-								),
-							);
-
-						if (!existing) {
-							await tx.insert(labTestFilesTable).values({
-								caseLabReportId: test.labTestReportId,
-								fileId: test.fileId,
-							});
-
-							await tx
-								.update(filesTable)
-								.set({ allowed: caseData.associatedUsers })
-								.where(eq(filesTable.id, test.fileId));
-						}
-					}
-				}
-			});
-
-			return c.json({
-				success: true,
-				data: {
-					message: "Tests updated successfully",
-				},
-			});
-		},
-	)
-
-	.post(
-		"/upload-file",
 		strictValidator(
 			"form",
 			z.object({
-				file: z.instanceof(File),
-				labTestReportId: z.coerce.number().int().positive(),
+				status: z.enum(statusEnums),
+				keep: z.union([
+					z.coerce.number().int().positive(),
+					z.array(z.coerce.number().int().positive()).optional().default([]),
+				]),
+				remove: z.union([
+					z.coerce.number().int().positive(),
+					z.array(z.coerce.number().int().positive()).optional().default([]),
+				]),
+				add: z.union([
+					z.instanceof(File),
+					z.array(z.instanceof(File)).optional().default([]),
+				]),
 			}),
 		),
 		async (c) => {
-			const { file, labTestReportId } = c.req.valid("form");
-
+			// TODO: Ensure associated users is being checked and permeated properly
+			// TODO: Verify that there are no orphaned files left behind in any scenario
+			const addedFiles: string[] = [];
 			try {
+				const {
+					add: addUnion,
+					remove: removeUnion,
+					keep: keepUnion,
+					status,
+				} = c.req.valid("form");
+				const { testId } = c.req.valid("param");
+
+				// Normalize inputs to arrays
+				const add = Array.isArray(addUnion) ? addUnion : [addUnion];
+				const remove = Array.isArray(removeUnion) ? removeUnion : [removeUnion];
+				const keep = Array.isArray(keepUnion) ? keepUnion : [keepUnion];
+
+				const deletedFiles: string[] = [];
+				// Quick check to see if test exists and get associated users
 				const [report] = await db
 					.select({ associatedUsers: casesTable.associatedUsers })
 					.from(caseLabReportsTable)
 					.innerJoin(casesTable, eq(caseLabReportsTable.caseId, casesTable.id))
-					.where(eq(caseLabReportsTable.id, labTestReportId));
-
+					.where(eq(caseLabReportsTable.id, testId));
 				if (!report) {
 					return c.json(
 						{ success: false, error: { message: "Lab test report not found" } },
@@ -322,21 +256,103 @@ const lab = createStrictHono()
 					);
 				}
 
-				const fileRecord = await uploadFileService(
-					file,
-					report.associatedUsers,
-				);
+				// Check on the files being kept the same
+				const existingFiles = await db
+					.select({ fileId: labTestFilesTable.fileId })
+					.from(labTestFilesTable)
+					.where(
+						and(
+							eq(labTestFilesTable.caseLabReportId, testId),
+							inArray(labTestFilesTable.fileId, keep),
+						),
+					);
+				if (existingFiles.length !== keep.length) {
+					return c.json(
+						{
+							success: false,
+							error: {
+								message:
+									"One or more files to keep are not associated with this lab test",
+							},
+						},
+						400,
+					);
+				}
+
+				await db.transaction(async (tx) => {
+					// Process removals
+					await tx
+						.delete(labTestFilesTable)
+						.where(
+							and(
+								eq(labTestFilesTable.caseLabReportId, testId),
+								inArray(labTestFilesTable.fileId, remove),
+							),
+						);
+					const fids = await tx
+						.delete(filesTable)
+						.returning({ fid: filesTable.fid })
+						.where(inArray(filesTable.id, remove));
+					for (const { fid } of fids) {
+						deletedFiles.push(fid);
+					}
+
+					// Process additions
+					for (const file of add) {
+						const fileRecord = await uploadFileService(
+							tx,
+							file,
+							report.associatedUsers,
+						);
+						addedFiles.push(fileRecord.fid);
+						await tx.insert(labTestFilesTable).values({
+							caseLabReportId: testId,
+							fileId: fileRecord.id,
+						});
+					}
+
+					// Check if the test has at least one file after additions/removals
+					const fileCount = await tx
+						.select({ count: count() })
+						.from(labTestFilesTable)
+						.where(eq(labTestFilesTable.caseLabReportId, testId));
+
+					// If no files remain, and status is being set to Complete, throw error
+					if (fileCount[0].count === 0 && status === "Complete") {
+						throw new Error(
+							"Cannot mark test as Complete without at least one associated file",
+						);
+					}
+					if (fileCount[0].count > 0 && status !== "Complete") {
+						throw new Error("Tests with files can only be marked as Complete");
+					}
+					// Finally, update the test status
+					await tx
+						.update(caseLabReportsTable)
+						.set({ status, updatedAt: new Date() })
+						.where(eq(caseLabReportsTable.id, testId))
+						.returning();
+				});
+
+				// If we reach here, transaction was successful, delete files from storage now
+				for (const fid of deletedFiles) {
+					await seaweedfs.deleteFile(fid);
+				}
 
 				return c.json({
 					success: true,
-					data: fileRecord,
+					data: { message: "Lab test updated successfully" },
 				});
 			} catch (error) {
-				console.error("File upload failed:", error);
+				// RIP, rollback happened, clean up any uploaded files
+				console.error("Error updating lab test:", error);
+				for (const fid of addedFiles) {
+					await seaweedfs.deleteFile(fid);
+				}
 				return c.json(
 					{
 						success: false,
-						error: { message: "File upload failed", details: error },
+						error: { message: "Failed to update lab test", details: error },
 					},
 					500,
 				);

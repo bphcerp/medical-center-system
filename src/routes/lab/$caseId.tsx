@@ -1,37 +1,25 @@
-import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
-import { Check } from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { createFileRoute, notFound } from "@tanstack/react-router";
+import { ChevronRight } from "lucide-react";
 import { LabTestStatusBadge } from "@/components/lab-test-status-badge";
+import LabTestUpdateSheet from "@/components/lab-test-update-sheet";
 import { NotFound } from "@/components/not-found";
 import { PatientDetails } from "@/components/patient-details";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Spinner } from "@/components/ui/spinner";
-import type { statusEnums } from "@/db/lab";
+import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import useAuth from "@/lib/hooks/useAuth";
-import { cn, handleErrors } from "@/lib/utils";
+import { handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
-
-type TestUpdate = {
-	labTestReportId: number;
-	status: (typeof statusEnums)[number];
-	fileId?: number;
-};
 
 export const Route = createFileRoute("/lab/$caseId")({
 	loader: async ({ params: { caseId } }) => {
 		const res = await client.api.lab.details[":caseId"].$get({
 			param: { caseId: caseId },
 		});
-		const reports = await handleErrors(res);
-		if (res.status === 404 || !reports) {
+		const caseDetails = await handleErrors(res);
+		if (res.status === 404 || !caseDetails) {
 			throw notFound();
 		}
 
-		return { ...reports };
+		return { ...caseDetails };
 	},
 	notFoundComponent: () => <NotFound title="Lab case not found" />,
 	component: TestEntry,
@@ -39,107 +27,7 @@ export const Route = createFileRoute("/lab/$caseId")({
 
 function TestEntry() {
 	useAuth(["lab"]);
-	const navigate = useNavigate();
-	const {
-		caseId,
-		patient,
-		doctorName,
-		token,
-		tests: initialTests,
-	} = Route.useLoaderData();
-
-	const [tests, setTests] = useState(initialTests);
-	const [uploading, setUploading] = useState<Record<number, boolean>>({});
-	const [isSubmitting, setIsSubmitting] = useState(false);
-
-	useEffect(() => setTests(initialTests), [initialTests]);
-
-	const handleCheckboxChange = (testId: number, checked: boolean) => {
-		setTests((prev) =>
-			prev.map((test) =>
-				test.labTestReportId === testId
-					? {
-							...test,
-							status: checked ? "Sample Collected" : "Requested",
-						}
-					: test,
-			),
-		);
-	};
-
-	const handleFileUpload = async (testId: number, file: File) => {
-		setUploading((prev) => ({ ...prev, [testId]: true }));
-		const res = await client.api.lab["upload-file"].$post({
-			form: {
-				file,
-				labTestReportId: testId,
-			},
-		});
-		const uploaded = await handleErrors(res);
-		if (!uploaded) {
-			setUploading((prev) => ({ ...prev, [testId]: false }));
-			return;
-		}
-
-		setTests((prev) =>
-			prev.map((test) =>
-				test.labTestReportId === testId
-					? {
-							...test,
-							fileId: uploaded.id,
-							status: "Complete",
-						}
-					: test,
-			),
-		);
-		setUploading((prev) => ({ ...prev, [testId]: false }));
-	};
-
-	const handleSubmit = async () => {
-		setIsSubmitting(true);
-
-		// build updates for tests that have changed
-		const updates: TestUpdate[] = [];
-
-		for (const test of tests) {
-			const original = initialTests.find(
-				(t) => t.labTestReportId === test.labTestReportId,
-			);
-			if (
-				!original ||
-				original.status !== test.status ||
-				original.fileId !== test.fileId
-			) {
-				updates.push({
-					labTestReportId: test.labTestReportId,
-					status: test.status,
-					...(test.fileId && { fileId: test.fileId }),
-				});
-			}
-		}
-
-		if (updates.length === 0) {
-			toast.info("No changes to submit");
-			setIsSubmitting(false);
-			return;
-		}
-
-		const res = await client.api.lab["update-tests"][":caseId"].$post({
-			param: { caseId: caseId.toString() },
-			json: { tests: updates },
-		});
-		const data = await handleErrors(res);
-		if (!data) {
-			setIsSubmitting(false);
-			return;
-		}
-		navigate({ to: "/lab" });
-	};
-
-	const hasChanges = tests.some((test, idx) => {
-		const original = initialTests[idx];
-		return original.status !== test.status || original.fileId !== test.fileId;
-	});
+	const { patient, doctorName, token, tests } = Route.useLoaderData();
 
 	return (
 		<div className="p-4 pb-0 lg:p-12 lg:pb-0 flex flex-col gap-6 h-full min-h-0 overflow-y-scroll">
@@ -154,74 +42,23 @@ function TestEntry() {
 				}
 			/>
 
-			<div className="grow flex flex-col gap-4 ">
+			<div className="grow flex flex-col gap-4">
 				{tests.map((test) => (
-					<div
-						key={test.labTestReportId}
-						className="flex flex-col border-2 rounded-lg overflow-clip"
-					>
-						<Label className="flex items-center gap-2 text-lg font-medium cursor-pointer w-full p-4 has-aria-checked:border-b hover:bg-accent transition-colors">
-							<Checkbox
-								id={`test-${test.labTestReportId}`}
-								className="size-6 [&>svg]:size-10"
-								checked={test.status !== "Requested"}
-								onCheckedChange={(checked) =>
-									handleCheckboxChange(test.labTestReportId, checked as boolean)
-								}
-							/>
-							{test.testName}
-							<LabTestStatusBadge status={test.status} />
-						</Label>
-
-						{test.status !== "Requested" && (
-							<div className="p-4 flex flex-col gap-2">
-								<Label className="min-h-6">
-									Upload Report
-									{uploading[test.labTestReportId] && (
-										<Spinner className="size-4" />
-									)}
-									{test.fileId !== null && (
-										<Check className="text-bits-green size-5" />
-									)}
-								</Label>
-								<div className="flex items-center gap-2 w-full">
-									<Input
-										type="file"
-										accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-										className={cn(
-											"transition-colors hover:enabled:cursor-pointer hover:enabled:bg-accent file:mr-4 p-0 h-auto",
-											"file:px-4 file:h-10 file:items-center file:border-r-2 file:border-border file:text-sm file:font-semibold w-full",
-										)}
-										onChange={(e) => {
-											const file = e.target.files?.[0];
-											if (file) {
-												handleFileUpload(test.labTestReportId, file);
-											}
-										}}
-										disabled={uploading[test.labTestReportId] || isSubmitting}
-									/>
+					<Sheet key={test.id}>
+						<SheetTrigger className="cursor-pointer group">
+							<div className="flex gap-2 py-4 justify-between px-4 items-center font-normal border-2 rounded-lg overflow-clip hover:bg-accent transition cursor-pointer">
+								<span className="line-clamp-1 text-left w-fit">
+									{test.testName}
+								</span>
+								<div className="flex items-center gap-2">
+									<LabTestStatusBadge status={test.status} />
+									<ChevronRight className="text-muted-foreground" />
 								</div>
 							</div>
-						)}
-					</div>
+						</SheetTrigger>
+						<LabTestUpdateSheet test={test} />
+					</Sheet>
 				))}
-			</div>
-			<div
-				className={cn(
-					"sticky bottom-0 flex justify-end gap-3 py-4 lg:py-12",
-					"bg-linear-to-t from-background to-transparent from-80% via-90% to-100%",
-				)}
-			>
-				<Button
-					variant="outline"
-					onClick={() => navigate({ to: "/lab" })}
-					disabled={isSubmitting}
-				>
-					Cancel
-				</Button>
-				<Button onClick={handleSubmit} disabled={!hasChanges || isSubmitting}>
-					{isSubmitting ? "Updating..." : "Update Tests"}
-				</Button>
 			</div>
 		</div>
 	);
