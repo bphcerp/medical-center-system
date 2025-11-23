@@ -5,6 +5,7 @@ import LabTestUpdateSheet from "@/components/lab-test-update-sheet";
 import { NotFound } from "@/components/not-found";
 import { PatientDetails } from "@/components/patient-details";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
+import { statusEnums } from "@/db/lab";
 import useAuth from "@/lib/hooks/useAuth";
 import { handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
@@ -43,22 +44,27 @@ function TestEntry() {
 			/>
 
 			<div className="grow flex flex-col gap-4">
-				{tests.map((test) => (
-					<Sheet key={test.id}>
-						<SheetTrigger className="cursor-pointer group">
-							<div className="flex gap-2 py-4 justify-between px-4 items-center font-normal border-2 rounded-lg overflow-clip hover:bg-accent transition cursor-pointer">
-								<span className="line-clamp-1 text-left w-fit">
-									{test.testName}
-								</span>
-								<div className="flex items-center gap-2">
-									<LabTestStatusBadge status={test.status} />
-									<ChevronRight className="text-muted-foreground" />
+				{tests
+					.sort(
+						(a, b) =>
+							statusEnums.indexOf(a.status) - statusEnums.indexOf(b.status),
+					)
+					.map((test) => (
+						<Sheet key={test.id}>
+							<SheetTrigger className="cursor-pointer group">
+								<div className="flex gap-2 py-4 justify-between px-4 items-center font-normal border-2 rounded-lg overflow-clip hover:bg-accent transition cursor-pointer">
+									<span className="line-clamp-1 text-left w-fit">
+										{test.testName}
+									</span>
+									<div className="flex items-center gap-2">
+										<LabTestStatusBadge status={test.status} />
+										<ChevronRight className="text-muted-foreground" />
+									</div>
 								</div>
-							</div>
-						</SheetTrigger>
-						<LabTestUpdateSheet test={test} />
-					</Sheet>
-				))}
+							</SheetTrigger>
+							<LabTestUpdateSheet test={test} />
+						</Sheet>
+					))}
 			</div>
 		</div>
 	);
