@@ -31,13 +31,13 @@ import type { Batch, Medicine } from "@/lib/types/inventory";
 export function MedicineBatchesSheet({
 	open,
 	onOpenChange,
-	setIsOpenAddMedicines,
+	setIsOpenAddBatch,
 	medicine,
 	batches,
 }: {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	setIsOpenAddMedicines: (isOpenAddMedicines: boolean) => void;
+	setIsOpenAddBatch: (isOpenAddBatch: boolean) => void;
 	medicine: Medicine | null;
 	batches: Batch[] | null;
 }) {
@@ -60,7 +60,7 @@ export function MedicineBatchesSheet({
 	};
 
 	const handleAddBatch = () => {
-		setIsOpenAddMedicines(true);
+		setIsOpenAddBatch(true);
 		onOpenChange(false);
 	};
 

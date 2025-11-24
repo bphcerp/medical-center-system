@@ -313,7 +313,7 @@ function InventoryPage() {
 			<MedicineBatchesSheet
 				open={isOpenBatchesSheet}
 				onOpenChange={setIsOpenBatchesSheet}
-				setIsOpenAddMedicines={setIsOpenAddMedicines}
+				setIsOpenAddBatch={setIsOpenAddBatch}
 				medicine={selectedMedicine}
 				batches={currentBatches}
 			/>
