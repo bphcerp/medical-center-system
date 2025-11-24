@@ -71,7 +71,7 @@ export function MedicineBatchesSheet({
 			<Sheet open={open} onOpenChange={onOpenChange}>
 				<SheetContent className="min-w-xl overflow-y-auto">
 					<SheetHeader>
-						<SheetTitle className="text-3xl font-bold">
+						<SheetTitle className="text-3xl font-bold my-2">
 							<span>
 								{medicine.company} {medicine.brand}
 							</span>
