@@ -1,5 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Package2, SquarePen, SquarePlus, Trash } from "lucide-react";
+import {
+	AlertTriangle,
+	Ban,
+	CalendarClock,
+	Package2,
+	PackageX,
+	SquarePen,
+	SquarePlus,
+	Trash,
+} from "lucide-react";
 import React, { useState } from "react";
 import { AddBatchModal } from "@/components/inventory/add-batch-modal";
 import { AddMedicinesModal } from "@/components/inventory/add-medicines-modal";
@@ -9,6 +18,13 @@ import { DeleteMedicineModal } from "@/components/inventory/delete-medicine-moda
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 import {
 	Table,
@@ -50,6 +66,32 @@ function InventoryPage() {
 	const [filterMode, setFilterMode] = useState<
 		"all" | "lowStock" | "nearExpiry" | "expired"
 	>("all");
+
+	const emptyStateConfig = {
+		all: {
+			icon: PackageX,
+			title: "No inventory found",
+			description: "Inventory is currently empty.",
+		},
+		lowStock: {
+			icon: AlertTriangle,
+			title: "No low stock items",
+			description: "All item quantities are within healthy limits.",
+		},
+		nearExpiry: {
+			icon: CalendarClock,
+			title: "No near-expiry items",
+			description: "No medicines are expiring in the near future.",
+		},
+		expired: {
+			icon: Ban,
+			title: "No expired items",
+			description: "Great! You have no expired medicines.",
+		},
+	};
+
+	const activeEmptyState = emptyStateConfig[filterMode];
+	const EmptyIcon = activeEmptyState.icon;
 
 	const [isOpenAddMedicines, setIsOpenAddMedicines] = useState<boolean>(false);
 
@@ -237,77 +279,92 @@ function InventoryPage() {
 
 			<Card>
 				<CardContent>
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Medicine</TableHead>
-								<TableHead>Critical Quantity</TableHead>
-								<TableHead>Total Quantity</TableHead>
-								<TableHead>Quick Actions</TableHead>
-							</TableRow>
-						</TableHeader>
-
-						<TableBody>
-							{finalInventory.map((item) => (
-								<React.Fragment key={item.id}>
-									<TableRow>
-										<TableCell className="cursor-pointer">
-											<span className="align-middle font-semibold mr-2">
-												{item.medicine.company} {item.medicine.brand}
-											</span>
-											<span className="align-middle text-muted-foreground mr-2">
-												({item.medicine.drug}) - {item.medicine.strength}
-											</span>
-											<span className="align-middle px-2 py-2 rounded-sm bg-primary/10 text-primary mr-2">
-												{item.medicine.type}
-											</span>
-											<Button
-												variant="outline"
-												className="align-middle hover:bg-destructive hover:text-destructive-foreground hover:border-destructive ml-1"
-												onClick={() =>
-													openDeleteMedicine(item.id, item.medicine)
-												}
-											>
-												<Trash />
-											</Button>
-										</TableCell>
-										<TableCell>
-											<span className="align-middle mr-2">
-												{item.criticalQty}
-											</span>
-											<Button
-												variant="outline"
-												className="align-middle"
-												onClick={() =>
-													openChangeCriticalQty(
-														item.medicine,
-														item.criticalQty ?? 0,
-													)
-												}
-											>
-												<SquarePen />
-											</Button>
-										</TableCell>
-										<TableCell>{item.quantity}</TableCell>
-										<TableCell className="flex space-x-2">
-											<Button
-												className="flex-1 w-full"
-												onClick={() => openAddBatch(item.id, item.medicine)}
-											>
-												Add Batch
-											</Button>
-											<Button
-												className="flex-1 w-full"
-												onClick={() => openBatchesSheet(item.medicine)}
-											>
-												Show Batches
-											</Button>
-										</TableCell>
-									</TableRow>
-								</React.Fragment>
-							))}
-						</TableBody>
-					</Table>
+					{finalInventory.length === 0 ? (
+						<Empty>
+							<EmptyHeader>
+								<EmptyMedia variant="icon" className="!w-32 !h-32">
+									<EmptyIcon className="!w-24 !h-24" />
+								</EmptyMedia>
+								<EmptyTitle className="text-3xl">
+									{activeEmptyState.title}
+								</EmptyTitle>
+								<EmptyDescription className="text-lg">
+									<p>{activeEmptyState.description}</p>
+								</EmptyDescription>
+							</EmptyHeader>
+						</Empty>
+					) : (
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Medicine</TableHead>
+									<TableHead>Critical Quantity</TableHead>
+									<TableHead>Total Quantity</TableHead>
+									<TableHead>Quick Actions</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{finalInventory.map((item) => (
+									<React.Fragment key={item.id}>
+										<TableRow>
+											<TableCell className="cursor-pointer">
+												<span className="align-middle font-semibold mr-2">
+													{item.medicine.company} {item.medicine.brand}
+												</span>
+												<span className="align-middle text-muted-foreground mr-2">
+													({item.medicine.drug}) - {item.medicine.strength}
+												</span>
+												<span className="align-middle px-2 py-2 rounded-sm bg-primary/10 text-primary mr-2">
+													{item.medicine.type}
+												</span>
+												<Button
+													variant="outline"
+													className="align-middle hover:bg-destructive hover:text-destructive-foreground hover:border-destructive ml-1"
+													onClick={() =>
+														openDeleteMedicine(item.id, item.medicine)
+													}
+												>
+													<Trash />
+												</Button>
+											</TableCell>
+											<TableCell>
+												<span className="align-middle mr-2">
+													{item.criticalQty}
+												</span>
+												<Button
+													variant="outline"
+													className="align-middle"
+													onClick={() =>
+														openChangeCriticalQty(
+															item.medicine,
+															item.criticalQty ?? 0,
+														)
+													}
+												>
+													<SquarePen />
+												</Button>
+											</TableCell>
+											<TableCell>{item.quantity}</TableCell>
+											<TableCell className="flex space-x-2">
+												<Button
+													className="flex-1 w-full"
+													onClick={() => openAddBatch(item.id, item.medicine)}
+												>
+													Add Batch
+												</Button>
+												<Button
+													className="flex-1 w-full"
+													onClick={() => openBatchesSheet(item.medicine)}
+												>
+													Show Batches
+												</Button>
+											</TableCell>
+										</TableRow>
+									</React.Fragment>
+								))}
+							</TableBody>
+						</Table>
+					)}
 				</CardContent>
 			</Card>
 			<MedicineBatchesSheet
