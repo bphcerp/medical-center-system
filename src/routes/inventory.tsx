@@ -5,7 +5,7 @@ import { AddBatchModal } from "@/components/inventory/add-batch-modal";
 import { AddMedicinesModal } from "@/components/inventory/add-medicines-modal";
 import { MedicineBatchesSheet } from "@/components/inventory/batches-sheet";
 import { ChangeCriticalQtyModal } from "@/components/inventory/change-critical-qty-modal";
-import { DeleteMedicineModal } from "@/components/inventory/delete-medicine-button";
+import { DeleteMedicineModal } from "@/components/inventory/delete-medicine-modal";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

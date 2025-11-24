@@ -1,3 +1,4 @@
+import { useRouter } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -9,6 +10,8 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import type { Medicine } from "@/lib/types/inventory";
+import { handleErrors } from "@/lib/utils";
+import { client } from "@/routes/api/$";
 
 export function DeleteMedicineModal({
 	open,
@@ -21,12 +24,22 @@ export function DeleteMedicineModal({
 	inventoryId: number | null;
 	medicine: Medicine | null;
 }) {
-	const handleDelete = async () => {
-		//call API here
-		onOpenChange(false);
-	};
+	const router = useRouter();
 
 	if (!medicine || !inventoryId) return;
+
+	const handleDelete = async () => {
+		const res = await client.api.inventory.medicine.$delete({
+			json: { inventoryMedicineId: inventoryId },
+		});
+		const data = await handleErrors(res);
+		if (!data) {
+			return;
+		}
+
+		await router.invalidate();
+		onOpenChange(false);
+	};
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
