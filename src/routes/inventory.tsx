@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Package2, SquarePlus } from "lucide-react";
+import { Package2, SquarePlus, Trash } from "lucide-react";
 import React, { useState } from "react";
 import { AddBatchModal } from "@/components/inventory/add-batch-modal";
 import { AddMedicinesModal } from "@/components/inventory/add-medicines-modal";
 import { MedicineBatchesSheet } from "@/components/inventory/batches-sheet";
 import { ChangeCriticalQtyModal } from "@/components/inventory/change-critical-qty-modal";
+import { DeleteMedicineModal } from "@/components/inventory/delete-medicine-button";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -54,6 +55,18 @@ function InventoryPage() {
 
 	const openAddMedicines = () => {
 		setIsOpenAddMedicines(true);
+	};
+
+	const [isOpenDeleteMedicine, setIsOpenDeleteMedicine] =
+		useState<boolean>(false);
+
+	const openDeleteMedicine = (
+		selectedInventoryId: number,
+		selectedMedicine: Medicine,
+	) => {
+		setSelectedInventoryId(selectedInventoryId);
+		setSelectedMedicine(selectedMedicine);
+		setIsOpenDeleteMedicine(true);
 	};
 
 	const [isOpenAddBatch, setIsOpenAddBatch] = useState<boolean>(false);
@@ -247,6 +260,15 @@ function InventoryPage() {
 													({item.medicine.drug}) - {item.medicine.strength} -{" "}
 													{item.medicine.type}
 												</span>
+												<Button
+													variant="outline"
+													className="hover:bg-destructive hover:text-destructive-foreground hover:border-destructive w-6 h-6 ml-1"
+													onClick={() =>
+														openDeleteMedicine(item.id, item.medicine)
+													}
+												>
+													<Trash className="!w-3 !h-3" />
+												</Button>
 											</div>
 										</TableCell>
 										<TableCell>
@@ -289,6 +311,12 @@ function InventoryPage() {
 				onOpenChange={setIsOpenBatchesSheet}
 				medicine={selectedMedicine}
 				batches={currentBatches}
+			/>
+			<DeleteMedicineModal
+				open={isOpenDeleteMedicine}
+				onOpenChange={setIsOpenDeleteMedicine}
+				inventoryId={selectedInventoryId}
+				medicine={selectedMedicine}
 			/>
 			<ChangeCriticalQtyModal
 				open={isOpenChangeCriticalQty}
