@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Package2, SquarePlus, Trash } from "lucide-react";
+import { Package2, SquarePen, SquarePlus, Trash } from "lucide-react";
 import React, { useState } from "react";
 import { AddBatchModal } from "@/components/inventory/add-batch-modal";
 import { AddMedicinesModal } from "@/components/inventory/add-medicines-modal";
@@ -252,28 +252,32 @@ function InventoryPage() {
 								<React.Fragment key={item.id}>
 									<TableRow>
 										<TableCell className="cursor-pointer">
-											<div className="flex flex-wrap">
-												<span className="font-semibold">
-													{item.medicine.company} {item.medicine.brand}
-												</span>
-												<span className="mx-1 text-muted-foreground text-right">
-													({item.medicine.drug}) - {item.medicine.strength} -{" "}
-													{item.medicine.type}
-												</span>
-												<Button
-													variant="outline"
-													className="hover:bg-destructive hover:text-destructive-foreground hover:border-destructive w-6 h-6 ml-1"
-													onClick={() =>
-														openDeleteMedicine(item.id, item.medicine)
-													}
-												>
-													<Trash className="!w-3 !h-3" />
-												</Button>
-											</div>
+											<span className="align-middle font-semibold mr-2">
+												{item.medicine.company} {item.medicine.brand}
+											</span>
+											<span className="align-middle text-muted-foreground mr-2">
+												({item.medicine.drug}) - {item.medicine.strength}
+											</span>
+											<span className="align-middle px-2 py-2 rounded-sm bg-primary/10 text-primary mr-2">
+												{item.medicine.type}
+											</span>
+											<Button
+												variant="outline"
+												className="align-middle hover:bg-destructive hover:text-destructive-foreground hover:border-destructive ml-1"
+												onClick={() =>
+													openDeleteMedicine(item.id, item.medicine)
+												}
+											>
+												<Trash />
+											</Button>
 										</TableCell>
 										<TableCell>
-											<span className="mr-2">{item.criticalQty}</span>
+											<span className="align-middle mr-2">
+												{item.criticalQty}
+											</span>
 											<Button
+												variant="outline"
+												className="align-middle"
 												onClick={() =>
 													openChangeCriticalQty(
 														item.medicine,
@@ -281,7 +285,7 @@ function InventoryPage() {
 													)
 												}
 											>
-												Edit
+												<SquarePen />
 											</Button>
 										</TableCell>
 										<TableCell>{item.quantity}</TableCell>
