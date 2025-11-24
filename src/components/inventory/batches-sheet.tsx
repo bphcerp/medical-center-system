@@ -28,19 +28,19 @@ import {
 } from "@/components/ui/sheet";
 import type { Batch, Medicine } from "@/lib/types/inventory";
 
-type MedicineBatchesSheetProps = {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-	medicine: Medicine | null;
-	batches: Batch[] | null;
-};
-
 export function MedicineBatchesSheet({
 	open,
 	onOpenChange,
+	setIsOpenAddMedicines,
 	medicine,
 	batches,
-}: MedicineBatchesSheetProps) {
+}: {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	setIsOpenAddMedicines: (isOpenAddMedicines: boolean) => void;
+	medicine: Medicine | null;
+	batches: Batch[] | null;
+}) {
 	const [isOpenAddQuantity, setIsOpenAddQuantity] = useState<boolean>(false);
 	const [selectedBatchId, setSelectedBatchId] = useState<number | null>(null);
 	const [selectedBatchNum, setSelectedBatchNum] = useState<string>("");
@@ -57,6 +57,11 @@ export function MedicineBatchesSheet({
 		setSelectedBatchId(batchId);
 		setSelectedBatchNum(batchNum);
 		setIsOpenDispense(true);
+	};
+
+	const handleAddBatch = () => {
+		setIsOpenAddMedicines(true);
+		onOpenChange(false);
 	};
 
 	if (!batches || !medicine) return;
@@ -95,8 +100,7 @@ export function MedicineBatchesSheet({
 							</EmptyHeader>
 							<EmptyContent>
 								<div className="flex gap-2">
-									<Button>Add Batch</Button>
-									{/* TODO: Add functionality */}
+									<Button onClick={() => handleAddBatch()}>Add Batch</Button>
 								</div>
 							</EmptyContent>
 						</Empty>
