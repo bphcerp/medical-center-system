@@ -1,4 +1,4 @@
-import { CalendarIcon } from "lucide-react";
+import { BriefcaseMedical, CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import { AddQuantityModal } from "@/components/inventory/add-quantity-modal";
 import { DispenseModal } from "@/components/inventory/dispense-modal";
@@ -11,6 +11,14 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
 import {
 	Sheet,
 	SheetContent,
@@ -58,18 +66,40 @@ export function MedicineBatchesSheet({
 			<Sheet open={open} onOpenChange={onOpenChange}>
 				<SheetContent className="min-w-xl overflow-y-auto">
 					<SheetHeader>
-						<SheetTitle className="text-xl">{medicine.brand}</SheetTitle>
-						<SheetDescription>
-							<div className="flex flex-col gap-1">
-								<span>
-									{medicine.drug} ({medicine.strength}) - {medicine.type}
-								</span>
-							</div>
+						<SheetTitle className="text-3xl font-bold">
+							<span>
+								{medicine.company} {medicine.brand}
+							</span>
+						</SheetTitle>
+						<SheetDescription className="text-lg">
+							<span className="text-muted-foreground mr-2">
+								({medicine.drug}) - {medicine.strength}
+							</span>
+							<span className="px-2 py-2 rounded-sm bg-primary/10 text-primary mr-2">
+								{medicine.type}
+							</span>
 						</SheetDescription>
 					</SheetHeader>
 
 					{batches.length === 0 ? (
-						<div>No active batches found.</div>
+						<Empty>
+							<EmptyHeader>
+								<EmptyMedia variant="icon" className="!w-16 !h-16">
+									<BriefcaseMedical className="!w-10 !h-10" />
+								</EmptyMedia>
+								<EmptyTitle>No Active Batches</EmptyTitle>
+								<EmptyDescription>
+									<p>You haven&apos;t added any batches yet.</p>
+									<p>Get started by adding a batch.</p>
+								</EmptyDescription>
+							</EmptyHeader>
+							<EmptyContent>
+								<div className="flex gap-2">
+									<Button>Add Batch</Button>
+									{/* TODO: Add functionality */}
+								</div>
+							</EmptyContent>
+						</Empty>
 					) : (
 						<div>
 							{batches.map((batch) => {
