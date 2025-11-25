@@ -282,13 +282,11 @@ function InventoryPage() {
 					{finalInventory.length === 0 ? (
 						<Empty>
 							<EmptyHeader>
-								<EmptyMedia variant="icon" className="!w-32 !h-32">
-									<EmptyIcon className="!w-24 !h-24" />
+								<EmptyMedia variant="icon">
+									<EmptyIcon />
 								</EmptyMedia>
-								<EmptyTitle className="text-3xl">
-									{activeEmptyState.title}
-								</EmptyTitle>
-								<EmptyDescription className="text-lg">
+								<EmptyTitle>{activeEmptyState.title}</EmptyTitle>
+								<EmptyDescription>
 									<p>{activeEmptyState.description}</p>
 								</EmptyDescription>
 							</EmptyHeader>
