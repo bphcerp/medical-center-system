@@ -143,8 +143,9 @@ function InventoryPage() {
 
 	const [isOpenBatchesSheet, setIsOpenBatchesSheet] = useState<boolean>(false);
 
-	const openBatchesSheet = (medicine: Medicine) => {
+	const openBatchesSheet = (inventoryId: number, medicine: Medicine) => {
 		setSelectedMedicine(medicine);
+		setSelectedInventoryId(inventoryId);
 		setIsOpenBatchesSheet(true);
 	};
 
@@ -352,7 +353,9 @@ function InventoryPage() {
 												</Button>
 												<Button
 													className="flex-1 w-full"
-													onClick={() => openBatchesSheet(item.medicine)}
+													onClick={() =>
+														openBatchesSheet(item.id, item.medicine)
+													}
 												>
 													Show Batches
 												</Button>
