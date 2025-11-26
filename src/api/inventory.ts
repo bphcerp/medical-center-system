@@ -302,6 +302,37 @@ const inventory = createStrictHono()
 				data: { message: "Medicines added successfully" },
 			});
 		},
+	)
+	.delete(
+		"/medicine",
+		strictValidator(
+			"json",
+			z.object({
+				inventoryMedicineId: z.number().int().positive(),
+			}),
+		),
+		async (c) => {
+			const { inventoryMedicineId } = c.req.valid("json");
+
+			const deleted = await db
+				.delete(inventoryMedicinesTable)
+				.where(eq(inventoryMedicinesTable.id, inventoryMedicineId))
+				.returning();
+
+			if (deleted.length === 0) {
+				return c.json(
+					{ success: false, error: { message: "Medicine not found" } },
+					404,
+				);
+			}
+
+			return c.json({
+				success: true,
+				data: {
+					message: "Medicine deleted successfully",
+				},
+			});
+		},
 	);
 
 export default inventory;
