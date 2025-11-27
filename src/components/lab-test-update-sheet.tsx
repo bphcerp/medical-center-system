@@ -1,5 +1,5 @@
 import { useRouter } from "@tanstack/react-router";
-import { File, Plus, TestTube, Trash, Undo } from "lucide-react";
+import { Download, File, Plus, TestTube, Trash, Undo } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 import { handleErrors } from "@/lib/utils";
@@ -239,46 +239,61 @@ const LabTestUpdateSheet = ({
 													: file.file.name}
 											</span>
 										</span>
-										<Button
-											variant="ghost"
-											data-slot={file.action}
-											className={`text-sm px-4 duration-300 transition ${
-												file.action === "remove"
-													? "text-bits-red bg-bits-red/10 hover:text-foreground hover:bg-accent"
-													: "text-foreground bg-accent hover:text-bits-red hover:bg-bits-red/10"
-											}`}
-											onClick={() => {
-												if (file.action === "add") {
-													setFiles((prev) =>
-														prev.filter((f) => f.id !== file.id),
-													);
-												} else if (file.action === "remove") {
-													setFiles((prev) =>
-														prev.map((f) =>
-															f.id === file.id && f.action === "remove"
-																? { ...f, action: "keep" }
-																: f,
-														),
-													);
-												} else {
-													setFiles((prev) =>
-														prev.map((f) =>
-															f.id === file.id && f.action === "keep"
-																? { ...f, action: "remove" }
-																: f,
-														),
-													);
-												}
-											}}
-										>
-											{file.action === "add" ? (
-												<Trash />
-											) : file.action === "remove" ? (
-												<Undo />
-											) : (
-												<Trash />
-											)}
-										</Button>
+										<div className="flex gap-1">
+											<Button variant="link" className="text-sm px-4" asChild>
+												<a
+													href={
+														"filename" in file.file
+															? `/api/files/${file.file.fileId}`
+															: URL.createObjectURL(file.file)
+													}
+													target="_blank"
+													rel="noopener noreferrer"
+												>
+													<Download />
+												</a>
+											</Button>
+											<Button
+												variant="ghost"
+												data-slot={file.action}
+												className={`text-sm px-4 duration-300 transition ${
+													file.action === "remove"
+														? "text-bits-red bg-bits-red/10 hover:text-foreground hover:bg-accent"
+														: "text-foreground bg-accent hover:text-bits-red hover:bg-bits-red/10"
+												}`}
+												onClick={() => {
+													if (file.action === "add") {
+														setFiles((prev) =>
+															prev.filter((f) => f.id !== file.id),
+														);
+													} else if (file.action === "remove") {
+														setFiles((prev) =>
+															prev.map((f) =>
+																f.id === file.id && f.action === "remove"
+																	? { ...f, action: "keep" }
+																	: f,
+															),
+														);
+													} else {
+														setFiles((prev) =>
+															prev.map((f) =>
+																f.id === file.id && f.action === "keep"
+																	? { ...f, action: "remove" }
+																	: f,
+															),
+														);
+													}
+												}}
+											>
+												{file.action === "add" ? (
+													<Trash />
+												) : file.action === "remove" ? (
+													<Undo />
+												) : (
+													<Trash />
+												)}
+											</Button>
+										</div>
 									</div>
 								))
 							)}
