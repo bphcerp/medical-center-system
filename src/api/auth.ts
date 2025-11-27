@@ -366,7 +366,7 @@ export const unauthenticated = createStrictHono()
 	);
 
 const authMiddleware: StrictHandler = async (c, next) => {
-	const jwt: JWTPayload = c.get("jwtPayload");
+	const jwt = c.get("jwtPayload");
 	const fingerprint = getCookie(c as Context, "fingerprint") || "";
 	const fingerprintHash = Bun.SHA256.hash(fingerprint, "base64url");
 	if (jwt.fingerprintHash !== fingerprintHash) {
