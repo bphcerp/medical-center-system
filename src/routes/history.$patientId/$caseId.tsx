@@ -109,7 +109,7 @@ function CaseDetailsPage() {
 								>
 									<ArrowLeft className="text-muted-foreground" />
 								</Button>
-								Consultation for
+								Consultation History for
 							</div>
 						}
 					/>
