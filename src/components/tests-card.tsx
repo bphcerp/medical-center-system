@@ -1,5 +1,5 @@
 import { Label } from "@radix-ui/react-label";
-import { ChevronsUpDown, Trash2 } from "lucide-react";
+import { ChevronsUpDown, Download, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AutoSizer } from "react-virtualized";
 import { toast } from "sonner";
@@ -208,14 +208,22 @@ const TestsCard = ({
 										<ul className="mt-1 ml-4 list-disc">
 											{item.files.map((file) => (
 												<li key={file.id}>
-													<a
-														href={`/api/files/${file.id}`}
-														target="_blank"
-														rel="noopener noreferrer"
-														className="block text-blue-600 underline w-fit py-1"
-													>
-														{file.filename}
-													</a>
+													<div className="flex items-center">
+														<span>{file.filename}</span>
+														<Button
+															variant="link"
+															className="text-sm px-4"
+															asChild
+														>
+															<a
+																href={`/api/files/${file.id}`}
+																target="_blank"
+																rel="noopener noreferrer"
+															>
+																<Download />
+															</a>
+														</Button>
+													</div>
 												</li>
 											))}
 										</ul>
