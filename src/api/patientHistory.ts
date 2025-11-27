@@ -56,6 +56,7 @@ const patientHistory = createStrictHono()
 				finalizedState: casesTable.finalizedState,
 				createdAt: casesTable.createdAt,
 				updatedAt: casesTable.updatedAt,
+				associatedUsers: casesTable.associatedUsers,
 			})
 			.from(casesTable)
 			.where(eq(casesTable.patient, patientId))
