@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
-import { ClipboardClock } from "lucide-react";
+import { ClipboardClock, Lock, Unlock } from "lucide-react";
 import { PatientDetails } from "@/components/patient-details";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
@@ -42,7 +42,7 @@ export const Route = createFileRoute("/history/$patientId/")({
 });
 
 function HistoryPage() {
-	useAuth(["doctor"]);
+	const { user } = useAuth(["doctor"]);
 	const { patient, cases, patientId } = Route.useLoaderData();
 	const navigate = useNavigate();
 
@@ -129,7 +129,20 @@ function HistoryPage() {
 													})
 												}
 											>
-												<TableCell>{caseItem.caseId}</TableCell>
+												<TableCell>
+													<span className="flex items-center gap-4">
+														{caseItem.caseId}{" "}
+														<span className="text-foreground-muted">
+															{caseItem.associatedUsers.includes(
+																user?.id || -1,
+															) ? (
+																<Unlock className="size-4" />
+															) : (
+																<Lock className="size-4" />
+															)}
+														</span>
+													</span>
+												</TableCell>
 												<TableCell>{caseItem.finalizedState || "—"}</TableCell>
 												<TableCell>{formatDate(caseItem.createdAt)}</TableCell>
 												<TableCell>{formatDate(caseItem.updatedAt)}</TableCell>
