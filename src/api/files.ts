@@ -53,10 +53,7 @@ const app = createStrictHono().get(
 	),
 	async (c) => {
 		const { id } = c.req.valid("param");
-		const payload = c.var.jwtPayload as {
-			id: number;
-			[key: string]: unknown;
-		};
+		const payload = c.get("jwtPayload");
 		const userId = payload.id;
 
 		const [file] = await db
@@ -72,7 +69,10 @@ const app = createStrictHono().get(
 			);
 		}
 
-		if (!file.allowed.includes(userId)) {
+		if (
+			!file.allowed.includes(userId) &&
+			!payload.role.allowed.includes("lab")
+		) {
 			return c.json(
 				{ success: false, error: { message: "Access forbidden" } },
 				403,
