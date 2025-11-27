@@ -26,7 +26,7 @@ interface OTPVerificationDialogProps {
 }
 
 export const useOTP = (caseId: string) => {
-	const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(true);
+	const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
 	const [isVerifying, setIsVerifying] = useState(false);
 	const [isSendingOtp, setIsSendingOtp] = useState(false);
 	const [otpError, setOtpError] = useState<string | null>(null);
@@ -77,6 +77,7 @@ export const useOTP = (caseId: string) => {
 	useEffect(() => {
 		checkOtpRequired().then((otpRequired) => {
 			if (!otpRequired) return;
+			setIsOtpDialogOpen(true);
 			if (!otpSentRef.current && !isSendingOtp) {
 				otpSentRef.current = true;
 				sendOtp();
