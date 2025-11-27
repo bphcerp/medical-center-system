@@ -1,6 +1,12 @@
 import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { CloudCheck, RefreshCw, TriangleAlert } from "lucide-react";
+import {
+	ArrowLeft,
+	CloudCheck,
+	History,
+	RefreshCw,
+	TriangleAlert,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import DiagnosisCard from "@/components/diagnosis-card";
@@ -169,7 +175,22 @@ function ConsultationPage() {
 						<PatientDetails
 							patient={caseDetail.patient}
 							token={caseDetail.cases.token}
-							label="Consultation for"
+							label={
+								<div className="flex items-center gap-2">
+									<Button
+										variant="ghost"
+										onClick={() =>
+											navigate({
+												to: "/doctor",
+											})
+										}
+										size="sm"
+									>
+										<ArrowLeft className="text-muted-foreground" />
+									</Button>
+									Consultation for
+								</div>
+							}
 						/>
 						<span
 							className={`py-2 flex items-center gap-2 ${autosaveError ? "text-destructive" : "text-muted-foreground"}`}
@@ -189,28 +210,17 @@ function ConsultationPage() {
 							)}
 						</span>
 					</div>
-					<div className="flex gap-2">
-						<Button
-							variant="outline"
-							onClick={() =>
-								navigate({
-									to: "/doctor",
-								})
-							}
-						>
-							Back to Dashboard
-						</Button>
-						<Button
-							onClick={() =>
-								navigate({
-									to: "/history/$patientId",
-									params: { patientId: String(caseDetail.patient.id) },
-								})
-							}
-						>
-							View History
-						</Button>
-					</div>
+					<Button
+						onClick={() =>
+							navigate({
+								to: "/history/$patientId",
+								params: { patientId: String(caseDetail.patient.id) },
+							})
+						}
+					>
+						<History />
+						<span className="hidden md:inline">View History</span>
+					</Button>
 				</div>
 				<LabRequestModal
 					id={id}
