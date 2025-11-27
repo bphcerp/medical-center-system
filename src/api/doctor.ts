@@ -182,23 +182,23 @@ const doctor = createStrictHono()
 			);
 		}
 
+		if (
+			caseDetail.cases.finalizedState !== null &&
+			!caseDetail.cases.associatedUsers.includes(userId)
+		) {
+			return c.json(
+				{
+					success: false,
+					error: { message: "OTP required", details: { caseId } },
+				},
+				400,
+			);
+		}
+
 		if (!caseDetail.cases.associatedUsers.includes(userId)) {
 			return c.json(
 				{ success: false, error: { message: "Unauthorized" } },
 				403,
-			);
-		}
-
-		if (caseDetail.cases.finalizedState !== null) {
-			return c.json(
-				{
-					success: false,
-					error: {
-						message: "Case is finalized. Access via OTP required.",
-						details: { caseId },
-					},
-				},
-				400,
 			);
 		}
 

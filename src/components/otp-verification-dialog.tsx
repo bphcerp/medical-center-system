@@ -32,6 +32,7 @@ export const useOTP = (caseId: string) => {
 	const [otpError, setOtpError] = useState<string | null>(null);
 	const otpSentRef = useRef<boolean>(false);
 	const [caseRecord, setCaseRecord] = useState<CaseDetail["data"] | null>(null);
+
 	const sendOtp = useCallback(async () => {
 		setIsSendingOtp(true);
 		setOtpError(null);
@@ -51,13 +52,37 @@ export const useOTP = (caseId: string) => {
 		setOtpError(null);
 	}, [caseId]);
 
+	const checkOtpRequired = useCallback(async () => {
+		const consultationRes = await client.api.doctor.consultation[
+			":caseId"
+		].$get({
+			param: { caseId: caseId },
+		});
+		// Bypass an error toast for 400 status (OTP required)
+		if (consultationRes.status === 400) {
+			return true;
+		}
+
+		const consultation = await handleErrors(consultationRes);
+		if (!consultation) {
+			return true;
+		}
+		setCaseRecord(consultation);
+		setIsOtpDialogOpen(false);
+		setIsVerifying(false);
+		return false;
+	}, [caseId]);
+
 	// Auto-send OTP when OTP is required (only once)
 	useEffect(() => {
-		if (!otpSentRef.current && !isSendingOtp) {
-			otpSentRef.current = true;
-			sendOtp();
-		}
-	}, [isSendingOtp, sendOtp]);
+		checkOtpRequired().then((otpRequired) => {
+			if (!otpRequired) return;
+			if (!otpSentRef.current && !isSendingOtp) {
+				otpSentRef.current = true;
+				sendOtp();
+			}
+		});
+	}, [isSendingOtp, sendOtp, checkOtpRequired]);
 
 	const handleVerifyOtp = async (otp: string) => {
 		setIsVerifying(true);
