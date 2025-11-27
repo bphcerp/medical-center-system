@@ -79,6 +79,7 @@ const patientHistory = createStrictHono()
 			"param",
 			z.object({ caseId: z.coerce.number().int().positive() }),
 		),
+		// TODO: move db calls to a transaction
 		async (c) => {
 			const { caseId } = c.req.valid("param");
 			const payload = c.get("jwtPayload");
@@ -234,6 +235,34 @@ const patientHistory = createStrictHono()
 			const { otp } = c.req.valid("json");
 			const payload = c.get("jwtPayload");
 			const doctorId = payload.id;
+
+			// Get case details to verify it exists and is finalized
+			const [caseData] = await db
+				.select({
+					finalizedState: casesTable.finalizedState,
+					associatedUsers: casesTable.associatedUsers,
+				})
+				.from(casesTable)
+				.where(eq(casesTable.id, caseId))
+				.limit(1);
+
+			if (!caseData) {
+				return c.json(
+					{ success: false, error: { message: "Case not found" } },
+					404,
+				);
+			}
+
+			if (caseData.finalizedState === null) {
+				return c.json(
+					{
+						success: false,
+						error: { message: "Override not required for active cases" },
+					},
+					400,
+				);
+			}
+
 			const otpRecord = await db
 				.select()
 				.from(doctorCaseHistoryOtpsTable)
@@ -263,6 +292,12 @@ const patientHistory = createStrictHono()
 					),
 				);
 
+			// Add user to associated users of the case so they can access without OTP next time
+			await db
+				.update(casesTable)
+				.set({ associatedUsers: caseData.associatedUsers.concat([doctorId]) })
+				.where(eq(casesTable.id, caseId));
+
 			const { caseDetail, prescriptions, diseases, tests } =
 				await getCaseDetail(caseId);
 
@@ -284,6 +319,7 @@ const patientHistory = createStrictHono()
 				reason: z.string().min(10, "Reason must be at least 10 characters"),
 			}),
 		),
+		// TODO: move db calls to a transaction
 		async (c) => {
 			const { caseId } = c.req.valid("param");
 			const { reason } = c.req.valid("json");
@@ -295,6 +331,7 @@ const patientHistory = createStrictHono()
 				.select({
 					id: casesTable.id,
 					finalizedState: casesTable.finalizedState,
+					associatedUsers: casesTable.associatedUsers,
 				})
 				.from(casesTable)
 				.where(eq(casesTable.id, caseId))
@@ -324,7 +361,11 @@ const patientHistory = createStrictHono()
 				reason,
 			});
 
-			const overrideOtp = 999999; // Special value to indicate override
+			// Add user to associated users of the case so they can access without OTP next time
+			await db
+				.update(casesTable)
+				.set({ associatedUsers: caseData.associatedUsers.concat([doctorId]) })
+				.where(eq(casesTable.id, caseId));
 
 			// del any existing OTPs for this doctor-case pair
 			await db
@@ -335,12 +376,6 @@ const patientHistory = createStrictHono()
 						eq(doctorCaseHistoryOtpsTable.caseId, caseId),
 					),
 				);
-
-			await db.insert(doctorCaseHistoryOtpsTable).values({
-				doctorId,
-				caseId,
-				otp: overrideOtp,
-			});
 
 			const { caseDetail, prescriptions, diseases, tests } =
 				await getCaseDetail(caseId);
