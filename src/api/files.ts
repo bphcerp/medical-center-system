@@ -44,7 +44,7 @@ export async function uploadFileService(
 export const seaweedfs = new SeaweedFSClient(env.SEAWEEDFS_MASTER);
 
 const app = createStrictHono().get(
-	"/get/:id",
+	"/:id",
 	strictValidator(
 		"param",
 		z.object({
@@ -105,6 +105,10 @@ const app = createStrictHono().get(
 		c.header(
 			"Content-Length",
 			fileResponse.headers.get("Content-Length") || undefined,
+		);
+		c.header(
+			"Content-Disposition",
+			`attachment; filename="${encodeURIComponent(file.filename)}"`,
 		);
 
 		if (fileResponse.body) return c.body(fileResponse.body);
