@@ -37,7 +37,7 @@ const useAuth = (requiredPermissions: Permission[] = []) => {
 			);
 		}
 
-		return { allowedRoutes };
+		return { allowedRoutes, user: payloadTyped };
 	} catch (e) {
 		toast.error("Error decoding token in useAuth");
 		console.error("Error decoding token in useAuth:", e);
