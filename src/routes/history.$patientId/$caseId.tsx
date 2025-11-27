@@ -101,7 +101,8 @@ function CaseDetailsPage() {
 									variant="ghost"
 									onClick={() =>
 										navigate({
-											to: "/doctor",
+											to: "/history/$patientId",
+											params: { patientId },
 										})
 									}
 									size="sm"
