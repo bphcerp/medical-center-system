@@ -234,7 +234,7 @@ function ConsultationPage() {
 				</Card>
 				<div className="flex grow shrink basis-auto">
 					<div className="grid xl:grid-cols-2 grid-cols-1 w-full">
-						<Card className="col-span-1 row-span-2 rounded-r-none rounded-bl-none px-4 pt-3 pb-2">
+						<Card className="col-span-1 row-span-2 xl:rounded-tl-xl xl:rounded-r-none xl:rounded-bl-none rounded-t-xl rounded-b-none px-4 pt-3 pb-2">
 							<Label className="font-semibold text-lg">
 								Clinical Examination
 							</Label>

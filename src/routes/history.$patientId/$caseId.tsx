@@ -7,6 +7,7 @@ import {
 	useOTP,
 } from "@/components/otp-verification-dialog";
 import { PatientDetails } from "@/components/patient-details";
+import TestsCard from "@/components/tests-card";
 import TopBar from "@/components/topbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,10 +36,11 @@ function CaseDetailsPage() {
 	} = useOTP(caseId);
 
 	// OTP verification state
-	const { caseDetail, prescriptions, diseases } = caseRecord || {
+	const { caseDetail, prescriptions, diseases, tests } = caseRecord || {
 		caseDetail: null,
 		prescriptions: [],
 		diseases: [],
+		tests: [],
 	};
 
 	if (!caseDetail) {
@@ -128,15 +130,21 @@ function CaseDetailsPage() {
 					<VitalsCard vitals={caseDetail.cases} condensed />
 				</Card>
 
-				<div className="grid grid-cols-2 mb-2">
-					<Card className="col-span-1 row-span-2 rounded-r-none rounded-bl-none px-2 pt-4 pb-2">
+				<div className="grid xl:grid-cols-2 grid-cols-1 mb-2">
+					<Card className="col-span-1 row-span-2 xl:rounded-l-xl xl:rounded-r-none rounded-t-xl rounded-b-none px-4 pt-3 pb-2">
 						<Label className="font-semibold text-lg">
 							Clinical Examination
 						</Label>
 						<Textarea
 							value={caseDetail?.cases.consultationNotes || "No notes recorded"}
 							readOnly
-							className="h-full -mt-3.5 resize-none bg-muted"
+							className="h-full -mt-3.5 -mb-3.5 resize-none min-h-48"
+						/>
+						<TestsCard
+							tests={tests}
+							testItems={tests}
+							setTestItems={() => {}}
+							readonly
 						/>
 					</Card>
 
@@ -147,7 +155,7 @@ function CaseDetailsPage() {
 						readonly
 					/>
 
-					<Card className="col-span-1 gap-3 row-span-1 rounded-none min-h-52 pt-3 px-4">
+					<Card className="col-span-1 gap-3 row-span-1 xl:rounded-br-xl xl:rounded-l-none xl:rounded-tr-none rounded-t-none rounded-b-xl min-h-52 pt-3 px-4">
 						<Label className="font-semibold text-lg">Prescription</Label>
 						{prescriptions.length === 0 ? (
 							<div className="pb-4 text-muted-foreground text-center">

@@ -109,7 +109,7 @@ const DiagnosisCard = ({
 	};
 
 	return (
-		<Card className="col-span-1 row-span-1 rounded-l-none rounded-br-none min-h-52 gap-2 pt-3 px-4">
+		<Card className="col-span-1 row-span-1 xl:rounded-tr-xl xl:rounded-l-none xl:rounded-br-none rounded-none min-h-52 gap-2 pt-3 px-4">
 			<div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-2">
 				<Label className="font-semibold text-lg">Diagnosis: </Label>
 				{!readonly && (

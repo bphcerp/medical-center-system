@@ -168,13 +168,13 @@ const TestsCard = ({
 				)}
 			</div>
 			{testItems.length > 0 ? (
-				<div className="py-4">
+				<div className={readonly ? "py-0" : "py-4"}>
 					{testItems.map((item) => (
 						<div key={item.id} className="py-2">
 							<div className="w-full flex flex-wrap gap-2">
 								<span className="font-medium">{item.name}</span>
 								<span className="font-medium text-muted-foreground">
-									(Category: {item.category})
+									({item.category})
 								</span>
 								{!readonly && (
 									<Button
