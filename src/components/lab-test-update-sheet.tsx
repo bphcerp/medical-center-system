@@ -1,5 +1,5 @@
 import { useRouter } from "@tanstack/react-router";
-import { File, Minus, Plus, TestTube } from "lucide-react";
+import { File, Plus, TestTube, Trash, Undo } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 import { handleErrors } from "@/lib/utils";
@@ -223,64 +223,63 @@ const LabTestUpdateSheet = ({
 								</Empty>
 							) : (
 								files.map((file) => (
-									<Button
-										variant="ghost"
-										data-slot={file.action}
-										size="lg"
-										className={`flex text-sm group justify-between px-4 duration-300 transition items-center ${
-											file.action === "add"
-												? "text-bits-green bg-bits-green/10 hover:text-bits-red hover:bg-bits-red/10"
-												: file.action === "remove"
-													? "text-bits-red bg-bits-red/10 hover:text-bits-green hover:bg-bits-green/10"
-													: "text-foreground bg-accent hover:text-bits-red hover:bg-bits-red/10"
-										}`}
-										onClick={() => {
-											if (file.action === "add") {
-												setFiles((prev) =>
-													prev.filter((f) => f.id !== file.id),
-												);
-											} else if (file.action === "remove") {
-												setFiles((prev) =>
-													prev.map((f) =>
-														f.id === file.id && f.action === "remove"
-															? { ...f, action: "keep" }
-															: f,
-													),
-												);
-											} else {
-												setFiles((prev) =>
-													prev.map((f) =>
-														f.id === file.id && f.action === "keep"
-															? { ...f, action: "remove" }
-															: f,
-													),
-												);
-											}
-										}}
+									<div
 										key={file.id}
+										className="flex items-center justify-between"
 									>
-										{file.action === "add" && (
-											<Plus className="group-hover:rotate-45 transition" />
-										)}
-										{file.action === "remove" && (
-											<div className="relative py-2">
-												<Minus className="group-hover:rotate-90 transition duration-300 inset-0 absolute" />
-												<Minus className="inset-0 absolute opacity-0 group-hover:opacity-100 transition duration-300" />
-											</div>
-										)}
-										{file.action === "keep" && (
-											<Plus className="group-hover:rotate-45 opacity-0 transition duration-200 group-hover:opacity-100" />
-										)}
-										<span className="flex overflow-hidden">
+										<span
+											className={`flex overflow-hidden ${file.action === "add" ? "text-bits-green" : file.action === "remove" ? "text-bits-red" : "text-foreground"} gap-1 items-center`}
+										>
+											{file.action === "add" && <Plus className="size-4" />}
 											<span
-												className={`truncate transition duration-300 decoration-2 line-through ${file.action === "remove" ? "decoration-bits-red/60 group-hover:decoration-bits-red/0" : "decoration-bits-red/0 group-hover:decoration-bits-red/60"}`}
+												className={`truncate transition duration-300 decoration-2 ${file.action === "remove" ? "line-through decoration-bits-red/60" : "decoration-bits-red/0"}`}
 											>
 												{"filename" in file.file
 													? file.file.filename
 													: file.file.name}
 											</span>
 										</span>
-									</Button>
+										<Button
+											variant="ghost"
+											data-slot={file.action}
+											className={`text-sm px-4 duration-300 transition ${
+												file.action === "remove"
+													? "text-bits-red bg-bits-red/10 hover:text-foreground hover:bg-accent"
+													: "text-foreground bg-accent hover:text-bits-red hover:bg-bits-red/10"
+											}`}
+											onClick={() => {
+												if (file.action === "add") {
+													setFiles((prev) =>
+														prev.filter((f) => f.id !== file.id),
+													);
+												} else if (file.action === "remove") {
+													setFiles((prev) =>
+														prev.map((f) =>
+															f.id === file.id && f.action === "remove"
+																? { ...f, action: "keep" }
+																: f,
+														),
+													);
+												} else {
+													setFiles((prev) =>
+														prev.map((f) =>
+															f.id === file.id && f.action === "keep"
+																? { ...f, action: "remove" }
+																: f,
+														),
+													);
+												}
+											}}
+										>
+											{file.action === "add" ? (
+												<Trash />
+											) : file.action === "remove" ? (
+												<Undo />
+											) : (
+												<Trash />
+											)}
+										</Button>
+									</div>
 								))
 							)}
 						</>
