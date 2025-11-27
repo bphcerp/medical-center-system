@@ -33,11 +33,11 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en">
+		<html lang="en" className="h-full">
 			<head>
 				<HeadContent />
 			</head>
-			<body className="bg-background">
+			<body className="bg-background h-full">
 				<SidebarProvider className="block">
 					<CookiesProvider>{children}</CookiesProvider>
 				</SidebarProvider>
