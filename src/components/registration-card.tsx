@@ -211,6 +211,10 @@ export function RegistrationForm({
 			return;
 		}
 
+		if (existing.type === "visitor") {
+			setEmail(existing.email);
+		}
+
 		setPatientId(existing.id);
 		setName(existing.name);
 		setBirthdate(new Date(existing.birthdate));
