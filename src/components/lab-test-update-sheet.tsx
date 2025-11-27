@@ -48,7 +48,13 @@ type OldFile = {
 
 type FileDiff = NewFile | OldFile;
 
-const LabTestUpdateSheet = ({ test }: { test: LabTest }) => {
+const LabTestUpdateSheet = ({
+	test,
+	close,
+}: {
+	test: LabTest;
+	close: () => void;
+}) => {
 	const checkboxId = useId();
 	const fileInputId = useId();
 	const [status, setStatus] = useState<LabTest["status"]>(test.status);
@@ -118,8 +124,8 @@ const LabTestUpdateSheet = ({ test }: { test: LabTest }) => {
 		}
 
 		toast.success("Lab test results updated successfully!");
-
 		await router.invalidate();
+		close();
 	};
 
 	const handleCheck = () => {

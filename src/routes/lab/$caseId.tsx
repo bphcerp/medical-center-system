@@ -1,5 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
+import { useState } from "react";
 import { LabTestStatusBadge } from "@/components/lab-test-status-badge";
 import LabTestUpdateSheet from "@/components/lab-test-update-sheet";
 import { NotFound } from "@/components/not-found";
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/lab/$caseId")({
 function TestEntry() {
 	useAuth(["lab"]);
 	const { patient, doctorName, token, tests } = Route.useLoaderData();
+	const [selectedTest, setSelectedTest] = useState(-1);
 
 	return (
 		<div className="p-4 pb-0 lg:p-12 lg:pb-0 flex flex-col gap-6 h-full min-h-0 overflow-y-scroll">
@@ -50,7 +52,17 @@ function TestEntry() {
 							statusEnums.indexOf(a.status) - statusEnums.indexOf(b.status),
 					)
 					.map((test) => (
-						<Sheet key={test.id}>
+						<Sheet
+							key={test.id}
+							open={selectedTest === test.id}
+							onOpenChange={(open) => {
+								if (open) {
+									setSelectedTest(test.id);
+								} else {
+									setSelectedTest(-1);
+								}
+							}}
+						>
 							<SheetTrigger className="cursor-pointer group">
 								<div className="flex gap-2 py-4 justify-between px-4 items-center font-normal border-2 rounded-lg overflow-clip hover:bg-accent transition cursor-pointer">
 									<span className="line-clamp-1 text-left w-fit">
@@ -62,7 +74,10 @@ function TestEntry() {
 									</div>
 								</div>
 							</SheetTrigger>
-							<LabTestUpdateSheet test={test} />
+							<LabTestUpdateSheet
+								test={test}
+								close={() => setSelectedTest(-1)}
+							/>
 						</Sheet>
 					))}
 			</div>
