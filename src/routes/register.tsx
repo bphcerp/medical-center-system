@@ -8,7 +8,7 @@ export const Route = createFileRoute("/register")({
 	component: Register,
 });
 
-const TOKEN_DISPLAY_DURATION_MS = 30_000;
+const TOKEN_DISPLAY_DURATION_MS = 15_000;
 
 function TokenDisplay({
 	token,
