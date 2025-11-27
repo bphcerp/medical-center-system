@@ -32,11 +32,7 @@ const DiagnosisCard = ({
 	setDiagnosisItems,
 	readonly = false,
 }: {
-	diseases: {
-		id: number;
-		name: string;
-		icd: string;
-	}[];
+	diseases: DiagnosisItem[];
 	diagnosisItems: DiagnosisItem[];
 	setDiagnosisItems: (items: DiagnosisItem[]) => void;
 	readonly?: boolean;
@@ -106,7 +102,7 @@ const DiagnosisCard = ({
 	};
 
 	return (
-		<Card className="col-span-2 row-span-1 rounded-l-none rounded-br-none min-h-52 gap-2">
+		<Card className="col-span-1 row-span-1 rounded-l-none rounded-br-none min-h-52 gap-2">
 			<div className="flex items-center w-full gap-2 px-2">
 				<Label className="font-semibold">Diagnosis: </Label>
 				{!readonly && (
