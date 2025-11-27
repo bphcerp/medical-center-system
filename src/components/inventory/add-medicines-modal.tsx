@@ -42,7 +42,14 @@ export function AddMedicinesModal({
 		useState<boolean>(false);
 	const [medicineItems, setMedicineItems] = useState<Medicine[]>([]);
 	const [medicineQuery, setMedicineQuery] = useState<string>("");
-	const { renderList } = useVirtualList<Medicine>(300, 48);
+	const { renderList } = useVirtualList<Medicine>(300, {
+		"2xl": 48,
+		xl: 60,
+		lg: 48,
+		md: 48,
+		sm: 60,
+		xs: 144,
+	});
 
 	const filteredMedicines = useMemo(
 		() =>

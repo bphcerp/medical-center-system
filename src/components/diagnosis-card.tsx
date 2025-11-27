@@ -39,7 +39,14 @@ const DiagnosisCard = ({
 }) => {
 	const [diseasesSearchOpen, setDiseasesSearchOpen] = useState<boolean>(false);
 	const [diagnosisQuery, setDiagnosisQuery] = useState<string>("");
-	const { renderList } = useVirtualList<DiagnosisItem>(300, 48);
+	const { renderList } = useVirtualList<DiagnosisItem>(300, {
+		"2xl": 72,
+		xl: 84,
+		lg: 60,
+		md: 72,
+		sm: 72,
+		xs: 168,
+	});
 
 	const filteredDiseases = useMemo(
 		() =>

@@ -38,7 +38,14 @@ const TestsCard = ({
 }) => {
 	const [testsSearchOpen, setTestsSearchOpen] = useState<boolean>(false);
 	const [testQuery, setTestQuery] = useState<string>("");
-	const { renderList } = useVirtualList<TestItem>(300, 48);
+	const { renderList } = useVirtualList<TestItem>(300, {
+		"2xl": 48,
+		xl: 48,
+		lg: 48,
+		md: 48,
+		sm: 48,
+		xs: 108,
+	});
 
 	const filteredTests = useMemo(
 		() =>
@@ -145,7 +152,7 @@ const TestsCard = ({
 															className="flex w-full justify-between"
 														>
 															<span>
-																{item.name} (Category: {item.category})
+																{item.name} ({item.category})
 															</span>
 														</CommandItem>
 													),

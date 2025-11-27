@@ -37,7 +37,14 @@ const PrescriptionCard = ({
 	const [medicinesSearchOpen, setMedicinesSearchOpen] =
 		useState<boolean>(false);
 	const [prescriptionQuery, setPrescriptionQuery] = useState<string>("");
-	const { renderList } = useVirtualList<MedicineItem>(300, 48);
+	const { renderList } = useVirtualList<MedicineItem>(300, {
+		"2xl": 48,
+		xl: 60,
+		lg: 48,
+		md: 48,
+		sm: 60,
+		xs: 144,
+	});
 
 	const filteredMedicines = useMemo(
 		() =>

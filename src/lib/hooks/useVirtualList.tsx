@@ -1,7 +1,14 @@
 import type React from "react";
 import { List } from "react-virtualized";
+import { type MediaQueryBreakpoints, useBreakpoint } from "./useMediaQuery";
 
-const useVirtualList = <T,>(height: number, rowHeight: number) => {
+const useVirtualList = <T,>(
+	height: number,
+	rowHeights: { [key in MediaQueryBreakpoints]: number },
+) => {
+	const breakpoint = useBreakpoint();
+	const rowHeight = rowHeights[breakpoint];
+
 	const rowRenderer =
 		(
 			data: T[],
