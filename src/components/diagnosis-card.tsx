@@ -114,7 +114,7 @@ const DiagnosisCard = ({
 							<Button
 								variant="outline"
 								role="combobox"
-								className="justify-between xl:w-[calc(50dvw-10rem)] md:w-[calc(100dvw-12rem)] w-[calc(100dvw-6rem)]"
+								className="justify-between text-muted-foreground xl:w-[calc(50dvw-10rem)] md:w-[calc(100dvw-12rem)] w-[calc(100dvw-6rem)]"
 							>
 								Select a disease...
 								<ChevronsUpDown className="ml-2 h-4 w-4" />

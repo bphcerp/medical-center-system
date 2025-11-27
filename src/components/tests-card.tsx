@@ -110,7 +110,7 @@ const TestsCard = ({
 							<Button
 								variant="outline"
 								role="combobox"
-								className="justify-between xl:w-[calc(50dvw-8rem)] md:w-[calc(100dvw-10rem)] w-[calc(100dvw-6rem)]"
+								className="justify-between text-muted-foreground xl:w-[calc(50dvw-8rem)] md:w-[calc(100dvw-10rem)] w-[calc(100dvw-6rem)]"
 							>
 								Select a test...
 								<ChevronsUpDown className="ml-2 h-4 w-4" />

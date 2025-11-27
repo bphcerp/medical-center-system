@@ -161,7 +161,7 @@ const PrescriptionCard = ({
 						<Button
 							variant="outline"
 							role="combobox"
-							className="justify-between xl:w-[calc(50dvw-11rem)] md:w-[calc(100dvw-13rem)] w-[calc(100dvw-6rem)]"
+							className="justify-between text-muted-foreground xl:w-[calc(50dvw-11rem)] md:w-[calc(100dvw-13rem)] w-[calc(100dvw-6rem)]"
 						>
 							Select a medicine...
 							<ChevronsUpDown className="ml-2 h-4 w-4" />
