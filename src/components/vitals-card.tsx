@@ -50,27 +50,23 @@ const VitalsCard = ({
 					{condensed ? (
 						<VitalField
 							label="Blood Pressure"
-							unit="mm Hg"
+							unit="mmHg"
 							name="bloodPressure"
 							placeholder="Blood Pressure"
-							value={
-								vitals?.bloodPressureSystolic && vitals?.bloodPressureDiastolic
-									? `${vitals?.bloodPressureSystolic}/${vitals?.bloodPressureDiastolic}`
-									: null
-							}
+							value={`${vitals?.bloodPressureSystolic ?? "—"}/${vitals?.bloodPressureDiastolic ?? "—"}`}
 						/>
 					) : (
 						<>
 							<VitalField
 								label="Blood Pressure (Systolic)"
-								unit="mm Hg"
+								unit="mmHg"
 								name="bloodPressureSystolic"
 								placeholder="Blood Pressure (Systolic)"
 								value={vitals?.bloodPressureSystolic}
 							/>
 							<VitalField
 								label="Blood Pressure (Diastolic)"
-								unit="mm Hg"
+								unit="mmHg"
 								name="bloodPressureDiastolic"
 								placeholder="Blood Pressure (Diastolic)"
 								value={vitals?.bloodPressureDiastolic}
