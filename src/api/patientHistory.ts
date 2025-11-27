@@ -253,6 +253,16 @@ const patientHistory = createStrictHono()
 				);
 			}
 
+			// del any existing OTPs for this doctor-case pair
+			await db
+				.delete(doctorCaseHistoryOtpsTable)
+				.where(
+					and(
+						eq(doctorCaseHistoryOtpsTable.doctorId, doctorId),
+						eq(doctorCaseHistoryOtpsTable.caseId, caseId),
+					),
+				);
+
 			const { caseDetail, prescriptions, diseases, tests } =
 				await getCaseDetail(caseId);
 
