@@ -241,7 +241,7 @@ function ConsultationPage() {
 							<Textarea
 								value={consultationNotes}
 								onChange={(e) => setConsultationNotes(e.target.value)}
-								className="h-full -mt-3.5 -mb-3.5 resize-none"
+								className="h-full -mt-3.5 -mb-3.5 resize-none min-h-48"
 								placeholder="Write notes here..."
 							/>
 							<TestsCard
