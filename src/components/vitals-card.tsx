@@ -1,6 +1,5 @@
 import type { InferResponseType } from "hono/client";
 import { client } from "@/routes/api/$";
-import { Card } from "./ui/card";
 import VitalField from "./vital-field";
 
 const caseDetailsResponse =
@@ -9,13 +8,17 @@ export type CaseDetail = InferResponseType<typeof caseDetailsResponse, 200>;
 
 const VitalsCard = ({
 	vitals,
+	condensed = false,
 }: {
 	vitals?: CaseDetail["data"]["caseDetail"]["cases"];
+	condensed?: boolean;
 }) => {
 	return (
-		<Card className="mb-2 flex flex-row gap-4 px-6">
-			<div className="flex flex-col gap-4 p-4 rounded-lg bg-pink-700/5 max-w-140">
-				<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-2">
+		<div className="flex flex-col lg:flex-row gap-4">
+			<div className="flex flex-col gap-4 w-full">
+				<div
+					className={`grid items-baseline-last p-4 rounded-lg gap-4 flex-2 ${condensed ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-7" : "bg-pink-700/5 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3"}`}
+				>
 					<VitalField
 						label="Body Temperature"
 						unit="° F"
@@ -32,7 +35,7 @@ const VitalsCard = ({
 					/>
 					<VitalField
 						label="Respiratory Rate"
-						unit="per minute"
+						unit="per min"
 						name="respiratoryRate"
 						placeholder="Respiratory Rate"
 						value={vitals?.respiratoryRate}
@@ -44,41 +47,75 @@ const VitalsCard = ({
 						placeholder="SpO2"
 						value={vitals?.spo2}
 					/>
-				</div>
-				<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-4 border-t border-pink-700/40">
-					<VitalField
-						label="Blood Pressure (Systolic)"
-						unit="mm Hg"
-						name="bloodPressureSystolic"
-						placeholder="Blood Pressure (Systolic)"
-						value={vitals?.bloodPressureSystolic}
-					/>
-					<VitalField
-						label="Blood Pressure (Diastolic)"
-						unit="mm Hg"
-						name="bloodPressureDiastolic"
-						placeholder="Blood Pressure (Diastolic)"
-						value={vitals?.bloodPressureDiastolic}
-					/>
+					{condensed ? (
+						<VitalField
+							label="Blood Pressure"
+							unit="mm Hg"
+							name="bloodPressure"
+							placeholder="Blood Pressure"
+							value={
+								vitals?.bloodPressureSystolic && vitals?.bloodPressureDiastolic
+									? `${vitals?.bloodPressureSystolic}/${vitals?.bloodPressureDiastolic}`
+									: null
+							}
+						/>
+					) : (
+						<>
+							<VitalField
+								label="Blood Pressure (Systolic)"
+								unit="mm Hg"
+								name="bloodPressureSystolic"
+								placeholder="Blood Pressure (Systolic)"
+								value={vitals?.bloodPressureSystolic}
+							/>
+							<VitalField
+								label="Blood Pressure (Diastolic)"
+								unit="mm Hg"
+								name="bloodPressureDiastolic"
+								placeholder="Blood Pressure (Diastolic)"
+								value={vitals?.bloodPressureDiastolic}
+							/>
+						</>
+					)}
+					{condensed && (
+						<>
+							<VitalField
+								label="Weight"
+								unit="kg"
+								name="weight"
+								placeholder="Weight"
+								value={vitals?.weight}
+							/>
+							<VitalField
+								label="Blood Sugar"
+								unit="mg/dL"
+								name="bloodSugar"
+								placeholder="Blood Sugar"
+								value={vitals?.bloodSugar}
+							/>
+						</>
+					)}
 				</div>
 			</div>
-			<div className="grid grid-cols-1 gap-4 p-4 rounded-lg bg-purple-700/5 max-w-70">
-				<VitalField
-					label="Weight"
-					unit="kg"
-					name="weight"
-					placeholder="Weight"
-					value={vitals?.weight}
-				/>
-				<VitalField
-					label="Blood Sugar"
-					unit="mg/dL"
-					name="bloodSugar"
-					placeholder="Blood Sugar"
-					value={vitals?.bloodSugar}
-				/>
-			</div>
-		</Card>
+			{condensed ? null : (
+				<div className="grid grid-cols-1 gap-4 p-4 rounded-lg bg-purple-700/5 lg:max-w-64 w-full">
+					<VitalField
+						label="Weight"
+						unit="kg"
+						name="weight"
+						placeholder="Weight"
+						value={vitals?.weight}
+					/>
+					<VitalField
+						label="Blood Sugar"
+						unit="mg/dL"
+						name="bloodSugar"
+						placeholder="Blood Sugar"
+						value={vitals?.bloodSugar}
+					/>
+				</div>
+			)}
+		</div>
 	);
 };
 
