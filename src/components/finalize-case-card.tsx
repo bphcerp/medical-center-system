@@ -12,12 +12,10 @@ import {
 export type FinalizeButtonValue = "Finalize (OPD)" | "Admit" | "Referral";
 
 const FinalizeCaseCard = ({
-	setLabTestModalOpen,
 	handleFinalize,
 	finalizeButtonValue,
 	setFinalizeButtonValue,
 }: {
-	setLabTestModalOpen: (open: boolean) => void;
 	handleFinalize: () => void;
 	finalizeButtonValue: FinalizeButtonValue;
 	setFinalizeButtonValue: (value: FinalizeButtonValue) => void;
@@ -25,16 +23,13 @@ const FinalizeCaseCard = ({
 	return (
 		<Card className="col-span-4 row-span-1 rounded-tr-none rounded-tl-none py-2 px-2">
 			<div className="flex justify-end gap-2">
-				<Button variant="outline" onClick={() => setLabTestModalOpen(true)}>
-					Request Lab Tests
-				</Button>
 				<ButtonGroup>
-					<Button variant="outline" onClick={handleFinalize}>
+					<Button onClick={handleFinalize} className="border-r border-border">
 						{finalizeButtonValue}
 					</Button>
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
-							<Button variant="outline">
+							<Button>
 								<ChevronDown />
 							</Button>
 						</DropdownMenuTrigger>

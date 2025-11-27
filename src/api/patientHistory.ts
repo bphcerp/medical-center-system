@@ -252,12 +252,12 @@ const patientHistory = createStrictHono()
 				);
 			}
 
-			const { caseDetail, prescriptions, diseases } =
+			const { caseDetail, prescriptions, diseases, tests } =
 				await getCaseDetail(caseId);
 
 			return c.json({
 				success: true,
-				data: { caseDetail, prescriptions, diseases },
+				data: { caseDetail, prescriptions, diseases, tests },
 			});
 		},
 	)
@@ -331,12 +331,12 @@ const patientHistory = createStrictHono()
 				otp: overrideOtp,
 			});
 
-			const { caseDetail, prescriptions, diseases } =
+			const { caseDetail, prescriptions, diseases, tests } =
 				await getCaseDetail(caseId);
 
 			return c.json({
 				success: true,
-				data: { caseDetail, prescriptions, diseases },
+				data: { caseDetail, prescriptions, diseases, tests },
 			});
 		},
 	);

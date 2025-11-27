@@ -150,9 +150,9 @@ const PrescriptionCard = ({
 	};
 
 	return (
-		<Card className="col-span-2 gap-4 row-span-1 rounded-none min-h-52">
-			<div className="flex items-center w-full gap-2 px-2">
-				<Label className="font-semibold">Prescription: </Label>
+		<Card className="col-span-1 gap-4 row-span-1 rounded-none min-h-52 pt-3 px-4">
+			<div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-2">
+				<Label className="font-semibold text-lg">Prescription: </Label>
 				<Popover
 					open={medicinesSearchOpen}
 					onOpenChange={setMedicinesSearchOpen}
@@ -161,13 +161,17 @@ const PrescriptionCard = ({
 						<Button
 							variant="outline"
 							role="combobox"
-							className="justify-between w-3xl"
+							className="justify-between xl:w-[calc(50dvw-11rem)] md:w-[calc(100dvw-13rem)] w-[calc(100dvw-6rem)]"
 						>
 							Select a medicine...
 							<ChevronsUpDown className="ml-2 h-4 w-4" />
 						</Button>
 					</PopoverTrigger>
-					<PopoverContent className="p-0 w-3xl" align="start" side="top">
+					<PopoverContent
+						className="p-0 xl:w-[calc(50dvw-11rem)] md:w-[calc(100dvw-13rem)] w-[calc(100dvw-6rem)]"
+						align="start"
+						side="top"
+					>
 						<Command shouldFilter={false}>
 							<CommandInput
 								placeholder="Type a medicine to search..."
@@ -209,7 +213,7 @@ const PrescriptionCard = ({
 			</div>
 			{prescriptionItems.length > 0 ? (
 				prescriptionItems.map((item) => (
-					<div key={item.medicines.id} className="px-2">
+					<div key={item.medicines.id}>
 						<div className="w-full pb-1 flex flex-wrap items-center gap-2">
 							<span className="font-semibold">
 								{item.medicines.company} {item.medicines.brand}

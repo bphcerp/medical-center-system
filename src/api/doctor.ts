@@ -97,6 +97,21 @@ export const getCaseDetail = async (caseId: number) => {
 			.from(diseasesTable)
 			.where(inArray(diseasesTable.id, caseDetail.cases.diagnosis));
 	}
+
+	// Fetch tests if tests prescribed
+	const tests = await db
+		.select({
+			id: labTestsMasterTable.id,
+			name: labTestsMasterTable.name,
+			category: labTestsMasterTable.category,
+		})
+		.from(caseLabReportsTable)
+		.innerJoin(
+			labTestsMasterTable,
+			eq(caseLabReportsTable.testId, labTestsMasterTable.id),
+		)
+		.where(eq(caseLabReportsTable.caseId, caseId));
+
 	return {
 		caseDetail: {
 			...caseDetail,
@@ -107,6 +122,7 @@ export const getCaseDetail = async (caseId: number) => {
 		},
 		prescriptions,
 		diseases,
+		tests,
 	};
 };
 
@@ -127,56 +143,24 @@ const doctor = createStrictHono()
 			})
 			.from(casesTable)
 			.innerJoin(patientsTable, eq(casesTable.patient, patientsTable.id))
-			.where(arrayContains(casesTable.associatedUsers, [userId]))
+			.where(
+				and(
+					arrayContains(casesTable.associatedUsers, [userId]),
+					isNull(casesTable.finalizedState),
+				),
+			)
 			.orderBy(casesTable.id);
 
-		const caseIds = cases.map((c) => c.caseId);
-		const labReports =
-			caseIds.length > 0
-				? await db
-						.select({
-							caseId: caseLabReportsTable.caseId,
-							status: caseLabReportsTable.status,
-						})
-						.from(caseLabReportsTable)
-						.where(inArray(caseLabReportsTable.caseId, caseIds))
-				: [];
-
-		const queue = cases
-			.filter((c) => !c.finalizedState) //only show non-finalized cases
-			.map((c) => {
-				const reports = labReports.filter((r) => r.caseId === c.caseId);
-				let status:
-					| "Waiting for Consultation"
-					| "Lab Results Ready"
-					| "Lab Tests in Progress"
-					| "Lab Tests Requested" = "Waiting for Consultation";
-
-				if (reports.length > 0) {
-					const hasComplete = reports.some((r) => r.status === "Complete");
-					const hasInProgress = reports.some(
-						(r) => r.status === "Sample Collected",
-					);
-					const hasRequested = reports.some((r) => r.status === "Requested");
-
-					if (hasComplete) {
-						status = "Lab Results Ready";
-					} else if (hasInProgress) {
-						status = "Lab Tests in Progress";
-					} else if (hasRequested) {
-						status = "Lab Tests Requested";
-					}
-				}
-
-				return {
-					caseId: c.caseId,
-					patientName: c.patientName,
-					patientAge: getAge(c.patientsBirthdate),
-					patientSex: c.patientSex,
-					token: c.token,
-					status,
-				};
-			});
+		const queue = cases.map((c) => {
+			return {
+				caseId: c.caseId,
+				patientName: c.patientName,
+				patientAge: getAge(c.patientsBirthdate),
+				patientSex: c.patientSex,
+				token: c.token,
+				status: "Waiting for Consultation",
+			};
+		});
 
 		return c.json({ success: true, data: queue });
 	})
@@ -185,7 +169,8 @@ const doctor = createStrictHono()
 		const userId = payload.id;
 		const caseId = Number(c.req.param("caseId"));
 
-		const { caseDetail, prescriptions, diseases } = await getCaseDetail(caseId);
+		const { caseDetail, prescriptions, diseases, tests } =
+			await getCaseDetail(caseId);
 
 		if (!caseDetail) {
 			return c.json(
@@ -219,7 +204,7 @@ const doctor = createStrictHono()
 
 		return c.json({
 			success: true,
-			data: { caseDetail, prescriptions, diseases },
+			data: { caseDetail, prescriptions, diseases, tests },
 		});
 	})
 	.get("/medicines", async (c) => {
@@ -251,6 +236,19 @@ const doctor = createStrictHono()
 
 		return c.json({ success: true, data: diseases });
 	})
+	.get("/tests", async (c) => {
+		const activeTests = await db
+			.select({
+				id: labTestsMasterTable.id,
+				testCode: labTestsMasterTable.testCode,
+				name: labTestsMasterTable.name,
+				category: labTestsMasterTable.category,
+			})
+			.from(labTestsMasterTable)
+			.where(eq(labTestsMasterTable.isActive, true));
+
+		return c.json({ success: true, data: activeTests });
+	})
 	.post(
 		"/autosave",
 		strictValidator(
@@ -258,17 +256,18 @@ const doctor = createStrictHono()
 			z.object({
 				caseId: z.number().int().positive(),
 				consultationNotes: z.string().optional(),
-				// Allow empty array to clear diagnosis and prescriptions
+				// Allow empty array to clear diagnosis, tests and prescriptions
 				diagnosis: z.array(z.number().int().positive()).optional(),
 				prescriptions: z
 					.array(createInsertSchema(casePrescriptionsTable))
 					.optional(),
+				tests: z.array(z.number().int().positive()).optional(),
 			}),
 		),
 		async (c) => {
 			const payload = c.get("jwtPayload");
 			const userId = payload.id;
-			const { caseId, consultationNotes, prescriptions, diagnosis } =
+			const { caseId, consultationNotes, prescriptions, diagnosis, tests } =
 				c.req.valid("json");
 
 			await db.transaction(async (tx) => {
@@ -301,6 +300,49 @@ const doctor = createStrictHono()
 
 					if (prescriptions.length > 0) {
 						await tx.insert(casePrescriptionsTable).values(prescriptions);
+					}
+				}
+
+				if (tests !== undefined) {
+					const validTests = await tx
+						.select({ id: labTestsMasterTable.id })
+						.from(labTestsMasterTable)
+						.where(
+							and(
+								inArray(labTestsMasterTable.id, tests),
+								eq(labTestsMasterTable.isActive, true),
+							),
+						);
+
+					if (validTests.length !== tests.length) {
+						return c.json(
+							{
+								success: false,
+								error: {
+									message: "Some test IDs are invalid",
+									details: {
+										invalidTestIds: tests.filter(
+											(id) => !validTests.some((test) => test.id === id),
+										),
+									},
+								},
+							},
+							400,
+						);
+					}
+
+					await tx
+						.delete(caseLabReportsTable)
+						.where(eq(caseLabReportsTable.caseId, caseId));
+
+					if (tests.length > 0) {
+						await tx.insert(caseLabReportsTable).values(
+							tests.map((testId) => ({
+								caseId,
+								testId,
+								status: "Requested" as const,
+							})),
+						);
 					}
 				}
 			});
@@ -354,92 +396,6 @@ const doctor = createStrictHono()
 				},
 			});
 		},
-	)
-	.post(
-		"/requestLabTests",
-		strictValidator(
-			"json",
-			z.object({
-				caseId: z.number().int().positive(),
-				testIds: z.array(z.number().int().positive()).min(1),
-			}),
-		),
-		async (c) => {
-			const payload = c.get("jwtPayload");
-			const userId = payload.id;
-			const { caseId, testIds } = c.req.valid("json");
-
-			//is it the docs caase????
-			const [caseExists] = await db
-				.select({ id: casesTable.id })
-				.from(casesTable)
-				.where(
-					and(
-						eq(casesTable.id, caseId),
-						arrayContains(casesTable.associatedUsers, [userId]),
-					),
-				)
-				.limit(1);
-
-			if (!caseExists) {
-				return c.json(
-					{ success: false, error: { message: "Case not found" } },
-					404,
-				);
-			}
-			const validTests = await db
-				.select({ id: labTestsMasterTable.id })
-				.from(labTestsMasterTable)
-				.where(
-					and(
-						inArray(labTestsMasterTable.id, testIds),
-						eq(labTestsMasterTable.isActive, true),
-					),
-				);
-
-			if (validTests.length !== testIds.length) {
-				return c.json(
-					{
-						success: false,
-						error: {
-							message: "Some test IDs are invalid",
-							details: {
-								invalidTestIds: testIds.filter(
-									(id) => !validTests.some((test) => test.id === id),
-								),
-							},
-						},
-					},
-					400,
-				);
-			}
-
-			await db.insert(caseLabReportsTable).values(
-				testIds.map((testId) => ({
-					caseId,
-					testId,
-					status: "Requested" as const,
-				})),
-			);
-
-			return c.json({
-				success: true,
-				data: { message: "Lab tests requested successfully" },
-			});
-		},
-	)
-	.get("/tests", async (c) => {
-		const activeTests = await db
-			.select({
-				id: labTestsMasterTable.id,
-				testCode: labTestsMasterTable.testCode,
-				name: labTestsMasterTable.name,
-				category: labTestsMasterTable.category,
-			})
-			.from(labTestsMasterTable)
-			.where(eq(labTestsMasterTable.isActive, true));
-
-		return c.json({ success: true, data: activeTests });
-	});
+	);
 
 export default doctor;

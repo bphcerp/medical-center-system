@@ -102,9 +102,9 @@ const DiagnosisCard = ({
 	};
 
 	return (
-		<Card className="col-span-1 row-span-1 rounded-l-none rounded-br-none min-h-52 gap-2">
-			<div className="flex items-center w-full gap-2 px-2">
-				<Label className="font-semibold">Diagnosis: </Label>
+		<Card className="col-span-1 row-span-1 rounded-l-none rounded-br-none min-h-52 gap-2 pt-3 px-4">
+			<div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-2">
+				<Label className="font-semibold text-lg">Diagnosis: </Label>
 				{!readonly && (
 					<Popover
 						open={diseasesSearchOpen}
@@ -114,13 +114,17 @@ const DiagnosisCard = ({
 							<Button
 								variant="outline"
 								role="combobox"
-								className="justify-between w-3xl"
+								className="justify-between xl:w-[calc(50dvw-10rem)] md:w-[calc(100dvw-12rem)] w-[calc(100dvw-6rem)]"
 							>
 								Select a disease...
 								<ChevronsUpDown className="ml-2 h-4 w-4" />
 							</Button>
 						</PopoverTrigger>
-						<PopoverContent className="p-0 w-3xl" align="start" side="top">
+						<PopoverContent
+							className="p-0 xl:w-[calc(50dvw-10rem)] md:w-[calc(100dvw-12rem)] w-[calc(100dvw-6rem)]"
+							align="start"
+							side="top"
+						>
 							<Command shouldFilter={false}>
 								<CommandInput
 									placeholder="Type a disease to search..."
@@ -162,7 +166,7 @@ const DiagnosisCard = ({
 			</div>
 			{diagnosisItems.length > 0 ? (
 				diagnosisItems.map((item) => (
-					<div key={item.id} className="px-2">
+					<div key={item.id}>
 						<div className="w-full flex flex-wrap gap-2">
 							<span className="font-medium">{item.name}</span>
 							<span className="font-medium text-muted-foreground">

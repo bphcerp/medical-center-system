@@ -13,9 +13,9 @@ import DiagnosisCard from "@/components/diagnosis-card";
 import FinalizeCaseCard, {
 	type FinalizeButtonValue,
 } from "@/components/finalize-case-card";
-import LabRequestModal from "@/components/lab-request-modal";
 import { PatientDetails } from "@/components/patient-details";
 import PrescriptionCard from "@/components/prescription/prescription-card";
+import TestsCard from "@/components/tests-card";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -49,12 +49,14 @@ export const Route = createFileRoute("/consultation/$id")({
 				tests: [],
 				prescriptions: [],
 				diagnosesFromCase: [],
+				testsFromCase: [],
 			};
 		}
 		const {
 			caseDetail,
 			prescriptions,
 			diseases: diagnosesFromCase,
+			tests: testsFromCase,
 		} = consultation;
 
 		if (caseDetail.cases.finalizedState !== null) {
@@ -71,6 +73,7 @@ export const Route = createFileRoute("/consultation/$id")({
 			caseDetail,
 			prescriptions,
 			diagnosesFromCase,
+			testsFromCase,
 
 			medicines: medicines,
 			diseases: diseases,
@@ -89,20 +92,22 @@ function ConsultationPage() {
 		tests,
 		prescriptions,
 		diagnosesFromCase,
+		testsFromCase,
 	} = Route.useLoaderData();
 	const navigate = useNavigate();
 	const { id } = Route.useParams();
 
 	const [finalizeButtonValue, setFinalizeButtonValue] =
 		useState<FinalizeButtonValue>("Finalize (OPD)");
-	const [labTestModalOpen, setLabTestModalOpen] = useState<boolean>(false);
 	const {
 		consultationNotes,
 		diagnosisItems,
 		prescriptionItems,
+		testItems,
 		setConsultationNotes,
 		setDiagnosisItems,
 		setPrescriptionItems,
+		setTestItems,
 		autosaved,
 		autosaveError,
 		autosave,
@@ -111,6 +116,7 @@ function ConsultationPage() {
 		diagnosesFromCase,
 		caseDetail,
 		prescriptions,
+		tests: testsFromCase,
 	});
 
 	if (!caseDetail) {
@@ -167,9 +173,9 @@ function ConsultationPage() {
 	}
 
 	return (
-		<>
+		<div className="flex flex-col h-full">
 			<TopBar title="Consultation Page" />
-			<div className="px-6 py-4">
+			<div className="flex flex-col px-6 py-4 h-full">
 				<div className="flex justify-between items-start mb-4">
 					<div className="flex gap-4 items-end">
 						<PatientDetails
@@ -217,50 +223,51 @@ function ConsultationPage() {
 								params: { patientId: String(caseDetail.patient.id) },
 							})
 						}
+						variant="outline"
 					>
 						<History />
 						<span className="hidden md:inline">View History</span>
 					</Button>
 				</div>
-				<LabRequestModal
-					id={id}
-					labTestModalOpen={labTestModalOpen}
-					setLabTestModalOpen={setLabTestModalOpen}
-					tests={tests}
-				/>
 				<Card className="mb-4 p-0">
 					<VitalsCard vitals={caseDetail.cases} condensed />
 				</Card>
-				<div className="grid grid-cols-3 mb-2">
-					<Card className="col-span-1 row-span-2 rounded-r-none rounded-bl-none px-2 pt-4 pb-2">
-						<Label className="font-semibold text-lg">
-							Clinical Examination
-						</Label>
-						<Textarea
-							value={consultationNotes}
-							onChange={(e) => setConsultationNotes(e.target.value)}
-							className="h-full -mt-3.5 resize-none"
-							placeholder="Write notes here..."
+				<div className="flex grow shrink basis-auto">
+					<div className="grid xl:grid-cols-2 grid-cols-1 w-full">
+						<Card className="col-span-1 row-span-2 rounded-r-none rounded-bl-none px-4 pt-3 pb-2">
+							<Label className="font-semibold text-lg">
+								Clinical Examination
+							</Label>
+							<Textarea
+								value={consultationNotes}
+								onChange={(e) => setConsultationNotes(e.target.value)}
+								className="h-full -mt-3.5 -mb-3.5 resize-none"
+								placeholder="Write notes here..."
+							/>
+							<TestsCard
+								tests={tests}
+								testItems={testItems}
+								setTestItems={setTestItems}
+							/>
+						</Card>
+						<DiagnosisCard
+							diseases={diseases}
+							diagnosisItems={diagnosisItems}
+							setDiagnosisItems={setDiagnosisItems}
 						/>
-					</Card>
-					<DiagnosisCard
-						diseases={diseases}
-						diagnosisItems={diagnosisItems}
-						setDiagnosisItems={setDiagnosisItems}
-					/>
-					<PrescriptionCard
-						medicines={medicines}
-						prescriptionItems={prescriptionItems}
-						setPrescriptionItems={setPrescriptionItems}
-					/>
-					<FinalizeCaseCard
-						setLabTestModalOpen={setLabTestModalOpen}
-						handleFinalize={handleFinalize}
-						finalizeButtonValue={finalizeButtonValue}
-						setFinalizeButtonValue={setFinalizeButtonValue}
-					/>
+						<PrescriptionCard
+							medicines={medicines}
+							prescriptionItems={prescriptionItems}
+							setPrescriptionItems={setPrescriptionItems}
+						/>
+					</div>
 				</div>
+				<FinalizeCaseCard
+					handleFinalize={handleFinalize}
+					finalizeButtonValue={finalizeButtonValue}
+					setFinalizeButtonValue={setFinalizeButtonValue}
+				/>
 			</div>
-		</>
+		</div>
 	);
 }
