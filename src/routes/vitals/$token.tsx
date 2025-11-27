@@ -121,9 +121,9 @@ function RouteComponent() {
 						label="Entering vitals for"
 					/>
 					<FieldSet>
-						<FieldGroup>
+						<FieldGroup className="pt-2">
 							<VitalsCard />
-							<Separator className="hidden lg:inline my-2" />
+							<Separator className="hidden lg:inline" />
 							<div className="flex items-end gap-4">
 								<Field>
 									<FieldLabel htmlFor={doctorAssignedId}>
@@ -136,7 +136,7 @@ function RouteComponent() {
 											setAssignedDoctor(parseInt(v, 10));
 										}}
 									>
-										<SelectTrigger>
+										<SelectTrigger id={doctorAssignedId}>
 											<SelectValue placeholder="Select Doctor" />
 										</SelectTrigger>
 										<SelectContent>
