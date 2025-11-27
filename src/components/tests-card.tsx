@@ -196,37 +196,40 @@ const TestsCard = ({
 								</div>
 								{readonly && (
 									<div>
-										{item.files.length > 0 || (
+										{item.files.length > 0 ? (
+											<>
+												<span className="font-medium text-sm text-muted-foreground">
+													Files:
+												</span>
+												<ul className="mt-1 ml-4 list-disc">
+													{item.files.map((file) => (
+														<li key={file.id}>
+															<div className="flex items-center">
+																<span>{file.filename}</span>
+																<Button
+																	variant="link"
+																	className="text-sm px-4"
+																	asChild
+																>
+																	<a
+																		href={`/api/files/${file.id}`}
+																		target="_blank"
+																		rel="noopener noreferrer"
+																	>
+																		<Download />
+																	</a>
+																</Button>
+															</div>
+														</li>
+													))}
+												</ul>
+											</>
+										) : (
 											<span className="font-medium text-sm text-muted-foreground">
 												{item.files.length} file
 												{item.files.length !== 1 ? "s" : ""}
 											</span>
 										)}
-										<span className="font-medium text-sm text-muted-foreground">
-											Files:
-										</span>
-										<ul className="mt-1 ml-4 list-disc">
-											{item.files.map((file) => (
-												<li key={file.id}>
-													<div className="flex items-center">
-														<span>{file.filename}</span>
-														<Button
-															variant="link"
-															className="text-sm px-4"
-															asChild
-														>
-															<a
-																href={`/api/files/${file.id}`}
-																target="_blank"
-																rel="noopener noreferrer"
-															>
-																<Download />
-															</a>
-														</Button>
-													</div>
-												</li>
-											))}
-										</ul>
 									</div>
 								)}
 							</div>
