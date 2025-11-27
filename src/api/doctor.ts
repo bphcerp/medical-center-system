@@ -17,7 +17,13 @@ import {
 	diseasesTable,
 	medicinesTable,
 } from "@/db/case";
-import { caseLabReportsTable, labTestsMasterTable } from "@/db/lab";
+import { filesTable } from "@/db/files";
+import {
+	caseLabReportsTable,
+	labTestFilesTable,
+	labTestsMasterTable,
+	type statusEnums,
+} from "@/db/lab";
 import {
 	dependentsTable,
 	patientsTable,
@@ -98,10 +104,13 @@ export const getCaseDetail = async (caseId: number) => {
 			.where(inArray(diseasesTable.id, caseDetail.cases.diagnosis));
 	}
 
-	// Fetch tests if tests prescribed
-	const tests = await db
+	// Fetch test status and files
+	const testDetails = await db
 		.select({
-			id: labTestsMasterTable.id,
+			id: caseLabReportsTable.id,
+			fileId: labTestFilesTable.fileId,
+			filename: filesTable.filename,
+			status: caseLabReportsTable.status,
 			name: labTestsMasterTable.name,
 			category: labTestsMasterTable.category,
 		})
@@ -110,7 +119,46 @@ export const getCaseDetail = async (caseId: number) => {
 			labTestsMasterTable,
 			eq(caseLabReportsTable.testId, labTestsMasterTable.id),
 		)
+		.innerJoin(casesTable, eq(caseLabReportsTable.caseId, casesTable.id))
+		.leftJoin(
+			labTestFilesTable,
+			eq(caseLabReportsTable.id, labTestFilesTable.caseLabReportId),
+		)
+		.leftJoin(filesTable, eq(labTestFilesTable.fileId, filesTable.id))
 		.where(eq(caseLabReportsTable.caseId, caseId));
+
+	interface TestDetail {
+		id: number;
+		status: (typeof statusEnums)[number];
+		name: string;
+		category: string;
+		files: FileDetail[];
+	}
+
+	interface FileDetail {
+		id: number;
+		filename: string;
+	}
+
+	const testMap = new Map<number, TestDetail>();
+	for (const test of testDetails) {
+		if (!testMap.has(test.id)) {
+			testMap.set(test.id, {
+				id: test.id,
+				name: test.name,
+				status: test.status,
+				category: test.category,
+				files: [],
+			});
+		}
+		if (test.fileId !== null) {
+			testMap.get(test.id)?.files.push({
+				id: test.fileId,
+				filename: test.filename ?? "Unknown file",
+			});
+		}
+	}
+	const tests = Array.from(testMap.values());
 
 	return {
 		caseDetail: {

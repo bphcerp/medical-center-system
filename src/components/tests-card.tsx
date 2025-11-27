@@ -17,13 +17,12 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { statusEnums } from "@/db/lab";
 import useVirtualList from "@/lib/hooks/useVirtualList";
+import { LabTestStatusBadge } from "./lab-test-status-badge";
+import type { CaseDetail } from "./vitals-card";
 
-export type TestItem = {
-	id: number;
-	name: string;
-	category: string;
-};
+type TestItem = CaseDetail["data"]["tests"][number];
 
 const TestsCard = ({
 	tests,
@@ -97,6 +96,8 @@ const TestsCard = ({
 			id: test.id,
 			name: test.name,
 			category: test.category,
+			status: test.status,
+			files: [],
 		};
 
 		setTestItems([...testItems, newItem]);
@@ -169,25 +170,59 @@ const TestsCard = ({
 			</div>
 			{testItems.length > 0 ? (
 				<div className={readonly ? "py-0" : "py-4"}>
-					{testItems.map((item) => (
-						<div key={item.id} className="py-2">
-							<div className="w-full flex flex-wrap gap-2">
-								<span className="font-medium">{item.name}</span>
-								<span className="font-medium text-muted-foreground">
-									({item.category})
-								</span>
-								{!readonly && (
-									<Button
-										variant="destructive"
-										onClick={() => handleRemoveTestItem(item.id)}
-										className="h-6 w-6"
-									>
-										<Trash2 />
-									</Button>
+					{testItems
+						.sort(
+							(a, b) =>
+								statusEnums.indexOf(a.status) - statusEnums.indexOf(b.status),
+						)
+						.map((item) => (
+							<div key={item.id} className="py-2">
+								<div className="w-full flex flex-wrap gap-2">
+									<span className="font-medium">{item.name}</span>
+									<span className="font-medium text-muted-foreground">
+										({item.category})
+									</span>
+									{readonly ? (
+										<LabTestStatusBadge status={item.status} />
+									) : (
+										<Button
+											variant="destructive"
+											onClick={() => handleRemoveTestItem(item.id)}
+											className="h-6 w-6"
+										>
+											<Trash2 />
+										</Button>
+									)}
+								</div>
+								{readonly && (
+									<div>
+										{item.files.length > 0 || (
+											<span className="font-medium text-sm text-muted-foreground">
+												{item.files.length} file
+												{item.files.length !== 1 ? "s" : ""}
+											</span>
+										)}
+										<span className="font-medium text-sm text-muted-foreground">
+											Files:
+										</span>
+										<ul className="mt-1 ml-4 list-disc">
+											{item.files.map((file) => (
+												<li key={file.id}>
+													<a
+														href={`/api/files/${file.id}`}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="block text-blue-600 underline w-fit py-1"
+													>
+														{file.filename}
+													</a>
+												</li>
+											))}
+										</ul>
+									</div>
 								)}
 							</div>
-						</div>
-					))}
+						))}
 				</div>
 			) : (
 				<div className="flex items-center justify-center text-muted-foreground py-6">
