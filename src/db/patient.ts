@@ -49,20 +49,16 @@ export const professorsTable = pgTable(
 	(table) => [uniqueIndex("psrn_idx").on(table.psrn)],
 );
 
-export const dependentsTable = pgTable(
-	"dependents",
-	{
-		id: integer().primaryKey().generatedAlwaysAsIdentity(),
-		psrn: varchar({ length: 255 })
-			.notNull()
-			.references(() => professorsTable.psrn),
-		patientId: integer()
-			.unique()
-			.references(() => patientsTable.id)
-			.notNull(),
-	},
-	(table) => [uniqueIndex("dependent_psrn_idx").on(table.psrn)],
-);
+export const dependentsTable = pgTable("dependents", {
+	id: integer().primaryKey().generatedAlwaysAsIdentity(),
+	psrn: varchar({ length: 255 })
+		.notNull()
+		.references(() => professorsTable.psrn),
+	patientId: integer()
+		.unique()
+		.references(() => patientsTable.id)
+		.notNull(),
+});
 
 export const visitorsTable = pgTable(
 	"visitors",
