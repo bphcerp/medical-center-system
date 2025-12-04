@@ -142,7 +142,7 @@ function CaseDetailsPage() {
 							className="h-full -mt-3.5 -mb-3.5 resize-none min-h-48"
 						/>
 						<TestsCard
-							tests={tests}
+							tests={[]}
 							testItems={tests}
 							setTestItems={() => {}}
 							readonly

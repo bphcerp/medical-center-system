@@ -1,4 +1,5 @@
 import { Label } from "@radix-ui/react-label";
+import type { InferResponseType } from "hono";
 import { ChevronsUpDown, Download, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AutoSizer } from "react-virtualized";
@@ -19,10 +20,13 @@ import {
 } from "@/components/ui/popover";
 import { statusEnums } from "@/db/lab";
 import useVirtualList from "@/lib/hooks/useVirtualList";
+import { client } from "@/routes/api/$";
 import { LabTestStatusBadge } from "./lab-test-status-badge";
 import type { CaseDetail } from "./vitals-card";
 
-type TestItem = CaseDetail["data"]["tests"][number];
+export type TestItem = CaseDetail["data"]["tests"][number];
+const testsResponse = client.api.doctor.tests.$get;
+export type Test = InferResponseType<typeof testsResponse, 200>["data"][number];
 
 const TestsCard = ({
 	tests,
@@ -30,14 +34,14 @@ const TestsCard = ({
 	setTestItems,
 	readonly = false,
 }: {
-	tests: TestItem[];
+	tests: Test[];
 	testItems: TestItem[];
 	setTestItems: (items: TestItem[]) => void;
 	readonly?: boolean;
 }) => {
 	const [testsSearchOpen, setTestsSearchOpen] = useState<boolean>(false);
 	const [testQuery, setTestQuery] = useState<string>("");
-	const { renderList } = useVirtualList<TestItem>(300, {
+	const { renderList } = useVirtualList<Test>(300, {
 		"2xl": 48,
 		xl: 48,
 		lg: 48,
@@ -96,7 +100,7 @@ const TestsCard = ({
 			id: test.id,
 			name: test.name,
 			category: test.category,
-			status: test.status,
+			status: "Requested",
 			files: [],
 		};
 
