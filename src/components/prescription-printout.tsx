@@ -1,5 +1,5 @@
-import { PiIcon } from "lucide-react";
 import type { JWTPayload } from "@/lib/types/api";
+import Logo from "@/styles/logo.svg";
 import type { DiagnosisItem } from "./diagnosis-card";
 import type { FinalizeButtonValue } from "./finalize-case-card";
 import type { PrescriptionItem } from "./prescription/types";
@@ -28,8 +28,12 @@ const PrescriptionPrintout = ({
 	return (
 		<>
 			<div className="w-full font-serif">
-				<PiIcon className="absolute top-8 left-8" />
-				<h1 className="text-xl font-bold uppercase underline my-8 w-full text-center">
+				<img
+					src={Logo}
+					alt="BITS Pilani Logo"
+					className="absolute size-20 top-8 left-8"
+				/>
+				<h1 className="text-xl font-bold uppercase underline my-8 w-full text-center pt-8">
 					Medical Center, BITS Pilani Hyderabad Campus
 				</h1>
 			</div>
@@ -110,39 +114,41 @@ const PrescriptionPrintout = ({
 							{consultationNotes || "No notes provided."}
 						</p>
 					</div>
-					<div className="pt-3">
-						<h2 className="text-lg font-bold underline mb-2">Tests</h2>
-						<ul className="flex flex-col list-inside divide-y divide-border divide-solid gap-2">
-							{testItems.map((item) => (
-								<li key={item.id} className="pb-2 list-disc">
-									<span>
-										{item.name} ({item.category})
-									</span>
-								</li>
-							))}
-						</ul>
-					</div>
+					{testItems.length > 0 && (
+						<div className="pt-3">
+							<h2 className="text-lg font-bold underline mb-2">Tests</h2>
+							<ul className="flex flex-col list-inside divide-y divide-border divide-solid gap-2">
+								{testItems.map((item) => (
+									<li key={item.id} className="pb-2 list-disc">
+										<span>
+											{item.name} ({item.category})
+										</span>
+									</li>
+								))}
+							</ul>
+						</div>
+					)}
 				</div>
 				<div className="flex flex-col divide-y divide-black divide-solid px-4">
 					<div>
 						<h2 className="text-lg font-bold underline mb-2">Diagnosis</h2>
-						<ul className="flex flex-col list-inside divide-y divide-border divide-solid gap-2 min-h-36">
-							{diagnosisItems.map((item) => (
-								<li key={item.id} className="pb-2 list-disc">
-									<span>
-										{item.name} ({item.icd})
-									</span>
-								</li>
-							))}
-						</ul>
-					</div>
-					<div className="min-h-52 pt-3">
-						<Label className="font-semibold text-lg">Prescription</Label>
-						{prescriptionItems.length === 0 ? (
-							<div className="pb-4 text-muted-foreground text-center">
-								No prescriptions recorded
-							</div>
+						{diagnosisItems.length > 0 ? (
+							<ul className="flex flex-col list-inside divide-y divide-border divide-solid gap-2 min-h-36">
+								{diagnosisItems.map((item) => (
+									<li key={item.id} className="pb-2 list-disc">
+										<span>
+											{item.name} ({item.icd})
+										</span>
+									</li>
+								))}
+							</ul>
 						) : (
+							<p>No diagnosis recorded.</p>
+						)}
+					</div>
+					{prescriptionItems.length > 0 && (
+						<div className="min-h-52 pt-3">
+							<Label className="font-semibold text-lg">Prescription</Label>
 							<div className="pb-4 space-y-2">
 								{prescriptionItems.map((item) => (
 									<div
@@ -258,8 +264,8 @@ const PrescriptionPrintout = ({
 									</div>
 								))}
 							</div>
-						)}
-					</div>
+						</div>
+					)}
 				</div>
 			</div>
 			<div className="border border-black divide-solid divide-y divide-black mx-4 mt-4 flex flex-col mb-8">
@@ -271,7 +277,7 @@ const PrescriptionPrintout = ({
 			</div>
 			<div className="px-4 w-full flex justify-between">
 				<div className="flex gap-2 items-center">
-					<PiIcon />
+					<img src={Logo} alt="BITS Pilani Logo" className="size-20" />
 					<div className="flex flex-col text-sm">
 						<span>Birla Institute of Technology & Science Pilani</span>
 						<span>Hyderabad Campus</span>
