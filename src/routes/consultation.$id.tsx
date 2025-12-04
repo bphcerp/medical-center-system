@@ -7,14 +7,17 @@ import {
 	RefreshCw,
 	TriangleAlert,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useReactToPrint } from "react-to-print";
 import { toast } from "sonner";
 import DiagnosisCard from "@/components/diagnosis-card";
 import FinalizeCaseCard, {
 	type FinalizeButtonValue,
 } from "@/components/finalize-case-card";
+import FinalizeCaseDialog from "@/components/finalize-case-dialog";
 import { PatientDetails } from "@/components/patient-details";
 import PrescriptionCard from "@/components/prescription/prescription-card";
+import PrescriptionPrintout from "@/components/prescription-printout";
 import TestsCard from "@/components/tests-card";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
@@ -84,7 +87,7 @@ export const Route = createFileRoute("/consultation/$id")({
 });
 
 function ConsultationPage() {
-	useAuth(["doctor"]);
+	const { user } = useAuth(["doctor"]);
 	const {
 		caseDetail,
 		medicines,
@@ -118,6 +121,16 @@ function ConsultationPage() {
 		prescriptions,
 		tests: testsFromCase,
 	});
+	const contentRef = useRef<HTMLDivElement>(null);
+	const reactToPrintFn = useReactToPrint({
+		contentRef,
+		onAfterPrint: () => {
+			setTimeout(() => {
+				setOpenFinalizeDialog(true);
+			}, 500);
+		},
+	});
+	const [openFinalizeDialog, setOpenFinalizeDialog] = useState(false);
 
 	if (!caseDetail) {
 		return (
@@ -262,11 +275,30 @@ function ConsultationPage() {
 						/>
 					</div>
 				</div>
+				<FinalizeCaseDialog
+					open={openFinalizeDialog}
+					onOpenChange={setOpenFinalizeDialog}
+					onConfirm={handleFinalize}
+				/>
+
 				<FinalizeCaseCard
-					handleFinalize={handleFinalize}
+					handleFinalize={reactToPrintFn}
 					finalizeButtonValue={finalizeButtonValue}
 					setFinalizeButtonValue={setFinalizeButtonValue}
 				/>
+				<div className="hidden">
+					<div ref={contentRef}>
+						<PrescriptionPrintout
+							caseDetail={caseDetail}
+							prescriptionItems={prescriptionItems}
+							diagnosisItems={diagnosisItems}
+							consultationNotes={consultationNotes}
+							testItems={testItems}
+							finalizeValue={finalizeButtonValue}
+							doctor={user}
+						/>
+					</div>
+				</div>
 			</div>
 		</div>
 	);
