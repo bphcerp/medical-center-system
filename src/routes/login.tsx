@@ -1,10 +1,11 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import useAuth from "@/lib/hooks/useAuth";
 import { handleErrors } from "@/lib/utils";
+import Logo from "@/styles/logo.svg";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/login")({
@@ -39,8 +40,12 @@ function Login() {
 	};
 
 	return (
-		<div className="w-full flex justify-center">
-			<form className="w-full md:w-1/3 pt-48 mx-6" action={handleLogin}>
+		<div className="w-full flex flex-col items-center pt-24">
+			<div className="w-full items-center flex flex-col gap-8 pb-8">
+				<img src={Logo} alt="BITS Pilani Logo" className="size-36" />
+				<span className="text-2xl font-semibold">Medical Center System</span>
+			</div>
+			<form className="w-full md:w-1/3 mx-6" action={handleLogin}>
 				<FieldSet>
 					<FieldGroup>
 						<Field>
@@ -69,6 +74,12 @@ function Login() {
 					</FieldGroup>
 				</FieldSet>
 			</form>
+			<Link
+				to="/about"
+				className="mt-4 text-sm underline text-muted-foreground"
+			>
+				About
+			</Link>
 		</div>
 	);
 }

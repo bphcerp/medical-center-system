@@ -1,0 +1,58 @@
+{
+  "professors": [
+     {
+      "department": "Mechanical Department",
+      "name": "Prof. Supradeepan K",
+      "imageUrl": "/contributors_images/supradeepan.webp"
+    },
+    {
+      "department": "Medical Center",
+      "name": "Lt. Col. (Dr.) Shyam Kumar",
+      "imageUrl": "/contributors_images/shyam.webp"
+    }
+  ],
+  "students": [
+    {
+      "id": "2021B3A70781H",
+      "name": "Soumitra Shewale",
+      "imageUrl": "/contributors_images/soumitra.webp",
+      "githubUsername": "soumitradev"
+    },
+    {
+      "id": "2023AAPS0244H",
+      "name": "Zeeshan Valappil",
+      "imageUrl": "/contributors_images/zeeshan.webp",
+      "githubUsername": "zeeshanok"
+    },
+    {
+      "id": "2022A7PS0205H",
+      "name": "Anurag Maiti",
+      "imageUrl": "/contributors_images/anurag.webp",
+      "githubUsername": "knoxxus-dev"
+    },
+    {
+      "id": "2022B3A70885H",
+      "name": "Namit Bhutani",
+      "imageUrl": "/contributors_images/namit.webp",
+      "githubUsername": "NamitBhutani"
+    },
+    {
+      "id": "2023A8PS1181H",
+      "name": "Bipul Behera",
+      "imageUrl": "/contributors_images/bipul.webp",
+      "githubUsername": "OpexRah"
+    },
+    {
+      "id": "2023AAPS1127H",
+      "name": "Advaith Neelacantan",
+      "imageUrl": "/contributors_images/advaith.webp",
+      "githubUsername": "i-ideamama"
+    },
+    {
+      "id": "2022A7PS0149H",
+      "name": "Mudit Somani",
+      "imageUrl": "/contributors_images/mudit.webp",
+      "githubUsername": "TheComputerM"
+    }
+  ]
+}

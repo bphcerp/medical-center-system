@@ -13,6 +13,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as DoctorRouteImport } from './routes/doctor'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as VitalsRouteRouteImport } from './routes/vitals/route'
 import { Route as LabRouteRouteImport } from './routes/lab/route'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
@@ -45,6 +46,11 @@ const InventoryRoute = InventoryRouteImport.update({
 const DoctorRoute = DoctorRouteImport.update({
   id: '/doctor',
   path: '/doctor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VitalsRouteRoute = VitalsRouteRouteImport.update({
@@ -118,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteRouteWithChildren
   '/lab': typeof LabRouteRouteWithChildren
   '/vitals': typeof VitalsRouteRouteWithChildren
+  '/about': typeof AboutRoute
   '/doctor': typeof DoctorRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRouteRouteWithChildren
   '/lab': typeof LabRouteRouteWithChildren
   '/vitals': typeof VitalsRouteRouteWithChildren
+  '/about': typeof AboutRoute
   '/doctor': typeof DoctorRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
@@ -157,6 +165,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteRouteWithChildren
   '/lab': typeof LabRouteRouteWithChildren
   '/vitals': typeof VitalsRouteRouteWithChildren
+  '/about': typeof AboutRoute
   '/doctor': typeof DoctorRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
@@ -178,6 +187,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/lab'
     | '/vitals'
+    | '/about'
     | '/doctor'
     | '/inventory'
     | '/login'
@@ -197,6 +207,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/lab'
     | '/vitals'
+    | '/about'
     | '/doctor'
     | '/inventory'
     | '/login'
@@ -216,6 +227,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/lab'
     | '/vitals'
+    | '/about'
     | '/doctor'
     | '/inventory'
     | '/login'
@@ -236,6 +248,7 @@ export interface RootRouteChildren {
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   LabRouteRoute: typeof LabRouteRouteWithChildren
   VitalsRouteRoute: typeof VitalsRouteRouteWithChildren
+  AboutRoute: typeof AboutRoute
   DoctorRoute: typeof DoctorRoute
   InventoryRoute: typeof InventoryRoute
   LoginRoute: typeof LoginRoute
@@ -274,6 +287,13 @@ declare module '@tanstack/react-router' {
       path: '/doctor'
       fullPath: '/doctor'
       preLoaderRoute: typeof DoctorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/vitals': {
@@ -415,6 +435,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRouteRoute: AdminRouteRouteWithChildren,
   LabRouteRoute: LabRouteRouteWithChildren,
   VitalsRouteRoute: VitalsRouteRouteWithChildren,
+  AboutRoute: AboutRoute,
   DoctorRoute: DoctorRoute,
   InventoryRoute: InventoryRoute,
   LoginRoute: LoginRoute,
