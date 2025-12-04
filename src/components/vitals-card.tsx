@@ -53,6 +53,7 @@ const VitalsCard = ({
 							unit="mmHg"
 							name="bloodPressure"
 							placeholder="Blood Pressure"
+							type="text"
 							value={`${vitals?.bloodPressureSystolic ?? "—"}/${vitals?.bloodPressureDiastolic ?? "—"}`}
 						/>
 					) : (
