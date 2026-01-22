@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { BarcodeScanner } from "@/components/barcode-scanner";
 import { RegistrationForm } from "@/components/registration-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -53,14 +54,15 @@ function Register() {
 	};
 
 	return (
-		<div className="flex w-full gap-6 justify-center pt-48">
-			{token !== null ? (
-				<TokenDisplay token={token} resetTab={handleResetTab} />
-			) : (
-				<Card className="m-4 w-full sm:w-1/2 lg:w-1/3 px-6">
-					<RegistrationForm setToken={handleToken} />
-				</Card>
-			)}
-		</div>
+		// <div className="flex w-full gap-6 justify-center pt-48">
+		// 	{token !== null ? (
+		// 		<TokenDisplay token={token} resetTab={handleResetTab} />
+		// 	) : (
+		// 		<Card className="m-4 w-full sm:w-1/2 lg:w-1/3 px-6">
+		// 			<RegistrationForm setToken={handleToken} />
+		// 		</Card>
+		// 	)}
+		// </div>
+		<BarcodeScanner />
 	);
 }
