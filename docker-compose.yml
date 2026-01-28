@@ -64,6 +64,7 @@ services:
         target: /usr/local/app/src
     ports:
       - "${FRONTEND_PORT}:3000"
+      - "4983:4983" # for drizzle studio remove while pushing to repo
     profiles:
       - "dev"
 
