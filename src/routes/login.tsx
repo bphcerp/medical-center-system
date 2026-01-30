@@ -45,7 +45,7 @@ function Login() {
 				<img src={Logo} alt="BITS Pilani Logo" className="size-36" />
 				<span className="text-2xl font-semibold">Medical Center System</span>
 			</div>
-			<form className="w-full md:w-1/3 mx-6" action={handleLogin}>
+			<form className="w-full md:w-1/3 px-6" action={handleLogin}>
 				<FieldSet>
 					<FieldGroup>
 						<Field>
