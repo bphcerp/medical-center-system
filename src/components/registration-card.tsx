@@ -1,9 +1,10 @@
-import { ArrowRight, CheckIcon } from "lucide-react";
+import { ArrowRight, CheckIcon, ScanBarcode } from "lucide-react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 import type { identifierTypes } from "@/db/case";
 import { handleErrors } from "@/lib/utils";
 import { client } from "@/routes/api/$";
+import { BarcodeScanner } from "./barcode-scanner";
 import { Button } from "./ui/button";
 import { DatePicker } from "./ui/date-picker";
 import { Input } from "./ui/input";
@@ -62,6 +63,7 @@ export function RegistrationForm({
 
 	const [showDetails, setShowDetails] = useState(false);
 	const [disableForm, setDisableForm] = useState(false);
+	const [showScanner, setShowScanner] = useState(false);
 
 	const [options, setOptions] = useState<
 		{ id: number; name: string; birthdate: Date; sex: string }[]
@@ -80,6 +82,7 @@ export function RegistrationForm({
 		setRegistrationType(null);
 		setShowDetails(false);
 		setDisableForm(false);
+		setShowScanner(false);
 		setOptions([]);
 		setPatientId(-1);
 		setIdentifier("");
@@ -137,10 +140,11 @@ export function RegistrationForm({
 		resetState();
 	};
 
-	const handleCheckExisting = async () => {
+	const handleCheckExisting = async (id?: string) => {
+		const identifierValue = (id ?? identifier).toLowerCase();
 		let type: RegistrationType;
 		if (registrationType !== "visitor") {
-			if (identifier.startsWith("H")) {
+			if (identifierValue.startsWith("h")) {
 				type = "professor";
 			} else {
 				type = "student";
@@ -154,7 +158,7 @@ export function RegistrationForm({
 
 		const res = await client.api.existing.$get({
 			query: {
-				identifier,
+				identifier: identifierValue,
 				identifierType,
 			},
 		});
@@ -222,9 +226,26 @@ export function RegistrationForm({
 		return;
 	};
 
+	const handleBarcodeScan = (scanned: string) => {
+		const studentIdPattern = /^F20\d{2}[A-Za-z0-9]{4}H$/;
+
+		if (studentIdPattern.test(scanned)) {
+			const withoutH = scanned.slice(0, -1);
+			const extractedId = withoutH.charAt(0).toLowerCase() + withoutH.slice(1);
+			setIdentifier(extractedId);
+			setShowScanner(false);
+
+			setTimeout(() => {
+				handleCheckExisting(extractedId);
+			}, 100);
+		} else {
+			toast.error("Invalid student ID format. Expected format: F20yyxxxxH");
+		}
+	};
+
 	return (
 		<form
-			action={showDetails ? handleRegister : handleCheckExisting}
+			action={showDetails ? handleRegister : () => handleCheckExisting()}
 			className="flex flex-col gap-1"
 		>
 			<span className="font-semibold text-xl">
@@ -247,7 +268,7 @@ export function RegistrationForm({
 						name="identifier"
 						placeholder={
 							registrationType === null
-								? "e.g. 2024A1PS0001H / H0001"
+								? "e.g. F20230001 / H0001"
 								: registrationTypeDetails[registrationType].inputHint
 						}
 						required
@@ -346,6 +367,32 @@ export function RegistrationForm({
 						<ArrowRight className="size-5" />
 					)}
 				</Button>
+				{!showDetails && !showScanner && (
+					<Button
+						variant="outline"
+						type="button"
+						onClick={() => setShowScanner(true)}
+						size="lg"
+						className="text-lg"
+					>
+						<ScanBarcode className="size-5" />
+						Scan ID Card
+					</Button>
+				)}
+				{showScanner && (
+					<div className="space-y-3">
+						<BarcodeScanner onScan={handleBarcodeScan} />
+						<Button
+							variant="outline"
+							type="button"
+							onClick={() => setShowScanner(false)}
+							size="lg"
+							className="w-full"
+						>
+							Close Scanner
+						</Button>
+					</div>
+				)}
 				{!showDetails && (
 					<Button
 						variant="link"
