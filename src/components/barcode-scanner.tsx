@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { isBarcodeDetectionAvailable } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 
@@ -24,19 +25,17 @@ export function BarcodeScanner({ onScan }: BarcodeScannerProps = {}) {
 	const [scanning, setScanning] = useState(false);
 	const [results, setResults] = useState<string[]>([]);
 	const [lastScanned, setLastScanned] = useState<string>("");
-	const [isSupported, setIsSupported] = useState<boolean>(false);
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const streamRef = useRef<MediaStream | null>(null);
 	const animationRef = useRef<number | null>(null);
 	const detectorRef = useRef<BarcodeDetector | null>(null);
 
-	useEffect(() => {
-		if ("BarcodeDetector" in window) {
-			setIsSupported(true);
-		} else {
-			console.error("Barcode Detector is not supported by this browser.");
-		}
-	}, []);
+	// works as long as there is no SSR
+	const isSupported = isBarcodeDetectionAvailable();
+
+	if (!isSupported) {
+		console.error("Barcode Detector is not supported by this browser.");
+	}
 
 	useEffect(() => {
 		if (!scanning || !isSupported) {
