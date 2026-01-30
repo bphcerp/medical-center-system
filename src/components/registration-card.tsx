@@ -232,7 +232,7 @@ export function RegistrationForm({
 	};
 
 	const handleBarcodeScan = (scanned: string) => {
-		const studentIdPattern = /^F20\d{2}[A-Za-z0-9]{4}H$/;
+		const studentIdPattern = /^F20\d{6}H$/;
 
 		if (studentIdPattern.test(scanned)) {
 			const withoutH = scanned.slice(0, -1);
