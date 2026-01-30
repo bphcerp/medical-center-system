@@ -1,8 +1,13 @@
-import { ArrowRight, CheckIcon, ScanBarcode } from "lucide-react";
+import {
+	ArrowRight,
+	CheckIcon,
+	ScanBarcode,
+	TextCursorInput,
+} from "lucide-react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 import type { identifierTypes } from "@/db/case";
-import { handleErrors } from "@/lib/utils";
+import { handleErrors, isBarcodeDetectionAvailable } from "@/lib/utils";
 import { client } from "@/routes/api/$";
 import { BarcodeScanner } from "./barcode-scanner";
 import { Button } from "./ui/button";
@@ -243,6 +248,8 @@ export function RegistrationForm({
 		}
 	};
 
+	const initialRegisterText = showScanner ? "Scan ID Card" : "Register";
+
 	return (
 		<form
 			action={showDetails ? handleRegister : () => handleCheckExisting()}
@@ -250,150 +257,154 @@ export function RegistrationForm({
 		>
 			<span className="font-semibold text-xl">
 				{registrationType === null
-					? "Register"
+					? initialRegisterText
 					: registrationTypeDetails[registrationType].title}
 			</span>
-			<div className="grid gap-3 mt-2">
-				<Label htmlFor={id}>
-					{registrationType === null
-						? "Student ID / PSRN"
-						: registrationTypeDetails[registrationType].labelText}
-				</Label>
-				<div className="flex gap-2">
-					<Input
-						id={id}
-						value={identifier}
-						onChange={(e) => setIdentifier(e.target.value)}
-						disabled={showDetails}
-						name="identifier"
-						placeholder={
-							registrationType === null
-								? "e.g. F20230001 / H0001"
-								: registrationTypeDetails[registrationType].inputHint
-						}
-						required
-						autoFocus
-					/>
+			{showScanner ? (
+				// Scanner form
+				<BarcodeScanner onScan={handleBarcodeScan} />
+			) : (
+				// Manually entering form
+				<div className="grid gap-3 mt-2">
+					<Label htmlFor={id}>
+						{registrationType === null
+							? "Student ID / PSRN"
+							: registrationTypeDetails[registrationType].labelText}
+					</Label>
+					<div className="flex gap-2">
+						<Input
+							id={id}
+							value={identifier}
+							onChange={(e) => setIdentifier(e.target.value)}
+							disabled={showDetails}
+							name="identifier"
+							placeholder={
+								registrationType === null
+									? "e.g. F20230001 / H0001"
+									: registrationTypeDetails[registrationType].inputHint
+							}
+							required
+							autoFocus
+						/>
+						{showDetails && (
+							<Button size={"lg"} variant={"outline"} onClick={resetState}>
+								Change
+							</Button>
+						)}
+					</div>
 					{showDetails && (
-						<Button size={"lg"} variant={"outline"} onClick={resetState}>
-							Change
-						</Button>
+						<>
+							{registrationType === "professor" && options.length > 0 && (
+								<>
+									<Label htmlFor={nameId}>Select Dependent/Professor</Label>
+									<Select
+										required
+										name="person"
+										onValueChange={(v) => {
+											const option = JSON.parse(v);
+											setPatientId(option.id);
+											setName(option.name);
+											setBirthdate(option.birthdate);
+											setSex(option.sex);
+										}}
+									>
+										<SelectTrigger className="w-full border-ring">
+											<SelectValue placeholder="Select Dependent/Professor" />
+										</SelectTrigger>
+										<SelectContent>
+											{options.map((option) => (
+												<SelectItem
+													key={`${option.id}|${option.name}|${option.birthdate}|${option.sex}`}
+													value={JSON.stringify(option)}
+												>{`${option.name} | ${option.birthdate} | ${option.sex}`}</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</>
+							)}
+							<Label htmlFor={nameId}>Name</Label>
+							<Input
+								disabled={disableForm}
+								id={nameId}
+								name="name"
+								placeholder="Full Name"
+								value={name}
+								onChange={(e) => setName(e.target.value)}
+								required
+							/>
+							{registrationType === "visitor" && (
+								<>
+									<Label htmlFor={emailId}>Email</Label>
+									<Input
+										disabled={disableForm}
+										id={emailId}
+										name="email"
+										placeholder="Email"
+										value={email}
+										onChange={(e) => setEmail(e.target.value)}
+										required
+									/>
+								</>
+							)}
+							<DatePicker
+								disabled={disableForm}
+								onChange={(date) => date && setBirthdate(date)}
+								value={birthdate}
+							/>
+							<Label htmlFor={sexId}>Sex</Label>
+							<Select
+								required
+								name="sex"
+								disabled={disableForm}
+								value={sex}
+								onValueChange={(v) => setSex(v as "male" | "female")}
+							>
+								<SelectTrigger id={sexId}>
+									<SelectValue placeholder="Sex" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="male">Male</SelectItem>
+									<SelectItem value="female">Female</SelectItem>
+								</SelectContent>
+							</Select>
+						</>
 					)}
 				</div>
-				{showDetails && (
-					<>
-						{registrationType === "professor" && options.length > 0 && (
-							<>
-								<Label htmlFor={nameId}>Select Dependent/Professor</Label>
-								<Select
-									required
-									name="person"
-									onValueChange={(v) => {
-										const option = JSON.parse(v);
-										setPatientId(option.id);
-										setName(option.name);
-										setBirthdate(option.birthdate);
-										setSex(option.sex);
-									}}
-								>
-									<SelectTrigger className="w-full border-ring">
-										<SelectValue placeholder="Select Dependent/Professor" />
-									</SelectTrigger>
-									<SelectContent>
-										{options.map((option) => (
-											<SelectItem
-												key={`${option.id}|${option.name}|${option.birthdate}|${option.sex}`}
-												value={JSON.stringify(option)}
-											>{`${option.name} | ${option.birthdate} | ${option.sex}`}</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</>
-						)}
-						<Label htmlFor={nameId}>Name</Label>
-						<Input
-							disabled={disableForm}
-							id={nameId}
-							name="name"
-							placeholder="Full Name"
-							value={name}
-							onChange={(e) => setName(e.target.value)}
-							required
-						/>
-						{registrationType === "visitor" && (
-							<>
-								<Label htmlFor={emailId}>Email</Label>
-								<Input
-									disabled={disableForm}
-									id={emailId}
-									name="email"
-									placeholder="Email"
-									value={email}
-									onChange={(e) => setEmail(e.target.value)}
-									required
-								/>
-							</>
-						)}
-						<DatePicker
-							disabled={disableForm}
-							onChange={(date) => date && setBirthdate(date)}
-							value={birthdate}
-						/>
-						<Label htmlFor={sexId}>Sex</Label>
-						<Select
-							required
-							name="sex"
-							disabled={disableForm}
-							value={sex}
-							onValueChange={(v) => setSex(v as "male" | "female")}
-						>
-							<SelectTrigger id={sexId}>
-								<SelectValue placeholder="Sex" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="male">Male</SelectItem>
-								<SelectItem value="female">Female</SelectItem>
-							</SelectContent>
-						</Select>
-					</>
-				)}
-			</div>
+			)}
 			<div className="pt-4 flex flex-col items-stretch w-full gap-4">
-				<Button type="submit" size="lg" className="text-lg">
-					{showDetails ? "Register" : "Continue"}
-					{showDetails ? (
-						<CheckIcon className="size-5" />
-					) : (
-						<ArrowRight className="size-5" />
-					)}
-				</Button>
-				{!showDetails && !showScanner && (
-					<Button
-						variant="outline"
-						type="button"
-						onClick={() => setShowScanner(true)}
-						size="lg"
-						className="text-lg"
-					>
-						<ScanBarcode className="size-5" />
-						Scan ID Card
+				{!showScanner && (
+					<Button type="submit" size="lg" className="text-lg">
+						{showDetails ? "Register" : "Continue"}
+						{showDetails ? (
+							<CheckIcon className="size-5" />
+						) : (
+							<ArrowRight className="size-5" />
+						)}
 					</Button>
 				)}
-				{showScanner && (
-					<div className="space-y-3">
-						<BarcodeScanner onScan={handleBarcodeScan} />
+				{isBarcodeDetectionAvailable() &&
+					!showDetails &&
+					registrationType !== "visitor" && (
 						<Button
 							variant="outline"
 							type="button"
-							onClick={() => setShowScanner(false)}
+							onClick={() => setShowScanner((show) => !show)}
 							size="lg"
-							className="w-full"
+							className="text-lg"
 						>
-							Close Scanner
+							{showScanner ? (
+								<>
+									Enter Manually <TextCursorInput className="size-5" />
+								</>
+							) : (
+								<>
+									Scan ID Card
+									<ScanBarcode className="size-5" />
+								</>
+							)}
 						</Button>
-					</div>
-				)}
-				{!showDetails && (
+					)}
+				{!showDetails && !showScanner && (
 					<Button
 						variant="link"
 						type="button"
