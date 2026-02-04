@@ -1,9 +1,4 @@
-import {
-	ArrowRight,
-	CheckIcon,
-	ScanBarcode,
-	TextCursorInput,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckIcon, ScanBarcode } from "lucide-react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 import type { identifierTypes } from "@/db/case";
@@ -145,19 +140,17 @@ export function RegistrationForm({
 		resetState();
 	};
 
-	const handleCheckExisting = async (id?: string) => {
-		const identifierValue = (id ?? identifier).toLowerCase();
-		let type: RegistrationType;
+	const handleCheckExisting = async (identifier: string) => {
+		const identifierValue = identifier.toLowerCase();
+
+		let type: RegistrationType = "visitor";
 		if (registrationType !== "visitor") {
 			if (identifierValue.startsWith("h")) {
 				type = "professor";
 			} else {
 				type = "student";
 			}
-		} else {
-			type = registrationType;
 		}
-		setRegistrationType(type);
 
 		const identifierType = registrationTypeDetails[type].identifierType;
 
@@ -168,6 +161,7 @@ export function RegistrationForm({
 			},
 		});
 		const existing = await handleErrors(res);
+
 		// For actual errors, handle them
 		if (!existing) {
 			resetState();
@@ -189,6 +183,8 @@ export function RegistrationForm({
 			}
 			return;
 		}
+
+		setRegistrationType(type);
 
 		setShowDetails(true);
 		setDisableForm(true);
@@ -231,28 +227,19 @@ export function RegistrationForm({
 		return;
 	};
 
-	const handleBarcodeScan = (scanned: string) => {
-		const studentIdPattern = /^F20\d{6}H$/;
-
-		if (studentIdPattern.test(scanned)) {
-			const withoutH = scanned.slice(0, -1);
-			const extractedId = withoutH.charAt(0).toLowerCase() + withoutH.slice(1);
-			setIdentifier(extractedId);
-			setShowScanner(false);
-
-			setTimeout(() => {
-				handleCheckExisting(extractedId);
-			}, 100);
-		} else {
-			toast.error("Invalid student ID format. Expected format: F20yyxxxxH");
-		}
+	const handleBarcodeScan = async (scanned: string) => {
+		await handleCheckExisting(scanned);
+		setShowScanner(false);
+		setIdentifier(scanned);
 	};
 
 	const initialRegisterText = showScanner ? "Scan ID Card" : "Register";
 
 	return (
 		<form
-			action={showDetails ? handleRegister : () => handleCheckExisting()}
+			action={
+				showDetails ? handleRegister : () => handleCheckExisting(identifier)
+			}
 			className="flex flex-col gap-1"
 		>
 			<span className="font-semibold text-xl">
@@ -262,7 +249,9 @@ export function RegistrationForm({
 			</span>
 			{showScanner ? (
 				// Scanner form
-				<BarcodeScanner onScan={handleBarcodeScan} />
+				<div className="pt-4">
+					<IdScanner onScan={handleBarcodeScan} />
+				</div>
 			) : (
 				// Manually entering form
 				<div className="grid gap-3 mt-2">
@@ -388,13 +377,13 @@ export function RegistrationForm({
 						<Button
 							variant="outline"
 							type="button"
-							onClick={() => setShowScanner((show) => !show)}
+							onClick={() => setShowScanner((val) => !val)}
 							size="lg"
 							className="text-lg"
 						>
 							{showScanner ? (
 								<>
-									Enter Manually <TextCursorInput className="size-5" />
+									<ArrowLeft /> Enter Manually
 								</>
 							) : (
 								<>
@@ -404,7 +393,7 @@ export function RegistrationForm({
 							)}
 						</Button>
 					)}
-				{!showDetails && !showScanner && (
+				{!showDetails && (
 					<Button
 						variant="link"
 						type="button"
@@ -422,5 +411,38 @@ export function RegistrationForm({
 				)}
 			</div>
 		</form>
+	);
+}
+
+type IdScannerProps = {
+	onScan: (scannedId: string) => void;
+};
+const validateResult = (scanned: string) => {
+	const studentIdPattern = /^((F)(20\d{2})(\d{4}))H$/i;
+
+	return studentIdPattern.exec(scanned);
+};
+function IdScanner({ onScan }: IdScannerProps) {
+	const [text, setText] = useState<string | null>(null);
+
+	const handleScan = (scanned: RegExpExecArray) => {
+		setText(scanned.slice(2).join(" "));
+		const extractedId = scanned[1];
+		onScan(extractedId);
+	};
+
+	if (text === null) {
+		return (
+			<BarcodeScanner
+				validateResult={validateResult}
+				onScanSuccess={handleScan}
+			/>
+		);
+	}
+
+	return (
+		<div className="flex items-center justify-center gap-2">
+			<p className="text-xl text-center font-semibold animate-pulse">{text}</p>
+		</div>
 	);
 }

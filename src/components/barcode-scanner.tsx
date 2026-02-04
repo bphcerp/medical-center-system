@@ -1,30 +1,24 @@
-import { useEffect, useRef, useState } from "react";
+import { OctagonX } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { isBarcodeDetectionAvailable } from "@/lib/utils";
-import { Button } from "./ui/button";
-import { Card } from "./ui/card";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "./ui/empty";
 
-interface BarcodeDetector {
-	detect: (source: HTMLVideoElement) => Promise<{ rawValue: string }[]>;
+interface BarcodeScannerProps<T> {
+	validateResult: (result: string) => T | null;
+	onScanSuccess?: (result: T) => void;
 }
 
-interface BarcodeDetectorConstructor {
-	new (options: { formats: string[] }): BarcodeDetector;
-}
-
-declare global {
-	interface Window {
-		BarcodeDetector: BarcodeDetectorConstructor;
-	}
-}
-
-interface BarcodeScannerProps {
-	onScan?: (result: string) => void;
-}
-
-export function BarcodeScanner({ onScan }: BarcodeScannerProps = {}) {
-	const [scanning, setScanning] = useState(false);
-	const [results, setResults] = useState<string[]>([]);
-	const [lastScanned, setLastScanned] = useState<string>("");
+export function BarcodeScanner<T>({
+	validateResult,
+	onScanSuccess,
+}: BarcodeScannerProps<T>) {
+	const [isScanning, setIsScanning] = useState(true);
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const streamRef = useRef<MediaStream | null>(null);
 	const animationRef = useRef<number | null>(null);
@@ -33,147 +27,146 @@ export function BarcodeScanner({ onScan }: BarcodeScannerProps = {}) {
 	// works as long as there is no SSR
 	const isSupported = isBarcodeDetectionAvailable();
 
-	if (!isSupported) {
-		console.error("Barcode Detector is not supported by this browser.");
-	}
+	const handleScanResult = useCallback(
+		(scanResult: T | null) => {
+			if (scanResult) {
+				setIsScanning(false);
+				onScanSuccess?.(scanResult);
+			}
+		},
+		[onScanSuccess],
+	);
+
+	const stopScanning = useCallback(() => {
+		// Cleanup
+		if (animationRef.current) {
+			cancelAnimationFrame(animationRef.current);
+		}
+		if (streamRef.current) {
+			streamRef.current.getTracks().forEach((track) => {
+				track.stop();
+			});
+		}
+		if (videoRef.current) {
+			videoRef.current.srcObject = null;
+		}
+	}, []);
+
+	const startScanning = useCallback(async () => {
+		if (!videoRef.current) return;
+
+		setIsScanning(true);
+
+		try {
+			detectorRef.current = new window.BarcodeDetector({
+				formats: ["code_128"],
+			});
+			const devices = (await navigator.mediaDevices.enumerateDevices()).filter(
+				(d) => d.kind === "videoinput",
+			);
+			const stream = await navigator.mediaDevices.getUserMedia({
+				video: {
+					facingMode: "environment",
+					deviceId:
+						devices.length > 0
+							? devices[devices.length - 1].deviceId
+							: undefined,
+					aspectRatio: { ideal: 3 / 4 },
+				},
+			});
+
+			streamRef.current = stream;
+
+			videoRef.current.srcObject = stream;
+			await videoRef.current.play();
+
+			const detectBarcodes = async () => {
+				const video = videoRef.current;
+				const detector = detectorRef.current;
+
+				if (!video || !detector) {
+					return;
+				}
+
+				if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+					animationRef.current = requestAnimationFrame(detectBarcodes);
+					return;
+				}
+
+				try {
+					const barcodes = await detector.detect(video);
+
+					if (barcodes.length > 0) {
+						const barcode = barcodes[0];
+						const decodedText = barcode.rawValue;
+						const result = validateResult(decodedText);
+						if (result) {
+							handleScanResult(result);
+							return;
+						}
+					}
+				} catch (_err) {
+					// Silent errors during detection
+				}
+
+				animationRef.current = requestAnimationFrame(detectBarcodes);
+			};
+
+			detectBarcodes();
+		} catch (err) {
+			console.error("Failed to start camera:", err);
+		}
+	}, [validateResult, handleScanResult]);
 
 	useEffect(() => {
-		if (!scanning || !isSupported) {
+		if (!isSupported) {
+			console.error("Barcode Detector is not supported by this browser.");
 			return;
 		}
 
-		const startScanning = async () => {
-			try {
-				detectorRef.current = new window.BarcodeDetector({
-					formats: ["code_128", "code_39", "ean_13", "ean_8", "upc_a", "upc_e"],
-				});
-
-				const stream = await navigator.mediaDevices.getUserMedia({
-					video: { facingMode: "environment" },
-				});
-
-				streamRef.current = stream;
-
-				if (videoRef.current) {
-					videoRef.current.srcObject = stream;
-					await videoRef.current.play();
-
-					const detectBarcodes = async () => {
-						if (!scanning || !videoRef.current || !detectorRef.current) {
-							return;
-						}
-
-						try {
-							const barcodes = await detectorRef.current.detect(
-								videoRef.current,
-							);
-
-							if (barcodes.length > 0) {
-								const barcode = barcodes[0];
-								const decodedText = barcode.rawValue;
-
-								if (decodedText !== lastScanned) {
-									setLastScanned(decodedText);
-									setResults((prev) => [decodedText, ...prev]);
-									console.log("Scanned:", decodedText);
-									if (onScan) {
-										onScan(decodedText);
-									}
-								}
-							}
-						} catch (_err) {
-							// Silent errors during detection
-						}
-
-						animationRef.current = requestAnimationFrame(detectBarcodes);
-					};
-
-					detectBarcodes();
-				}
-			} catch (err) {
-				console.error("Failed to start camera:", err);
-			}
-		};
-
 		startScanning();
 
-		return () => {
-			// Cleanup
-			if (animationRef.current) {
-				cancelAnimationFrame(animationRef.current);
-			}
-			if (streamRef.current) {
-				streamRef.current.getTracks().forEach((track) => {
-					track.stop();
-				});
-			}
-			if (videoRef.current) {
-				videoRef.current.srcObject = null;
-			}
-		};
-	}, [scanning, isSupported, lastScanned, onScan]);
-
-	const handleToggleScanning = () => {
-		setScanning(!scanning);
-		if (scanning) {
-			setLastScanned("");
-		}
-	};
-
-	const handleClearResults = () => {
-		setResults([]);
-		setLastScanned("");
-	};
+		return stopScanning;
+	}, [isSupported, startScanning, stopScanning]);
 
 	if (!isSupported) {
 		return (
-			<div className="p-6 text-center">
-				<Card className="p-6">
-					<h2 className="text-2xl font-semibold mb-4 text-destructive">
-						Not Supported
-					</h2>
-					<p className="text-muted-foreground">
-						Barcode Detection API is not supported in this browser. Please use
-						Chrome/Edge on Android or enable the experimental feature in
-						chrome://flags
-					</p>
-				</Card>
+			<div className="text-center">
+				<Empty>
+					<EmptyHeader>
+						<EmptyMedia variant="icon" className="bg-destructive/10">
+							<OctagonX className="text-destructive" />
+						</EmptyMedia>
+						<EmptyTitle className="text-2xl font-semibold text-destructive">
+							Not Supported
+						</EmptyTitle>
+						<EmptyDescription>
+							Barcode Detection API is not supported in this browser. Please use
+							Chrome/Edge on Android or enable the experimental feature in
+							chrome://flags
+						</EmptyDescription>
+					</EmptyHeader>
+				</Empty>
 			</div>
 		);
 	}
 
-	return (
-		<div className="flex flex-col items-center gap-6 p-6 max-w-4xl mx-auto">
-			<Card className="w-full p-6">
-				<h2 className="text-2xl font-semibold mb-4">Barcode Scanner</h2>
-
-				<div className="flex gap-3 mb-4">
-					<Button onClick={handleToggleScanning} size="lg">
-						{scanning ? "Stop Scanning" : "Start Scanning"}
-					</Button>
-
-					{results.length > 0 && (
-						<Button onClick={handleClearResults} variant="outline" size="lg">
-							Clear Results
-						</Button>
-					)}
-				</div>
-
-				<div className={`w-full ${scanning ? "block" : "hidden"}`}>
-					<video
-						ref={videoRef}
-						className="w-full h-auto rounded-lg"
-						playsInline
-						muted
-					/>
-				</div>
-
-				{!scanning && results.length === 0 && (
-					<div className="text-center py-12 text-muted-foreground">
-						Click "Start Scanning" to begin
-					</div>
-				)}
-			</Card>
-		</div>
-	);
+	if (isScanning) {
+		return (
+			<div className="flex flex-col items-center gap-4">
+				<video
+					ref={videoRef}
+					className="w-full h-auto rounded-md"
+					playsInline
+					muted
+				/>
+				<span className="italic">
+					<span className="text-muted-foreground font-medium animate-pulse">
+						Searching...
+					</span>
+					<span> Place your ID card in front of the camera</span>
+				</span>
+			</div>
+		);
+	}
 }

@@ -40,7 +40,7 @@ function Login() {
 	};
 
 	return (
-		<div className="w-full flex flex-col items-center pt-24">
+		<div className="w-full flex flex-col items-center pt-8 lg:pt-24">
 			<div className="w-full items-center flex flex-col gap-8 pb-8">
 				<img src={Logo} alt="BITS Pilani Logo" className="size-36" />
 				<span className="text-2xl font-semibold">Medical Center System</span>
