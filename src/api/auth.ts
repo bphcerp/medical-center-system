@@ -190,7 +190,7 @@ export const unauthenticated = createStrictHono()
 					const student = await db
 						.select()
 						.from(studentsTable)
-						.where(eq(studentsTable.studentId, identifier))
+						.where(eq(studentsTable.studentId, identifier.toLowerCase()))
 						.innerJoin(
 							patientsTable,
 							eq(studentsTable.patientId, patientsTable.id),
