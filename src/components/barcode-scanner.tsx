@@ -159,6 +159,7 @@ export function BarcodeScanner<T>({
 					className="w-full h-auto rounded-md"
 					playsInline
 					muted
+					aria-label="Barcode scanner camera view"
 				/>
 				<span className="italic">
 					<span className="text-muted-foreground font-medium animate-pulse">
