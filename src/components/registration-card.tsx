@@ -32,7 +32,7 @@ const registrationTypeDetails: RegistrationTypeDetails = {
 	student: {
 		title: "Register as a Student",
 		labelText: "Student ID",
-		inputHint: "e.g. 2024A1PS0001H",
+		inputHint: "e.g. F20230001",
 		identifierType: "student_id",
 	},
 	professor: {

@@ -62,6 +62,5 @@ function Register() {
 				</Card>
 			)}
 		</div>
-		// <BarcodeScanner />
 	);
 }
