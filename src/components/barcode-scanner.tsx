@@ -121,6 +121,12 @@ export function BarcodeScanner<T>({
 			detectBarcodes();
 		} catch (err) {
 			console.error("Failed to start camera:", err);
+			toast.error("Failed to start camera.", {
+				duration: Infinity,
+				description: "Please check camera permissions and try again.",
+				position: "top-center",
+				dismissible: true,
+			});
 		}
 	}, [validateResult, handleScanResult]);
 
