@@ -103,7 +103,7 @@ export function BarcodeScanner<T>({
 						const decodedText = barcode.rawValue;
 						const result = validateResult(decodedText);
 
-						if (!result) {
+						if (result) {
 							handleScanResult(result);
 							return;
 						} else if (decodedText !== lastScanned.current) {
