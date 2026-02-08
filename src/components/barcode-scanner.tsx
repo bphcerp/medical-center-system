@@ -1,5 +1,6 @@
 import { OctagonX } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { isBarcodeDetectionAvailable } from "@/lib/utils";
 import {
 	Empty,
@@ -23,6 +24,7 @@ export function BarcodeScanner<T>({
 	const streamRef = useRef<MediaStream | null>(null);
 	const animationRef = useRef<number | null>(null);
 	const detectorRef = useRef<BarcodeDetector | null>(null);
+	const lastScanned = useRef<string>("");
 
 	// works as long as there is no SSR
 	const isSupported = isBarcodeDetectionAvailable();
@@ -100,9 +102,13 @@ export function BarcodeScanner<T>({
 						const barcode = barcodes[0];
 						const decodedText = barcode.rawValue;
 						const result = validateResult(decodedText);
-						if (result) {
+
+						if (!result) {
 							handleScanResult(result);
 							return;
+						} else if (decodedText !== lastScanned.current) {
+							lastScanned.current = decodedText;
+							toast.warning("This barcode is invalid.");
 						}
 					}
 				} catch (_err) {
