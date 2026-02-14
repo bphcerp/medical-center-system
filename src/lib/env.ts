@@ -1,6 +1,7 @@
 import path from "node:path";
 import dotenv from "dotenv";
 import { z } from "zod";
+import { getVaultSecrets } from "./vault";
 
 // Trying to load .env if running outside docker and cwd is server
 dotenv.config({
@@ -22,9 +23,17 @@ const serverSchema = z.object({
 	SEAWEEDFS_MASTER: z.url().min(1),
 	EMAIL_USER: z.string().min(1),
 	EMAIL_PASS: z.string().min(1),
+    VAULT_PORT: z.coerce.number().optional(),
 });
 
-const parsed = serverSchema.parse(process.env);
+const vaultSecrets = getVaultSecrets;
+
+const mergedEnv = {
+    ...process.env,
+    ...vaultSecrets,
+};
+
+const parsed = serverSchema.parse(mergedEnv);
 
 export const DATABASE_URL = `postgres://${parsed.POSTGRES_USER}:${parsed.POSTGRES_PASSWORD}@${parsed.DB_HOST}:${parsed.PGPORT}/${parsed.POSTGRES_DB}`;
 export const PROD = parsed.NODE_ENV === "production";
