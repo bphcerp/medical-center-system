@@ -25,6 +25,11 @@ export const dayOfWeekEnum = pgEnum("day_of_week", [
 	"saturday",
 ]);
 
+export const doctorTypeEnum = pgEnum("doctor_type", [
+	"campus",
+	"visiting",
+]);
+
 export const scheduleOverrideTypeEnum = pgEnum("schedule_override_type", [
 	"unavailable", // doctor is off that day
 	"custom_hours", // different start/end/slot duration for that day
@@ -61,6 +66,7 @@ export const doctorCategoryAssignmentsTable = pgTable(
 		categoryId: integer()
 			.notNull()
 			.references(() => specialistCategoriesTable.id),
+		doctorType: doctorTypeEnum("doctor_type").notNull().default("campus"),
 		isActive: boolean().notNull().default(true),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
