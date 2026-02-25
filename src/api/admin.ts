@@ -3,8 +3,10 @@ import { arrayContains, desc, eq } from "drizzle-orm";
 import z from "zod";
 import { rolesTable, usersTable } from "@/db/auth";
 import {
+	dayOfWeekEnum,
 	doctorCategoryAssignmentsTable,
 	doctorTypeEnum,
+	doctorWeeklyTemplatesTable,
 	specialistCategoriesTable,
 } from "@/db/booking";
 import { casesTable } from "@/db/case";
@@ -116,6 +118,65 @@ const admin = createStrictHono()
 				.returning();
 
 			return c.json({ success: true, data: assignment });
+		},
+	)
+	.get(
+		"/doctor-schedule/:doctorId",
+		strictValidator(
+			"param",
+			z.object({ doctorId: z.coerce.number().int().positive() }),
+		),
+		async (c) => {
+			const { doctorId } = c.req.valid("param");
+
+			const templates = await db
+				.select()
+				.from(doctorWeeklyTemplatesTable)
+				.where(eq(doctorWeeklyTemplatesTable.doctorId, doctorId))
+				.orderBy(
+					doctorWeeklyTemplatesTable.dayOfWeek,
+					doctorWeeklyTemplatesTable.startTime,
+				);
+
+			return c.json({ success: true, data: templates });
+		},
+	)
+	.put(
+		"/doctor-schedule/:doctorId",
+		strictValidator(
+			"param",
+			z.object({ doctorId: z.coerce.number().int().positive() }),
+		),
+		strictValidator(
+			"json",
+			z.object({
+				slots: z.array(
+					z.object({
+						dayOfWeek: z.enum(dayOfWeekEnum.enumValues),
+						startTime: z.string().regex(/^\d{2}:\d{2}$/),
+						endTime: z.string().regex(/^\d{2}:\d{2}$/),
+						slotDurationMinutes: z.number().int().positive(),
+					}),
+				),
+			}),
+		),
+		async (c) => {
+			const { doctorId } = c.req.valid("param");
+			const { slots } = c.req.valid("json");
+
+			await db.transaction(async (tx) => {
+				await tx
+					.delete(doctorWeeklyTemplatesTable)
+					.where(eq(doctorWeeklyTemplatesTable.doctorId, doctorId));
+
+				if (slots.length > 0) {
+					await tx
+						.insert(doctorWeeklyTemplatesTable)
+						.values(slots.map((s) => ({ doctorId, ...s })));
+				}
+			});
+
+			return c.json({ success: true, data: null });
 		},
 	);
 

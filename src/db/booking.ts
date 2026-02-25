@@ -25,10 +25,7 @@ export const dayOfWeekEnum = pgEnum("day_of_week", [
 	"saturday",
 ]);
 
-export const doctorTypeEnum = pgEnum("doctor_type", [
-	"campus",
-	"visiting",
-]);
+export const doctorTypeEnum = pgEnum("doctor_type", ["campus", "visiting"]);
 
 export const scheduleOverrideTypeEnum = pgEnum("schedule_override_type", [
 	"unavailable", // doctor is off that day

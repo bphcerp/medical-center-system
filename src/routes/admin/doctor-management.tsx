@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Plus, Stethoscope, UserRound } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -28,13 +28,8 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import {
-	Tabs,
-	TabsContent,
-	TabsList,
-	TabsTrigger,
-} from "@/components/ui/tabs";
 import { handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
 
@@ -135,7 +130,10 @@ function DoctorManagement() {
 					</Table>
 				</TabsContent>
 
-				<TabsContent value="manage-doctors" className="flex flex-col gap-6 pt-2">
+				<TabsContent
+					value="manage-doctors"
+					className="flex flex-col gap-6 pt-2"
+				>
 					{unassignedDoctors.length > 0 && (
 						<section>
 							<h2 className="text-base font-semibold mb-3 text-destructive">
@@ -198,9 +196,11 @@ function DoctorManagement() {
 														{a.doctorType}
 													</span>
 												</div>
-												<Button variant="outline" size="sm" disabled>
-													Edit Schedule
-												</Button>
+												<EditScheduleDialog
+													doctorId={a.doctorId}
+													doctorName={a.doctor?.name ?? "Unknown"}
+													categoryName={a.categoryName}
+												/>
 											</div>
 										))}
 									</div>
@@ -211,6 +211,270 @@ function DoctorManagement() {
 				</TabsContent>
 			</Tabs>
 		</div>
+	);
+}
+
+type SlotEntry = {
+	key: string;
+	startTime: string;
+	endTime: string;
+	slotDurationMinutes: number;
+};
+
+type DayOfWeek =
+	| "sunday"
+	| "monday"
+	| "tuesday"
+	| "wednesday"
+	| "thursday"
+	| "friday"
+	| "saturday";
+
+const DAY_ROWS: DayOfWeek[][] = [
+	["monday", "tuesday", "wednesday", "thursday"],
+	["friday", "saturday", "sunday"],
+];
+
+function formatTime12(t: string): string {
+	const [hStr, mStr] = t.split(":");
+	const h = Number(hStr);
+	const m = Number(mStr);
+	const period = h >= 12 ? "pm" : "am";
+	const h12 = h % 12 || 12;
+	return `${h12}:${String(m).padStart(2, "0")}${period}`;
+}
+
+function EditScheduleDialog({
+	doctorId,
+	doctorName,
+	categoryName,
+}: {
+	doctorId: number;
+	doctorName: string;
+	categoryName: string;
+}) {
+	const [isOpen, setIsOpen] = useState(false);
+	const [slots, setSlots] = useState<Record<string, SlotEntry[]>>({});
+	const [addingDay, setAddingDay] = useState<string | null>(null);
+	const [addForm, setAddForm] = useState({
+		startTime: "",
+		endTime: "",
+		slotDurationMinutes: 15,
+	});
+	const [saving, setSaving] = useState(false);
+
+	useEffect(() => {
+		if (!isOpen) return;
+		client.api.admin["doctor-schedule"][":doctorId"]
+			.$get({ param: { doctorId: doctorId.toString() } })
+			.then((res) => handleErrors(res))
+			.then((data) => {
+				if (!data) return;
+				const grouped: Record<string, SlotEntry[]> = {};
+				for (const t of data) {
+					if (!grouped[t.dayOfWeek]) grouped[t.dayOfWeek] = [];
+					grouped[t.dayOfWeek].push({
+						key: crypto.randomUUID(),
+						startTime: t.startTime.slice(0, 5),
+						endTime: t.endTime.slice(0, 5),
+						slotDurationMinutes: t.slotDurationMinutes,
+					});
+				}
+				setSlots(grouped);
+			});
+	}, [isOpen, doctorId]);
+
+	const handleOpenChange = (open: boolean) => {
+		setIsOpen(open);
+		if (!open) {
+			setSlots({});
+			setAddingDay(null);
+			setAddForm({ startTime: "", endTime: "", slotDurationMinutes: 15 });
+		}
+	};
+
+	const handleAddSlot = (day: string) => {
+		if (!addForm.startTime || !addForm.endTime) return;
+		setSlots((prev) => ({
+			...prev,
+			[day]: [...(prev[day] ?? []), { key: crypto.randomUUID(), ...addForm }],
+		}));
+		setAddingDay(null);
+		setAddForm({ startTime: "", endTime: "", slotDurationMinutes: 15 });
+	};
+
+	const handleRemoveSlot = (day: string, key: string) => {
+		setSlots((prev) => ({
+			...prev,
+			[day]: (prev[day] ?? []).filter((s) => s.key !== key),
+		}));
+	};
+
+	const handleSave = async () => {
+		setSaving(true);
+		const allSlots = Object.entries(slots).flatMap(([day, daySlots]) =>
+			daySlots.map((s) => ({
+				dayOfWeek: day as DayOfWeek,
+				startTime: s.startTime,
+				endTime: s.endTime,
+				slotDurationMinutes: s.slotDurationMinutes,
+			})),
+		);
+		const res = await client.api.admin["doctor-schedule"][":doctorId"].$put({
+			param: { doctorId: doctorId.toString() },
+			json: { slots: allSlots },
+		});
+		await handleErrors(res);
+		setSaving(false);
+		setIsOpen(false);
+	};
+
+	return (
+		<Dialog open={isOpen} onOpenChange={handleOpenChange}>
+			<DialogTrigger asChild>
+				<Button variant="outline" size="sm">
+					Edit Schedule
+				</Button>
+			</DialogTrigger>
+			<DialogContent className="sm:max-w-4xl gap-6">
+				<div>
+					<p className="text-muted-foreground text-xs italic mb-0.5">
+						Editing schedule for
+					</p>
+					<DialogTitle className="text-xl">{doctorName}</DialogTitle>
+					<p className="text-muted-foreground text-sm mt-0.5">{categoryName}</p>
+				</div>
+
+				<div className="flex flex-col gap-4">
+					{DAY_ROWS.map((row) => (
+						<div
+							key={row.join("-")}
+							className="grid gap-px bg-border border rounded-lg overflow-hidden"
+							style={{ gridTemplateColumns: `repeat(${row.length}, 1fr)` }}
+						>
+							{row.map((day) => {
+								const daySlots = slots[day] ?? [];
+								const isAdding = addingDay === day;
+
+								return (
+									<div key={day} className="bg-background flex flex-col">
+										<div className="bg-muted/50 text-center py-2 font-medium text-sm capitalize border-b">
+											{day.charAt(0).toUpperCase() + day.slice(1)}
+										</div>
+										<div className="flex flex-col gap-1 p-2 flex-1">
+											{daySlots.map((slot) => (
+												<div
+													key={slot.key}
+													className="group flex items-center justify-between text-xs bg-muted/40 rounded px-2 py-1.5 gap-1"
+												>
+													<span className="tabular-nums">
+														{formatTime12(slot.startTime)} –{" "}
+														{formatTime12(slot.endTime)}
+													</span>
+													<button
+														type="button"
+														onClick={() => handleRemoveSlot(day, slot.key)}
+														className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity shrink-0"
+													>
+														×
+													</button>
+												</div>
+											))}
+
+											{isAdding ? (
+												<div className="flex flex-col gap-1.5 mt-1 pt-1 border-t">
+													<input
+														type="time"
+														value={addForm.startTime}
+														onChange={(e) =>
+															setAddForm((f) => ({
+																...f,
+																startTime: e.target.value,
+															}))
+														}
+														className="text-xs border rounded px-1.5 py-1 w-full bg-background"
+													/>
+													<input
+														type="time"
+														value={addForm.endTime}
+														onChange={(e) =>
+															setAddForm((f) => ({
+																...f,
+																endTime: e.target.value,
+															}))
+														}
+														className="text-xs border rounded px-1.5 py-1 w-full bg-background"
+													/>
+													<div className="flex items-center gap-1">
+														<input
+															type="number"
+															min={5}
+															step={5}
+															value={addForm.slotDurationMinutes}
+															onChange={(e) =>
+																setAddForm((f) => ({
+																	...f,
+																	slotDurationMinutes: Number(e.target.value),
+																}))
+															}
+															className="text-xs border rounded px-1.5 py-1 w-full bg-background"
+														/>
+														<span className="text-xs text-muted-foreground whitespace-nowrap">
+															min
+														</span>
+													</div>
+													<div className="flex gap-1">
+														<button
+															type="button"
+															onClick={() => handleAddSlot(day)}
+															disabled={!addForm.startTime || !addForm.endTime}
+															className="flex-1 text-xs bg-primary text-primary-foreground rounded py-1 disabled:opacity-40"
+														>
+															Add
+														</button>
+														<button
+															type="button"
+															onClick={() => setAddingDay(null)}
+															className="flex-1 text-xs border rounded py-1 hover:bg-muted"
+														>
+															Cancel
+														</button>
+													</div>
+												</div>
+											) : (
+												<button
+													type="button"
+													onClick={() => {
+														setAddingDay(day);
+														setAddForm({
+															startTime: "",
+															endTime: "",
+															slotDurationMinutes: 15,
+														});
+													}}
+													className="mt-1 text-muted-foreground hover:text-foreground text-base self-center leading-none py-1 w-full"
+												>
+													+
+												</button>
+											)}
+										</div>
+									</div>
+								);
+							})}
+						</div>
+					))}
+				</div>
+
+				<DialogFooter>
+					<DialogClose asChild>
+						<Button variant="outline">Cancel</Button>
+					</DialogClose>
+					<Button onClick={handleSave} disabled={saving} className="w-32">
+						{saving ? "Saving…" : "Save"}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }
 
@@ -302,6 +566,8 @@ function CreateCategoryButton({
 	onCreate: (name: string, description: string | undefined) => Promise<void>;
 }) {
 	const [isOpen, setIsOpen] = useState(false);
+	const scNameId = useId();
+	const scDescId = useId();
 
 	const handleSubmit = async (e: FormData) => {
 		const name = e.get("name") as string | null;
@@ -329,7 +595,7 @@ function CreateCategoryButton({
 					<div className="flex flex-col gap-1.5">
 						<Label htmlFor="sc-name">Name</Label>
 						<Input
-							id="sc-name"
+							id={scNameId}
 							name="name"
 							placeholder="e.g. Cardiology"
 							required
@@ -339,10 +605,12 @@ function CreateCategoryButton({
 					<div className="flex flex-col gap-1.5">
 						<Label htmlFor="sc-description">
 							Description{" "}
-							<span className="text-muted-foreground font-normal">(optional)</span>
+							<span className="text-muted-foreground font-normal">
+								(optional)
+							</span>
 						</Label>
 						<Textarea
-							id="sc-description"
+							id={scDescId}
 							name="description"
 							placeholder="Brief description of this specialty"
 							rows={3}
