@@ -101,6 +101,11 @@ export const doctorWeeklyTemplatesTable = pgTable(
 			.$onUpdate(() => new Date()),
 	},
 	(table) => [
+		uniqueIndex("dwt_doctor_day_start_idx").on(
+			table.doctorId,
+			table.dayOfWeek,
+			table.startTime,
+		),
 		index("dwt_doctor_idx").on(table.doctorId),
 		index("dwt_doctor_day_idx").on(table.doctorId, table.dayOfWeek),
 	],
