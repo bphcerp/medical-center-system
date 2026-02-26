@@ -13,6 +13,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as DoctorRouteImport } from './routes/doctor'
+import { Route as BookingRouteImport } from './routes/booking'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as VitalsRouteRouteImport } from './routes/vitals/route'
 import { Route as LabRouteRouteImport } from './routes/lab/route'
@@ -47,6 +48,11 @@ const InventoryRoute = InventoryRouteImport.update({
 const DoctorRoute = DoctorRouteImport.update({
   id: '/doctor',
   path: '/doctor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BookingRoute = BookingRouteImport.update({
+  id: '/booking',
+  path: '/booking',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/lab': typeof LabRouteRouteWithChildren
   '/vitals': typeof VitalsRouteRouteWithChildren
   '/about': typeof AboutRoute
+  '/booking': typeof BookingRoute
   '/doctor': typeof DoctorRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/lab': typeof LabRouteRouteWithChildren
   '/vitals': typeof VitalsRouteRouteWithChildren
   '/about': typeof AboutRoute
+  '/booking': typeof BookingRoute
   '/doctor': typeof DoctorRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/lab': typeof LabRouteRouteWithChildren
   '/vitals': typeof VitalsRouteRouteWithChildren
   '/about': typeof AboutRoute
+  '/booking': typeof BookingRoute
   '/doctor': typeof DoctorRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
@@ -197,6 +206,7 @@ export interface FileRouteTypes {
     | '/lab'
     | '/vitals'
     | '/about'
+    | '/booking'
     | '/doctor'
     | '/inventory'
     | '/login'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/lab'
     | '/vitals'
     | '/about'
+    | '/booking'
     | '/doctor'
     | '/inventory'
     | '/login'
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/lab'
     | '/vitals'
     | '/about'
+    | '/booking'
     | '/doctor'
     | '/inventory'
     | '/login'
@@ -261,6 +273,7 @@ export interface RootRouteChildren {
   LabRouteRoute: typeof LabRouteRouteWithChildren
   VitalsRouteRoute: typeof VitalsRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
+  BookingRoute: typeof BookingRoute
   DoctorRoute: typeof DoctorRoute
   InventoryRoute: typeof InventoryRoute
   LoginRoute: typeof LoginRoute
@@ -299,6 +312,13 @@ declare module '@tanstack/react-router' {
       path: '/doctor'
       fullPath: '/doctor'
       preLoaderRoute: typeof DoctorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/booking': {
+      id: '/booking'
+      path: '/booking'
+      fullPath: '/booking'
+      preLoaderRoute: typeof BookingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -457,6 +477,7 @@ const rootRouteChildren: RootRouteChildren = {
   LabRouteRoute: LabRouteRouteWithChildren,
   VitalsRouteRoute: VitalsRouteRouteWithChildren,
   AboutRoute: AboutRoute,
+  BookingRoute: BookingRoute,
   DoctorRoute: DoctorRoute,
   InventoryRoute: InventoryRoute,
   LoginRoute: LoginRoute,
