@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { sign } from "hono/jwt";
@@ -24,6 +24,7 @@ import {
 import type { Permission } from "@/lib/types/permissions";
 import { db } from ".";
 import admin from "./admin";
+import booking from "./booking";
 import doctor from "./doctor";
 import files from "./files";
 import inventory from "./inventory";
@@ -190,7 +191,7 @@ export const unauthenticated = createStrictHono()
 					const student = await db
 						.select()
 						.from(studentsTable)
-						.where(eq(studentsTable.studentId, identifier.toLowerCase()))
+						.where(sql`lower(${studentsTable.studentId}) = ${identifier.toLowerCase()}`)
 						.innerJoin(
 							patientsTable,
 							eq(studentsTable.patientId, patientsTable.id),
@@ -240,7 +241,7 @@ export const unauthenticated = createStrictHono()
 					const professor = await db
 						.select()
 						.from(professorsTable)
-						.where(eq(professorsTable.psrn, identifier))
+						.where(sql`lower(${professorsTable.psrn}) = ${identifier.toLowerCase()}`)
 						.innerJoin(
 							patientsTable,
 							eq(professorsTable.patientId, patientsTable.id),
@@ -255,7 +256,7 @@ export const unauthenticated = createStrictHono()
 					const dependents = await db
 						.select()
 						.from(dependentsTable)
-						.where(eq(dependentsTable.psrn, identifier))
+						.where(sql`lower(${dependentsTable.psrn}) = ${identifier.toLowerCase()}`)
 						.innerJoin(
 							patientsTable,
 							eq(dependentsTable.patientId, patientsTable.id),
@@ -392,4 +393,5 @@ export const authenticated = createStrictHono()
 	.route("/files", files)
 	.route("/inventory", inventory)
 	.route("/patientHistory", patientHistory)
-	.route("/admin", admin);
+	.route("/admin", admin)
+	.route("/booking", booking);
