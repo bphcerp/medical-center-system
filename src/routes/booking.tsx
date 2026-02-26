@@ -7,7 +7,11 @@ import StepSelectCategory from "@/components/booking/step-select-category";
 import StepViewAvailability from "@/components/booking/step-view-availability";
 import StepperHeader from "@/components/booking/stepper-header";
 import TokenDisplay from "@/components/booking/token-display";
-import type { BookingState, Category, Doctor } from "@/components/booking/types";
+import type {
+	BookingState,
+	Category,
+	Doctor,
+} from "@/components/booking/types";
 import { INITIAL_STATE } from "@/components/booking/types";
 import TopBar from "@/components/topbar";
 import useAuth from "@/lib/hooks/useAuth";
@@ -85,10 +89,7 @@ function BookingPage() {
 
 				{mode === "scheduling" && (
 					<>
-						<StepperHeader
-							currentStep={state.step}
-							onGoToStep={goToStep}
-						/>
+						<StepperHeader currentStep={state.step} onGoToStep={goToStep} />
 
 						{state.step === 1 && (
 							<StepSelectCategory

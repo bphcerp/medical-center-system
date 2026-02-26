@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { AlertCircle, CalendarOff, Check, Clock, Pencil } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ function PatientLookup({
 }: {
 	onFound: (patientId: number, name: string, identifier: string) => void;
 }) {
+	const inputId = useId();
 	const [identifier, setIdentifier] = useState("");
 	const [lookingUp, setLookingUp] = useState(false);
 
@@ -65,17 +66,23 @@ function PatientLookup({
 				Look up the patient before confirming the appointment.
 			</p>
 			<div className="flex flex-col gap-2">
-				<Label htmlFor="patient-id">Patient Identifier</Label>
+				<Label htmlFor={inputId}>Patient Identifier</Label>
 				<div className="flex gap-2">
 					<Input
-						id="patient-id"
+						id={inputId}
 						value={identifier}
 						onChange={(e) => setIdentifier(e.target.value)}
 						placeholder="e.g. F20230001 / H0001 / phone"
 						onKeyDown={(e) => e.key === "Enter" && handleLookup()}
 					/>
 					<Button onClick={handleLookup} disabled={lookingUp}>
-						{lookingUp ? <><Spinner className="mr-2" /> Searching…</> : "Search"}
+						{lookingUp ? (
+							<>
+								<Spinner className="mr-2" /> Searching…
+							</>
+						) : (
+							"Search"
+						)}
 					</Button>
 				</div>
 			</div>
@@ -245,7 +252,12 @@ function BookingConfirmation({
 				<CardContent className="p-4 space-y-1">
 					<div className="flex items-center justify-between">
 						<span className="text-sm text-muted-foreground">Category</span>
-						<Button variant="ghost" size="sm" className="text-primary h-7" onClick={onEditCategory}>
+						<Button
+							variant="ghost"
+							size="sm"
+							className="text-primary h-7"
+							onClick={onEditCategory}
+						>
 							<Pencil className="size-3 mr-1" /> Edit
 						</Button>
 					</div>
@@ -255,7 +267,12 @@ function BookingConfirmation({
 
 					<div className="flex items-center justify-between">
 						<span className="text-sm text-muted-foreground">Doctor</span>
-						<Button variant="ghost" size="sm" className="text-primary h-7" onClick={onEditDoctor}>
+						<Button
+							variant="ghost"
+							size="sm"
+							className="text-primary h-7"
+							onClick={onEditDoctor}
+						>
 							<Pencil className="size-3 mr-1" /> Edit
 						</Button>
 					</div>
@@ -270,7 +287,12 @@ function BookingConfirmation({
 
 					<div className="flex items-center justify-between">
 						<span className="text-sm text-muted-foreground">Date</span>
-						<Button variant="ghost" size="sm" className="text-primary h-7" onClick={onEditDate}>
+						<Button
+							variant="ghost"
+							size="sm"
+							className="text-primary h-7"
+							onClick={onEditDate}
+						>
 							<Pencil className="size-3 mr-1" /> Edit
 						</Button>
 					</div>
@@ -293,7 +315,15 @@ function BookingConfirmation({
 				size="lg"
 				className="mt-2"
 			>
-				{isBooking ? <><Spinner className="mr-2" /> Booking…</> : <>Confirm Appointment <Check className="size-4 ml-1" /></>}
+				{isBooking ? (
+					<>
+						<Spinner className="mr-2" /> Booking…
+					</>
+				) : (
+					<>
+						Confirm Appointment <Check className="size-4 ml-1" />
+					</>
+				)}
 			</Button>
 		</div>
 	);
@@ -327,9 +357,7 @@ export default function StepBookAppointment({
 	if (!patient) {
 		return (
 			<PatientLookup
-				onFound={(id, name, identifier) =>
-					setPatient({ id, name, identifier })
-				}
+				onFound={(id, name, identifier) => setPatient({ id, name, identifier })}
 			/>
 		);
 	}
@@ -348,9 +376,7 @@ export default function StepBookAppointment({
 						Change
 					</Button>
 				</AlertTitle>
-				<AlertDescription>
-					ID: {patient.identifier}
-				</AlertDescription>
+				<AlertDescription>ID: {patient.identifier}</AlertDescription>
 			</Alert>
 
 			<BookingConfirmation

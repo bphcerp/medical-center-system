@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 export default function TokenDisplay({
 	tokenNumber,
 	onReset,
-}: { tokenNumber: number; onReset: () => void }) {
+}: {
+	tokenNumber: number;
+	onReset: () => void;
+}) {
 	const [showButton, setShowButton] = useState(false);
 
 	useEffect(() => {

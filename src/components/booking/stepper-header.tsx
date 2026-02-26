@@ -9,7 +9,10 @@ const STEPS = [
 export default function StepperHeader({
 	currentStep,
 	onGoToStep,
-}: { currentStep: number; onGoToStep: (step: number) => void }) {
+}: {
+	currentStep: number;
+	onGoToStep: (step: number) => void;
+}) {
 	return (
 		<div className="flex items-center justify-center gap-2 mb-8">
 			{STEPS.map((label, i) => {

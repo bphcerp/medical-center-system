@@ -191,7 +191,9 @@ export const unauthenticated = createStrictHono()
 					const student = await db
 						.select()
 						.from(studentsTable)
-						.where(sql`lower(${studentsTable.studentId}) = ${identifier.toLowerCase()}`)
+						.where(
+							sql`lower(${studentsTable.studentId}) = ${identifier.toLowerCase()}`,
+						)
 						.innerJoin(
 							patientsTable,
 							eq(studentsTable.patientId, patientsTable.id),
@@ -241,7 +243,9 @@ export const unauthenticated = createStrictHono()
 					const professor = await db
 						.select()
 						.from(professorsTable)
-						.where(sql`lower(${professorsTable.psrn}) = ${identifier.toLowerCase()}`)
+						.where(
+							sql`lower(${professorsTable.psrn}) = ${identifier.toLowerCase()}`,
+						)
 						.innerJoin(
 							patientsTable,
 							eq(professorsTable.patientId, patientsTable.id),
@@ -256,7 +260,9 @@ export const unauthenticated = createStrictHono()
 					const dependents = await db
 						.select()
 						.from(dependentsTable)
-						.where(sql`lower(${dependentsTable.psrn}) = ${identifier.toLowerCase()}`)
+						.where(
+							sql`lower(${dependentsTable.psrn}) = ${identifier.toLowerCase()}`,
+						)
 						.innerJoin(
 							patientsTable,
 							eq(dependentsTable.patientId, patientsTable.id),
