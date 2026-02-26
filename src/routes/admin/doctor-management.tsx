@@ -31,7 +31,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import type { doctorAvailabilityTypeEnum } from "@/db/doctor";
-import { Day, daysOfWeek } from "@/lib/types/day";
+import type { Day } from "@/lib/types/day";
 import { handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
 
