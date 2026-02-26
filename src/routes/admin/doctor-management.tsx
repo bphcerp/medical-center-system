@@ -36,16 +36,18 @@ import { client } from "../api/$";
 export const Route = createFileRoute("/admin/doctor-management")({
 	component: DoctorManagement,
 	loader: async () => {
-		const [categoriesRes, doctorsRes] = await Promise.all([
-			client.api.admin["specialist-categories"].$get(),
-			client.api.admin["doctors-with-assignments"].$get(),
+		const [doctorsRes, specializationsRes, unassignedRes] = await Promise.all([
+			client.api.admin.doctor.all.$get(),
+			client.api.admin.specialization.all.$get(),
+			client.api.admin.doctor.unassigned.$get(),
 		]);
-		const categoriesData = await handleErrors(categoriesRes);
-		const doctorsData = await handleErrors(doctorsRes);
+		const specializations = await handleErrors(specializationsRes);
+		const doctors = await handleErrors(doctorsRes);
+		const unassigned = await handleErrors(unassignedRes);
 		return {
-			categories: categoriesData ?? [],
-			doctors: doctorsData?.doctors ?? [],
-			assignments: doctorsData?.assignments ?? [],
+			doctors: doctors ?? [],
+			specializations: specializations ?? [],
+			unassignedDoctors: unassigned ?? [],
 		};
 	},
 	staticData: {
@@ -55,14 +57,14 @@ export const Route = createFileRoute("/admin/doctor-management")({
 });
 
 function DoctorManagement() {
-	const { categories, doctors, assignments } = Route.useLoaderData();
+	const { specializations, doctors, unassignedDoctors } = Route.useLoaderData();
 	const router = useRouter();
 
 	const handleCreateCategory = async (
 		name: string,
 		description: string | undefined,
 	) => {
-		const res = await client.api.admin["specialist-categories"].$post({
+		const res = await client.api.admin.specialization.$post({
 			json: { name, description },
 		});
 		const data = await handleErrors(res);
@@ -72,19 +74,17 @@ function DoctorManagement() {
 
 	const handleAssignDoctor = async (
 		doctorId: number,
-		categoryId: number,
-		doctorType: "campus" | "visiting",
+		specialityId: number,
+		availabilityType: "campus" | "visiting",
 	) => {
-		const res = await client.api.admin["doctor-assignments"].$post({
-			json: { doctorId, categoryId, doctorType },
+		const res = await client.api.admin.doctor[":doctorId"].$post({
+			param: { doctorId: doctorId.toString() },
+			json: { specialityId, availabilityType },
 		});
 		const data = await handleErrors(res);
 		if (!data) return;
 		router.invalidate();
 	};
-
-	const assignedDoctorIds = new Set(assignments.map((a) => a.doctorId));
-	const unassignedDoctors = doctors.filter((d) => !assignedDoctorIds.has(d.id));
 
 	return (
 		<div>
@@ -111,14 +111,14 @@ function DoctorManagement() {
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{categories.map((category) => (
-								<TableRow key={category.id}>
-									<TableCell className="font-medium">{category.name}</TableCell>
+							{specializations.map((sp) => (
+								<TableRow key={sp.id}>
+									<TableCell className="font-medium">{sp.name}</TableCell>
 									<TableCell className="text-muted-foreground">
-										{category.description ?? "—"}
+										{sp.description ?? "—"}
 									</TableCell>
 									<TableCell>
-										{category.isActive ? (
+										{sp.isActive ? (
 											<span className="text-green-600 font-medium">Active</span>
 										) : (
 											<span className="text-muted-foreground">Inactive</span>
@@ -151,9 +151,9 @@ function DoctorManagement() {
 										</div>
 										<AssignCategoryDialog
 											doctor={doctor}
-											categories={categories}
-											onAssign={(categoryId, doctorType) =>
-												handleAssignDoctor(doctor.id, categoryId, doctorType)
+											categories={specializations}
+											onAssign={(specialityId, doctorType) =>
+												handleAssignDoctor(doctor.id, specialityId, doctorType)
 											}
 										/>
 									</div>
@@ -162,19 +162,15 @@ function DoctorManagement() {
 						</section>
 					)}
 
-					{categories.map((category) => {
-						const categoryAssignments = assignments.filter(
-							(a) => a.categoryId === category.id,
+					{specializations.map((sp) => {
+						const assignedDoctors = doctors.filter(
+							(d) => d.specialityId === sp.id,
 						);
-						const assignedDoctors = categoryAssignments.map((a) => ({
-							...a,
-							doctor: doctors.find((d) => d.id === a.doctorId),
-						}));
 
 						return (
-							<section key={category.id}>
+							<section key={sp.id}>
 								<div className="flex items-center gap-3 mb-3">
-									<h2 className="text-base font-semibold">{category.name}</h2>
+									<h2 className="text-base font-semibold">{sp.name}</h2>
 								</div>
 								{assignedDoctors.length === 0 ? (
 									<p className="text-muted-foreground text-sm italic pl-1">
@@ -182,24 +178,22 @@ function DoctorManagement() {
 									</p>
 								) : (
 									<div className="flex flex-col gap-2">
-										{assignedDoctors.map((a) => (
+										{assignedDoctors.map((doctor) => (
 											<div
-												key={a.assignmentId}
+												key={doctor.id}
 												className="flex items-center justify-between rounded-lg border px-4 py-2.5"
 											>
 												<div className="flex items-center gap-3">
 													<UserRound className="text-muted-foreground size-5" />
-													<span className="font-medium">
-														{a.doctor?.name ?? "Unknown"}
-													</span>
+													<span className="font-medium">{doctor.name}</span>
 													<span className="text-muted-foreground text-xs capitalize border rounded-full px-2 py-0.5">
-														{a.doctorType}
+														{doctor.availabilityType}
 													</span>
 												</div>
 												<EditScheduleDialog
-													doctorId={a.doctorId}
-													doctorName={a.doctor?.name ?? "Unknown"}
-													categoryName={a.categoryName}
+													doctorId={doctor.id}
+													doctorName={doctor.name}
+													categoryName={doctor.specialityName}
 												/>
 											</div>
 										))}
@@ -265,7 +259,7 @@ function EditScheduleDialog({
 
 	useEffect(() => {
 		if (!isOpen) return;
-		client.api.admin["doctor-schedule"][":doctorId"]
+		client.api.admin.doctor[":doctorId"].schedule
 			.$get({ param: { doctorId: doctorId.toString() } })
 			.then((res) => handleErrors(res))
 			.then((data) => {
@@ -320,7 +314,7 @@ function EditScheduleDialog({
 				slotDurationMinutes: s.slotDurationMinutes,
 			})),
 		);
-		const res = await client.api.admin["doctor-schedule"][":doctorId"].$put({
+		const res = await client.api.admin.doctor[":doctorId"].schedule.$put({
 			param: { doctorId: doctorId.toString() },
 			json: { slots: allSlots },
 		});
@@ -612,7 +606,7 @@ function CreateCategoryButton({
 						<Textarea
 							id={scDescId}
 							name="description"
-							placeholder="Brief description of this specialty"
+							placeholder="Brief description of this speciality"
 							rows={3}
 						/>
 					</div>
