@@ -30,6 +30,8 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import type { doctorAvailabilityTypeEnum } from "@/db/doctor";
+import { Day, daysOfWeek } from "@/lib/types/day";
 import { handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
 
@@ -75,7 +77,7 @@ function DoctorManagement() {
 	const handleAssignDoctor = async (
 		doctorId: number,
 		specialityId: number,
-		availabilityType: "campus" | "visiting",
+		availabilityType: (typeof doctorAvailabilityTypeEnum.enumValues)[number],
 	) => {
 		const res = await client.api.admin.doctor[":doctorId"].$post({
 			param: { doctorId: doctorId.toString() },
@@ -215,16 +217,7 @@ type SlotEntry = {
 	slotDurationMinutes: number;
 };
 
-type DayOfWeek =
-	| "sunday"
-	| "monday"
-	| "tuesday"
-	| "wednesday"
-	| "thursday"
-	| "friday"
-	| "saturday";
-
-const DAY_ROWS: DayOfWeek[][] = [
+const DAY_ROWS: Day[][] = [
 	["monday", "tuesday", "wednesday", "thursday"],
 	["friday", "saturday", "sunday"],
 ];
@@ -308,7 +301,7 @@ function EditScheduleDialog({
 		setSaving(true);
 		const allSlots = Object.entries(slots).flatMap(([day, daySlots]) =>
 			daySlots.map((s) => ({
-				dayOfWeek: day as DayOfWeek,
+				dayOfWeek: day as Day,
 				startTime: s.startTime,
 				endTime: s.endTime,
 				slotDurationMinutes: s.slotDurationMinutes,
