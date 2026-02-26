@@ -2,6 +2,7 @@ import "dotenv/config";
 import { and, eq, max } from "drizzle-orm";
 import nodemailer from "nodemailer";
 import z from "zod";
+import { usersTable } from "@/db/auth";
 import {
 	appointmentsTable,
 	doctorCategoryAssignmentsTable,
@@ -9,7 +10,6 @@ import {
 	doctorWeeklyTemplatesTable,
 	specialistCategoriesTable,
 } from "@/db/booking";
-import { usersTable } from "@/db/auth";
 import {
 	dependentsTable,
 	patientsTable,
@@ -192,7 +192,10 @@ const booking = createStrictHono()
 				.limit(1);
 
 			if (override?.overrideType === "unavailable") {
-				return c.json({ success: true, data: { slots: [], unavailable: true } });
+				return c.json({
+					success: true,
+					data: { slots: [], unavailable: true },
+				});
 			}
 
 			let timeWindows: {
@@ -202,7 +205,11 @@ const booking = createStrictHono()
 			}[] = [];
 
 			if (override?.overrideType === "custom_hours") {
-				if (override.startTime && override.endTime && override.slotDurationMinutes) {
+				if (
+					override.startTime &&
+					override.endTime &&
+					override.slotDurationMinutes
+				) {
 					timeWindows = [
 						{
 							startTime: override.startTime.slice(0, 5),
@@ -231,7 +238,10 @@ const booking = createStrictHono()
 			}
 
 			if (timeWindows.length === 0) {
-				return c.json({ success: true, data: { slots: [], unavailable: false } });
+				return c.json({
+					success: true,
+					data: { slots: [], unavailable: false },
+				});
 			}
 
 			const allSlots = timeWindows.flatMap((w) =>
@@ -376,7 +386,9 @@ function sendAppointmentConfirmationEmail(
 		.then((email) => {
 			if (!email) return;
 
-			const formattedDate = new Date(`${appointmentDate}T00:00:00`).toLocaleDateString("en-IN", {
+			const formattedDate = new Date(
+				`${appointmentDate}T00:00:00`,
+			).toLocaleDateString("en-IN", {
 				weekday: "long",
 				year: "numeric",
 				month: "long",
