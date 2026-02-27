@@ -111,7 +111,6 @@ function BookingPage() {
 							state.date &&
 							state.categoryId && (
 								<StepBookAppointment
-									categoryId={state.categoryId}
 									categoryName={state.categoryName}
 									doctor={state.doctor}
 									date={state.date}

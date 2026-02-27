@@ -3,13 +3,13 @@ import { and, eq, max } from "drizzle-orm";
 import nodemailer from "nodemailer";
 import z from "zod";
 import { usersTable } from "@/db/auth";
+import { appointmentsTable } from "@/db/booking";
 import {
-	appointmentsTable,
-	doctorCategoryAssignmentsTable,
 	doctorScheduleOverridesTable,
-	doctorWeeklyTemplatesTable,
-	specialistCategoriesTable,
-} from "@/db/booking";
+	doctorScheduleTable,
+	doctorSpecialitiesTable,
+	doctorsTable,
+} from "@/db/doctor";
 import {
 	dependentsTable,
 	patientsTable,
@@ -19,17 +19,8 @@ import {
 } from "@/db/patient";
 import env from "@/lib/env";
 import { createStrictHono, strictValidator } from "@/lib/types/api";
+import { daysOfWeek } from "@/lib/types/day";
 import { db } from ".";
-
-const DAY_NAMES = [
-	"sunday",
-	"monday",
-	"tuesday",
-	"wednesday",
-	"thursday",
-	"friday",
-	"saturday",
-] as const;
 
 function generateSlots(
 	startTime: string,
@@ -119,44 +110,36 @@ const booking = createStrictHono()
 	.get("/categories", async (c) => {
 		const categories = await db
 			.select({
-				id: specialistCategoriesTable.id,
-				name: specialistCategoriesTable.name,
-				description: specialistCategoriesTable.description,
+				id: doctorSpecialitiesTable.id,
+				name: doctorSpecialitiesTable.name,
+				description: doctorSpecialitiesTable.description,
 			})
-			.from(specialistCategoriesTable)
-			.where(eq(specialistCategoriesTable.isActive, true))
-			.orderBy(specialistCategoriesTable.name);
+			.from(doctorSpecialitiesTable)
+			.where(eq(doctorSpecialitiesTable.isActive, true))
+			.orderBy(doctorSpecialitiesTable.name);
 
 		return c.json({ success: true, data: categories });
 	})
 
-	// List active doctors in a category
+	// List active doctors in a speciality
 	.get(
-		"/doctors-by-category/:categoryId",
+		"/doctors-by-speciality/:specialityId",
 		strictValidator(
 			"param",
-			z.object({ categoryId: z.coerce.number().int().positive() }),
+			z.object({ specialityId: z.coerce.number().int().positive() }),
 		),
 		async (c) => {
-			const { categoryId } = c.req.valid("param");
+			const { specialityId } = c.req.valid("param");
 
 			const doctors = await db
 				.select({
-					doctorId: doctorCategoryAssignmentsTable.doctorId,
+					doctorId: doctorsTable.id,
 					doctorName: usersTable.name,
-					doctorType: doctorCategoryAssignmentsTable.doctorType,
+					doctorType: doctorsTable.availabilityType,
 				})
-				.from(doctorCategoryAssignmentsTable)
-				.innerJoin(
-					usersTable,
-					eq(doctorCategoryAssignmentsTable.doctorId, usersTable.id),
-				)
-				.where(
-					and(
-						eq(doctorCategoryAssignmentsTable.categoryId, categoryId),
-						eq(doctorCategoryAssignmentsTable.isActive, true),
-					),
-				)
+				.from(doctorsTable)
+				.innerJoin(usersTable, eq(doctorsTable.id, usersTable.id))
+				.where(eq(doctorsTable.specialityId, specialityId))
 				.orderBy(usersTable.name);
 
 			return c.json({ success: true, data: doctors });
@@ -178,7 +161,7 @@ const booking = createStrictHono()
 			const doctorId = Number(query.doctorId);
 			const date = query.date;
 			const dateObj = new Date(`${date}T00:00:00`);
-			const dayOfWeek = DAY_NAMES[dateObj.getDay()];
+			const dayOfWeek = daysOfWeek[dateObj.getDay()];
 
 			const [override] = await db
 				.select()
@@ -221,12 +204,11 @@ const booking = createStrictHono()
 			} else {
 				const templates = await db
 					.select()
-					.from(doctorWeeklyTemplatesTable)
+					.from(doctorScheduleTable)
 					.where(
 						and(
-							eq(doctorWeeklyTemplatesTable.doctorId, doctorId),
-							eq(doctorWeeklyTemplatesTable.dayOfWeek, dayOfWeek),
-							eq(doctorWeeklyTemplatesTable.isActive, true),
+							eq(doctorScheduleTable.doctorId, doctorId),
+							eq(doctorScheduleTable.dayOfWeek, dayOfWeek),
 						),
 					);
 
@@ -280,7 +262,6 @@ const booking = createStrictHono()
 			z.object({
 				patientId: z.number().int().positive(),
 				doctorId: z.number().int().positive(),
-				categoryId: z.number().int().positive(),
 				appointmentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 				slotStart: z.string().regex(/^\d{2}:\d{2}$/),
 				slotEnd: z.string().regex(/^\d{2}:\d{2}$/),
@@ -322,13 +303,11 @@ const booking = createStrictHono()
 
 				const tokenNumber = (maxToken ?? 0) + 1;
 
-				// 3. Insert appointment
 				const [appointment] = await tx
 					.insert(appointmentsTable)
 					.values({
 						patientId: body.patientId,
 						doctorId: body.doctorId,
-						categoryId: body.categoryId,
 						appointmentDate: body.appointmentDate,
 						slotStart: body.slotStart,
 						slotEnd: body.slotEnd,
