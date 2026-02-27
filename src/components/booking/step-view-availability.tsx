@@ -26,10 +26,10 @@ export default function StepViewAvailability({
 	useEffect(() => {
 		(async () => {
 			setLoading(true);
-			const res = await client.api.booking["doctors-by-category"][
-				":categoryId"
+			const res = await client.api.booking["doctors-by-speciality"][
+				":specialityId"
 			].$get({
-				param: { categoryId: categoryId.toString() },
+				param: { specialityId: categoryId.toString() },
 			});
 			const data = await handleErrors(res);
 			setDoctors(data ?? []);

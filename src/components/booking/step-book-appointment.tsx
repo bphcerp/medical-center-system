@@ -175,7 +175,6 @@ function SlotGrid({
 }
 
 function BookingConfirmation({
-	categoryId,
 	categoryName,
 	doctor,
 	date,
@@ -185,7 +184,6 @@ function BookingConfirmation({
 	onEditDate,
 	onBooked,
 }: {
-	categoryId: number;
 	categoryName: string;
 	doctor: Doctor;
 	date: Date;
@@ -229,7 +227,6 @@ function BookingConfirmation({
 			json: {
 				patientId,
 				doctorId: doctor.doctorId,
-				categoryId,
 				appointmentDate: dateStr,
 				slotStart: selectedSlot.slotStart,
 				slotEnd: selectedSlot.slotEnd,
@@ -330,7 +327,6 @@ function BookingConfirmation({
 }
 
 export default function StepBookAppointment({
-	categoryId,
 	categoryName,
 	doctor,
 	date,
@@ -339,7 +335,6 @@ export default function StepBookAppointment({
 	onEditDate,
 	onBooked,
 }: {
-	categoryId: number;
 	categoryName: string;
 	doctor: Doctor;
 	date: Date;
@@ -380,7 +375,6 @@ export default function StepBookAppointment({
 			</Alert>
 
 			<BookingConfirmation
-				categoryId={categoryId}
 				categoryName={categoryName}
 				doctor={doctor}
 				date={date}
