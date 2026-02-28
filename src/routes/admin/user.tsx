@@ -39,7 +39,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import useAuth from "@/lib/hooks/useAuth";
-import { handleErrors } from "@/lib/utils";
+import { handleErrors, titleCase } from "@/lib/utils";
 import { client } from "../api/$";
 
 export const Route = createFileRoute("/admin/user")({
@@ -106,7 +106,7 @@ function Admin() {
 	return (
 		<>
 			<div className="flex flex-wrap items-center gap-4 justify-between mb-3">
-				<h1 className="font-bold text-2xl">User Management</h1>
+				<h1 className="font-bold text-2xl">Manage Staff</h1>
 				<div className="flex gap-4 items-center">
 					<div className="flex">
 						<InputGroup className="w-80">
@@ -143,20 +143,36 @@ function Admin() {
 			<Table>
 				<TableHeader>
 					<TableRow>
-						<TableHead className="w-2/5 whitespace-break-spaces">
-							Name
+						<TableHead className="w-1/5 whitespace-break-spaces">
+							Member
 						</TableHead>
-						<TableHead className="w-2/5">Username</TableHead>
+						<TableHead className="w-3/5" />
 						<TableHead className="w-1/5">Role</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
 					{users.map((user) => (
 						<TableRow key={user.username}>
-							<TableCell className="whitespace-break-spaces">
-								{user.name}
+							<TableCell className="whitespace-break-spaces flex flex-col">
+								<span className="font-medium text-base">{user.name}</span>
+								<span className="text-muted-foreground text-xs">
+									{user.username}
+								</span>
 							</TableCell>
-							<TableCell className="font-mono">{user.username}</TableCell>
+							<TableCell>
+								<div className="flex flex-col">
+									{user.speciality && (
+										<span className="italic text-base">
+											{user.speciality.name}
+										</span>
+									)}
+									{user.doctor && (
+										<span className="text-muted-foreground">
+											{titleCase(user.doctor.availabilityType)}
+										</span>
+									)}
+								</div>
+							</TableCell>
 							<TableCell>
 								<RoleSelect
 									role={user.role.toString()}
@@ -186,10 +202,15 @@ function RoleFilter({
 			<FieldLegend>Filter by Role</FieldLegend>
 			<FieldGroup className="gap-3">
 				{roles.map((role) => (
-					<Field key={role.id} orientation="horizontal">
+					<Field
+						key={role.id}
+						orientation="horizontal"
+						className="*:cursor-pointer"
+					>
 						<Checkbox
 							checked={selected.has(role.id)}
 							id={`role-${role.id}`}
+							className="border-2 size-5"
 							onCheckedChange={(e) => {
 								const newSet = new Set(selected);
 								if (e) {
