@@ -1,12 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Search, ShieldUser } from "lucide-react";
-import { useState } from "react";
+import { FilterIcon, Search, ShieldUser } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+	Field,
+	FieldGroup,
+	FieldLabel,
+	FieldLegend,
+	FieldSet,
+} from "@/components/ui/field";
 import {
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
 } from "@/components/ui/input-group";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -47,14 +61,38 @@ export const Route = createFileRoute("/admin/user")({
 	},
 	staticData: {
 		icon: ShieldUser,
-		name: "User Management",
+		name: "Manage Staff",
 	},
 });
+
+type Filter = {
+	name?: string;
+	roleIds: Set<number>;
+};
 
 function Admin() {
 	useAuth(["admin"]);
 	const { users: allUsers, roles } = Route.useLoaderData();
-	const [users, setUsers] = useState(allUsers);
+	const [filter, setFilter] = useState<Filter>({ roleIds: new Set() });
+
+	const users = useMemo(() => {
+		let filtered = allUsers;
+
+		if (filter.name) {
+			const query = filter.name.toLowerCase();
+			filtered = filtered.filter(
+				(user) =>
+					user.name.toLowerCase().includes(query) ||
+					user.username.toLowerCase().includes(query),
+			);
+		}
+
+		if (filter.roleIds.size > 0) {
+			filtered = filtered.filter((user) => filter.roleIds.has(user.role));
+		}
+
+		return filtered;
+	}, [allUsers, filter]);
 
 	const handleRoleChange = async (userId: number, roleId: number) => {
 		const res = await client.api.user[":id"].$post({
@@ -62,24 +100,7 @@ function Admin() {
 			json: { role: roleId },
 		});
 		const data = await handleErrors(res);
-		if (!data) {
-			return false;
-		}
-		return true;
-	};
-
-	const handleFilter = (query: string) => {
-		query = query.toLowerCase().trim();
-		if (query === "") {
-			setUsers(allUsers);
-			return;
-		}
-		const filtered = allUsers.filter(
-			(user) =>
-				user.name.toLowerCase().includes(query) ||
-				user.username.toLowerCase().includes(query),
-		);
-		setUsers(filtered);
+		return !!data;
 	};
 
 	return (
@@ -87,16 +108,36 @@ function Admin() {
 			<div className="flex flex-wrap items-center gap-4 justify-between mb-3">
 				<h1 className="font-bold text-2xl">User Management</h1>
 				<div className="flex gap-4 items-center">
-					<InputGroup className="w-80">
-						<InputGroupAddon>
-							<Search />
-						</InputGroupAddon>
-						<InputGroupInput
-							type="search"
-							placeholder="Search by name or username"
-							onChange={(e) => handleFilter(e.target.value)}
-						/>
-					</InputGroup>
+					<div className="flex">
+						<InputGroup className="w-80">
+							<InputGroupAddon>
+								<Search />
+							</InputGroupAddon>
+							<InputGroupInput
+								type="search"
+								placeholder="Search by name or username"
+								onChange={(e) =>
+									setFilter((filter) => ({ ...filter, name: e.target.value }))
+								}
+							/>
+						</InputGroup>
+					</div>
+					<Popover>
+						<PopoverTrigger asChild>
+							<Button variant="outline">
+								<FilterIcon /> Role
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent align="end" className="bg-background w-48">
+							<RoleFilter
+								roles={roles}
+								selected={filter.roleIds}
+								onChanged={(ids) =>
+									setFilter((filter) => ({ ...filter, roleIds: ids }))
+								}
+							/>
+						</PopoverContent>
+					</Popover>
 				</div>
 			</div>
 			<Table>
@@ -128,6 +169,44 @@ function Admin() {
 				</TableBody>
 			</Table>
 		</>
+	);
+}
+
+function RoleFilter({
+	roles,
+	selected,
+	onChanged,
+}: {
+	roles: typeof Route.types.loaderData.roles;
+	selected: Set<number>;
+	onChanged: (selected: Set<number>) => void;
+}) {
+	return (
+		<FieldSet>
+			<FieldLegend>Filter by Role</FieldLegend>
+			<FieldGroup className="gap-3">
+				{roles.map((role) => (
+					<Field key={role.id} orientation="horizontal">
+						<Checkbox
+							checked={selected.has(role.id)}
+							id={`role-${role.id}`}
+							onCheckedChange={(e) => {
+								const newSet = new Set(selected);
+								if (e) {
+									newSet.add(role.id);
+								} else {
+									newSet.delete(role.id);
+								}
+								onChanged(newSet);
+							}}
+						/>
+						<FieldLabel htmlFor={`role-${role.id}`} className="font-normal">
+							{role.name}
+						</FieldLabel>
+					</Field>
+				))}
+			</FieldGroup>
+		</FieldSet>
 	);
 }
 
