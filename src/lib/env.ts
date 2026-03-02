@@ -8,6 +8,13 @@ dotenv.config({
 	path: path.resolve(process.cwd(), "../.env"),
 });
 
+const vaultSecrets = getVaultSecrets();
+
+const mergedEnv = {
+	...process.env,
+	...vaultSecrets,
+};
+
 const serverSchema = z.object({
 	NODE_ENV: z
 		.enum(["development", "test", "production"])
@@ -17,21 +24,14 @@ const serverSchema = z.object({
 	POSTGRES_PASSWORD: z.string().min(1),
 	POSTGRES_DB: z.string().min(1),
 	PGPORT: z.coerce.number().int().positive().default(5432),
-	FRONTEND_URL: z.url().min(1),
+	FRONTEND_URL: z.string().min(1),
 	FRONTEND_PORT: z.coerce.number().int().positive().default(3000),
 	JWT_SECRET: z.string().min(1),
-	SEAWEEDFS_MASTER: z.url().min(1),
+	SEAWEEDFS_MASTER: z.string().min(1),
 	EMAIL_USER: z.string().min(1),
 	EMAIL_PASS: z.string().min(1),
-    VAULT_PORT: z.coerce.number().optional(),
 });
 
-const vaultSecrets = getVaultSecrets;
-
-const mergedEnv = {
-    ...process.env,
-    ...vaultSecrets,
-};
 
 const parsed = serverSchema.parse(mergedEnv);
 

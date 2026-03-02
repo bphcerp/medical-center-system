@@ -50,12 +50,61 @@ services:
   vault:
     image: hashicorp/vault:latest
     ports:
-      - "${VAULT_PORT}:8200"
+      - "${VAULT_PORT:-8200}:8200"
     environment:
       VAULT_DEV_ROOT_TOKEN_ID: root
       VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+      VAULT_ADDR: "http://127.0.0.1:8200"
+    healthcheck:
+      test: [ "CMD", "vault", "status" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
     cap_add:
       - IPC_LOCK
+    profiles:
+      - "dev"
+
+  vault-init:
+    image: hashicorp/vault:latest
+    # Run as root so we can write to the vault-credentials volume
+    # (default Docker volumes are root-owned; vault image USER is UID 100)
+    user: root
+    depends_on:
+      vault:
+        condition: service_healthy
+    environment:
+      VAULT_ADDR: "http://vault:8200"
+      VAULT_TOKEN: "root"
+    volumes:
+      - ./vault/vault-init.sh:/vault-init.sh:ro
+      - vault-credentials:/vault-credentials
+    entrypoint: /bin/sh
+    # Use "sh file" (not "sh -c file") so the script only needs the read bit,
+    # not the execute bit.
+    command: [ "/vault-init.sh" ]
+    restart: "no"
+    profiles:
+      - "dev"
+
+  vault-agent:
+    image: hashicorp/vault:latest
+    command: agent -config=/vault/config/vault-agent.hcl
+    depends_on:
+      vault-init:
+        condition: service_completed_successfully
+    volumes:
+      # HCL configuration file (tells agent how to authenticate)
+      - ./vault/vault-agent.hcl:/vault/config/vault-agent.hcl:ro
+      # Go template file (defines the output format)
+      - ./vault/secrets.ctmpl:/vault/config/secrets.ctmpl:ro
+      # AppRole credentials (roleid + secretid) from vault-init
+      # Mounted at /vault/credentials — matches paths in vault-agent.hcl
+      - vault-credentials:/vault/credentials:ro
+      # Shared tmpfs volume where the agent WRITES the rendered secrets
+      - shared-secrets:/vault/secrets
+    restart: unless-stopped
     profiles:
       - "dev"
 
@@ -68,17 +117,34 @@ services:
         condition: service_healthy
       seaweedfs-master:
         condition: service_healthy
-    env_file:
-      - .env
+      vault-agent:
+        condition: service_started
+    environment:
+      TZ: Asia/Kolkata
+      NODE_ENV: development
+      VITE_FRONTEND_URL: http://localhost:3000
     volumes:
+      # Source code bind mount (for hot reloading during development)
       - type: bind
         source: ./src
         target: /usr/local/app/src
+      # Shared tmpfs volume — secrets appear here (read-only)
+      - shared-secrets:/app/secrets:ro
+      # Entrypoint script that waits for secrets then starts the app
+      - ./vault/entrypoint.sh:/usr/local/app/entrypoint.sh:ro
+    # entrypoint replaces the Dockerfile's default ENTRYPOINT.
+    # It runs entrypoint.sh, which waits for secrets, sources them,
+    # then runs whatever "command" is set below.
+    entrypoint: [ "/bin/bash", "/usr/local/app/entrypoint.sh" ]
+    # This is passed as "$@" to entrypoint.sh, which runs "exec $@"
+    # (i.e., exec bun dev --host)
+    command: [ "bun", "dev", "--host" ]
     ports:
-      - "${FRONTEND_PORT}:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
     profiles:
       - "dev"
 
+  # uses env_file for now
   app-prod:
     build:
       context: ./
@@ -99,3 +165,11 @@ volumes:
   postgres-data:
   seaweedfs-master-data:
   seaweedfs-volume-data:
+  shared-secrets:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      # uid=100 (vault user) owns the dir; mode=0750 restricts access to owner+group
+      o: size=10m,uid=100,gid=1000,mode=0750
+  vault-credentials:

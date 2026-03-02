@@ -13,3 +13,8 @@ count.txt
 todos.json
 drizzle
 data
+
+# Vault credentials — never commit these
+vault/roleid
+vault/secretid
+*.token
