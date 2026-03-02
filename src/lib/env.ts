@@ -1,6 +1,7 @@
 import path from "node:path";
 import dotenv from "dotenv";
 import { z } from "zod";
+import { getSecret } from "@/utils/getSecret";
 
 // Trying to load .env if running outside docker and cwd is server
 dotenv.config({
@@ -24,7 +25,16 @@ const serverSchema = z.object({
 	EMAIL_PASS: z.string().min(1),
 });
 
-const parsed = serverSchema.parse(process.env);
+const parsed = serverSchema.parse({
+	...process.env,
+	// Override secrets: reads /run/secrets/* in Docker, falls back to process.env for local dev
+	POSTGRES_USER: getSecret("POSTGRES_USER"),
+	POSTGRES_PASSWORD: getSecret("POSTGRES_PASSWORD"),
+	POSTGRES_DB: getSecret("POSTGRES_DB"),
+	JWT_SECRET: getSecret("JWT_SECRET"),
+	EMAIL_USER: getSecret("EMAIL_USER"),
+	EMAIL_PASS: getSecret("EMAIL_PASS"),
+});
 
 export const DATABASE_URL = `postgres://${parsed.POSTGRES_USER}:${parsed.POSTGRES_PASSWORD}@${parsed.DB_HOST}:${parsed.PGPORT}/${parsed.POSTGRES_DB}`;
 export const PROD = parsed.NODE_ENV === "production";
