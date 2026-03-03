@@ -1,5 +1,4 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { cx } from "class-variance-authority";
 import {
 	Calendar,
 	FilterIcon,
@@ -7,9 +6,11 @@ import {
 	Search,
 	ShieldUser,
 	Stethoscope,
+	XIcon,
 } from "lucide-react";
 import { type PropsWithChildren, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Textarea } from "src/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -93,6 +94,9 @@ type Filter = {
 	roleIds: Set<number>;
 };
 
+type NewSpeciality = { name: string; description: string | null };
+type ExistingSpeciality = { id: number };
+
 function Admin() {
 	useAuth(["admin"]);
 
@@ -130,17 +134,35 @@ function Admin() {
 		return !!data;
 	};
 
+	const createSpeciality = async (speciality: NewSpeciality) => {
+		const res = await client.api.admin.specialization.$post({
+			json: {
+				name: speciality.name,
+				description:
+					speciality.description === null ? undefined : speciality.description,
+			},
+		});
+
+		return await handleErrors(res);
+	};
+
 	const handleAssignDoctor = async (
 		doctorId: number,
-		specialityId: number,
+		speciality: NewSpeciality | ExistingSpeciality,
 		availabilityType: DoctorAvailabilityType,
 	) => {
+		const data =
+			"name" in speciality ? await createSpeciality(speciality) : speciality;
+
+		if (!data) return;
+
 		const res = await client.api.admin.doctor[":doctorId"].$post({
 			param: { doctorId: doctorId.toString() },
-			json: { specialityId, availabilityType },
+			json: { specialityId: data.id, availabilityType },
 		});
-		const data = await handleErrors(res);
-		if (data) {
+
+		const result = await handleErrors(res);
+		if (result) {
 			router.invalidate();
 		}
 	};
@@ -242,10 +264,10 @@ function Admin() {
 											)}
 											<ButtonGroup>
 												<DoctorSpecialityDialog
-													onSubmit={(specialityId, availabilityType) =>
+													onSubmit={(speciality, availabilityType) =>
 														handleAssignDoctor(
 															user.id,
-															specialityId,
+															speciality,
 															availabilityType,
 														)
 													}
@@ -303,6 +325,7 @@ function RoleFilter({
 							checked={selected.has(role.id)}
 							id={`role-${role.id}`}
 							className="border-2 size-5"
+							variant="secondary"
 							onCheckedChange={(e) => {
 								const newSet = new Set(selected);
 								if (e) {
@@ -385,21 +408,34 @@ function DoctorSpecialityDialog({
 	specialities: typeof Route.types.loaderData.specialities;
 	doctor: (typeof Route.types.loaderData.users)[number];
 	onSubmit?: (
-		specialityId: number,
+		speciality: NewSpeciality | ExistingSpeciality,
 		availabilityType: DoctorAvailabilityType,
 	) => Promise<void>;
 }>) {
 	const [isOpen, setIsOpen] = useState(false);
 
 	const handleSubmit = async (formData: FormData) => {
-		const specialityId = formData.get("speciality");
+		const specialityId = formData.get("specialityId");
+		const specialityName = formData.get("specialityName");
+		const specialityDescription = formData.get("specialityDescription");
+
 		const availabilityType = formData.get("availabilityType");
-		if (specialityId && availabilityType) {
+
+		if (specialityName !== null) {
 			await onSubmit?.(
-				Number(specialityId),
+				{
+					name: specialityName as string,
+					description: specialityDescription as string | null,
+				},
+				availabilityType as DoctorAvailabilityType,
+			);
+		} else {
+			await onSubmit?.(
+				{ id: Number(specialityId) },
 				availabilityType as DoctorAvailabilityType,
 			);
 		}
+
 		setIsOpen(false);
 	};
 
@@ -417,32 +453,13 @@ function DoctorSpecialityDialog({
 					</DialogDescription>
 				</DialogHeader>
 				<form action={handleSubmit} className="flex flex-col flex-1 space-y-4">
-					<FieldGroup>
+					<FieldGroup className="gap-4">
+						<SpecialityField
+							defaultSpeciality={doctor.speciality}
+							specialities={specialities}
+						/>
 						<FieldSet>
-							<FieldLegend variant="label">Doctor Specialization</FieldLegend>
-							<Select
-								name="speciality"
-								defaultValue={doctor.speciality?.id.toString()}
-								required
-							>
-								<SelectTrigger className="w-full">
-									<SelectValue placeholder="Select Specialization" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectGroup>
-										<SelectLabel>Specializations</SelectLabel>
-										{specialities.map((s) => (
-											<SelectItem key={s.id} value={s.id.toString()}>
-												{s.name}
-											</SelectItem>
-										))}
-									</SelectGroup>
-									<AddSpecialityButton />
-								</SelectContent>
-							</Select>
-						</FieldSet>
-						<FieldSet>
-							<FieldLegend variant="label">Doctor Availability</FieldLegend>
+							<FieldLegend variant="label">Availability</FieldLegend>
 							<RadioGroup
 								name="availabilityType"
 								defaultValue={doctor.assignedDoctor?.availabilityType}
@@ -488,35 +505,90 @@ function DoctorSpecialityDialog({
 	);
 }
 
-function AddSpecialityButton() {
-	const [expanded, setExpanded] = useState(false);
+type Speciality = (typeof Route.types.loaderData.specialities)[number];
+
+function SpecialityField({
+	specialities,
+	defaultSpeciality,
+}: {
+	defaultSpeciality: Speciality | null;
+	specialities: Speciality[];
+}) {
+	const [isAdding, setIsAdding] = useState(false);
 
 	return (
-		<div
-			className={cx(
-				"mt-2 w-full flex-col items-stretch",
-				expanded && "border-t pt-2",
+		<FieldSet>
+			{isAdding ? (
+				<div className="flex flex-col gap-4 bg-primary/4 p-4 rounded-md border-2 border-primary border-dashed">
+					<h2 className="font-semibold text-base flex justify-between">
+						Create new specialization
+						<Button
+							type="button"
+							size="icon"
+							variant="outline"
+							onClick={() => setIsAdding(false)}
+							className="self-end font-normal size-7 p-0"
+						>
+							<XIcon strokeWidth={3} />
+						</Button>
+					</h2>
+					<FieldGroup className="gap-4">
+						<Field>
+							<FieldLabel className="leading-none">
+								Specialization Name
+							</FieldLabel>
+							<Input
+								name="specialityName"
+								className="h-8"
+								placeholder="e.g. Cardiology"
+								required
+							/>
+						</Field>
+						<Field>
+							<FieldLabel className="leading-none">
+								Specialization Description
+							</FieldLabel>
+							<Textarea
+								name="specialityDescription"
+								placeholder="Brief description of this specialization"
+							/>
+						</Field>
+					</FieldGroup>
+				</div>
+			) : (
+				<>
+					<FieldLegend variant="label">Specialization</FieldLegend>
+					<div className="flex gap-2">
+						<Select
+							name="specialityId"
+							defaultValue={defaultSpeciality?.id.toString()}
+							required
+						>
+							<SelectTrigger className="flex-1">
+								<SelectValue placeholder="Select Specialization" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectGroup>
+									<SelectLabel>Specializations</SelectLabel>
+									{specialities.map((s) => (
+										<SelectItem key={s.id} value={s.id.toString()}>
+											{s.name}
+										</SelectItem>
+									))}
+								</SelectGroup>
+							</SelectContent>
+						</Select>
+						<Button
+							variant="outline"
+							size="icon"
+							type="button"
+							onClick={() => setIsAdding((v) => !v)}
+						>
+							{isAdding ? <XIcon /> : <PlusIcon />}
+						</Button>
+					</div>
+				</>
 			)}
-		>
-			{expanded && (
-				<form>
-					<Field>
-						<Input type="text" placeholder="Name" />
-					</Field>
-
-					<Field>
-						<Input type="text" placeholder="Description" />
-					</Field>
-				</form>
-			)}
-			<Button
-				size="sm"
-				variant="outline"
-				className={cx("font-normal", !expanded && "w-full")}
-				onClick={() => setExpanded(true)}
-			>
-				<PlusIcon /> Add
-			</Button>
-		</div>
+		</FieldSet>
 	);
 }
