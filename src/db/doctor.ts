@@ -21,11 +21,15 @@ export const doctorScheduleOverrideTypeEnum = pgEnum(
 		"custom_hours", // different start/end/slot duration for that day
 	],
 );
+export const doctorAvailabilityTypes = ["campus", "visiting"] as const;
 
-export const doctorAvailabilityTypeEnum = pgEnum("doctor_availability_type", [
-	"campus",
-	"visiting",
-]);
+export type DoctorAvailabilityType =
+	(typeof doctorAvailabilityTypeEnum.enumValues)[number];
+
+export const doctorAvailabilityTypeEnum = pgEnum(
+	"doctor_availability_type",
+	doctorAvailabilityTypes,
+);
 
 export const doctorSpecialitiesTable = pgTable("doctor_specialities", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
