@@ -1,4 +1,3 @@
-import { SelectTrigger } from "@radix-ui/react-select";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Pencil, Plus, ShieldUser, Trash, X } from "lucide-react";
 import type React from "react";
@@ -17,12 +16,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
-	Select,
-	SelectContent,
-	SelectGroup,
-	SelectItem,
-	SelectLabel,
-} from "@/components/ui/select";
+	Popover,
+	PopoverContent,
+	PopoverHeader,
+	PopoverTitle,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import {
 	Table,
 	TableBody,
@@ -199,6 +198,7 @@ function RowItem({
 	const [unusedPerms, setUnusedPerms] = useState(() =>
 		permissions.filter((p) => !originalPerms.includes(p)),
 	);
+	const [open, setOpen] = useState(false);
 
 	const handleDeletePerm = (perm: Permission) => {
 		const newPerms = perms.filter((p) => p !== perm);
@@ -230,34 +230,36 @@ function RowItem({
 			<TableCell>{name}</TableCell>
 
 			<TableCell className="flex gap-6 px-0">
-				<Select
-					onValueChange={(e) => handleAddPerm(e as Permission)}
-					defaultValue=""
-					disabled={unusedPerms.length === 0}
-				>
-					<SelectTrigger className="outline-none" asChild>
+				<Popover open={open} onOpenChange={setOpen}>
+					<PopoverTrigger asChild disabled={unusedPerms.length === 0}>
 						<CircleButton className="bg-primary/20 text-secondary">
 							<Plus />
 						</CircleButton>
-					</SelectTrigger>
+					</PopoverTrigger>
 
-					<SelectContent align="start" className="max-w-80">
-						<SelectGroup>
-							<SelectLabel>Permissions</SelectLabel>
-
-							{unusedPerms.map((p) => (
-								<SelectItem value={p} key={p}>
-									<div className="flex flex-col">
-										<span className="font-medium">{p}</span>
-										<span className="text-muted-foreground text-xs">
-											{permissionDescriptions[p]}
-										</span>
-									</div>
-								</SelectItem>
-							))}
-						</SelectGroup>
-					</SelectContent>
-				</Select>
+					<PopoverContent className="max-w-80 flex flex-col items-stretch p-1">
+						<PopoverHeader className="px-2 py-1 text-muted-foreground text-xs">
+							<PopoverTitle>Add permission</PopoverTitle>
+						</PopoverHeader>
+						{unusedPerms.map((p) => (
+							<Button
+								key={p}
+								value={p}
+								variant="ghost"
+								onClick={() => {
+									handleAddPerm(p);
+									setOpen(false);
+								}}
+								className="flex flex-col items-start justify-start w-full h-fit px-2 py-1.5 gap-0 m-0 text-start"
+							>
+								<span className="font-medium">{p}</span>
+								<span className="text-muted-foreground text-xs whitespace-normal">
+									{permissionDescriptions[p]}
+								</span>
+							</Button>
+						))}
+					</PopoverContent>
+				</Popover>
 			</TableCell>
 
 			<TableCell className="pl-2">
