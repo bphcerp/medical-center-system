@@ -1,6 +1,6 @@
-import { usersTable } from "@/db/auth";
+import { rolesTable, usersTable } from "@/db/auth";
 import "dotenv/config";
-import { desc, eq, getTableColumns } from "drizzle-orm";
+import { desc, eq, getTableColumns, sql } from "drizzle-orm";
 import z from "zod";
 import { doctorSpecialitiesTable, doctorsTable } from "@/db/doctor";
 import type { JWTPayload } from "@/lib/types/api";
@@ -40,10 +40,12 @@ const user = createStrictHono()
 				name,
 				username,
 				role,
-				doctor: doctorsTable,
+				assignedDoctor: doctorsTable,
+				isDoctor: sql<boolean>`'doctor' = ANY(${rolesTable.allowed})`,
 				speciality: doctorSpecialitiesTable,
 			})
 			.from(usersTable)
+			.innerJoin(rolesTable, eq(usersTable.role, rolesTable.id))
 			.leftJoin(doctorsTable, eq(usersTable.id, doctorsTable.id))
 			.leftJoin(
 				doctorSpecialitiesTable,
