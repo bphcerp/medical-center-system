@@ -9,6 +9,14 @@ const config = defineConfig({
 	server: {
 		port: 3000,
 	},
+	optimizeDeps: {
+		exclude: [
+			"otplib",
+			"pg",
+			"nodemailer",
+			"drizzle-orm",
+		],
+	},
 	plugins: [
 		// this is the plugin that enables path aliases
 		tsconfigPaths({

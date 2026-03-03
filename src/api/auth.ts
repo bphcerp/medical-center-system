@@ -30,6 +30,7 @@ import inventory from "./inventory";
 import lab from "./lab";
 import patientHistory from "./patientHistory";
 import role from "./role";
+import totp from "./totp";
 import user from "./user";
 import vitals from "./vitals";
 
@@ -55,6 +56,7 @@ const clearAuthCookies = (c: Context) => {
 };
 
 export const unauthenticated = createStrictHono()
+	.route("/totp", totp)
 	.post(
 		"/login",
 		strictValidator(
