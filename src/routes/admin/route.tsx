@@ -24,7 +24,7 @@ export const Route = createFileRoute("/admin")({
 	staticData: {
 		requiredPermissions: ["admin"],
 		icon: ShieldUser,
-		name: "Admin Dashboard",
+		name: "Admin",
 	},
 	component: AdminDashboard,
 });
@@ -70,7 +70,7 @@ function AdminDashboard() {
 	return (
 		<div className="w-full">
 			<TopBar
-				title="Admin Dashboard"
+				title="Admin"
 				actionButton={
 					isMobile ? (
 						<Button

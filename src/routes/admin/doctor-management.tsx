@@ -1,6 +1,18 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { Plus, Stethoscope, UserRound } from "lucide-react";
-import { type FormEvent, useEffect, useId, useState } from "react";
+import {
+	Loader2Icon,
+	Plus,
+	PlusIcon,
+	Stethoscope,
+	UserRound,
+} from "lucide-react";
+import {
+	type FormEvent,
+	type PropsWithChildren,
+	useEffect,
+	useId,
+	useState,
+} from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -231,15 +243,16 @@ function formatTime12(t: string): string {
 	return `${h12}:${String(m).padStart(2, "0")}${period}`;
 }
 
-function EditScheduleDialog({
+export function EditScheduleDialog({
 	doctorId,
 	doctorName,
 	categoryName,
-}: {
+	children,
+}: PropsWithChildren<{
 	doctorId: number;
 	doctorName: string;
 	categoryName: string;
-}) {
+}>) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [slots, setSlots] = useState<Record<string, SlotEntry[]>>({});
 	const [addingDay, setAddingDay] = useState<string | null>(null);
@@ -299,6 +312,7 @@ function EditScheduleDialog({
 
 	const handleSave = async () => {
 		setSaving(true);
+
 		const allSlots = Object.entries(slots).flatMap(([day, daySlots]) =>
 			daySlots.map((s) => ({
 				dayOfWeek: day as Day,
@@ -312,16 +326,20 @@ function EditScheduleDialog({
 			json: { slots: allSlots },
 		});
 		await handleErrors(res);
+
 		setSaving(false);
+
 		setIsOpen(false);
 	};
 
 	return (
 		<Dialog open={isOpen} onOpenChange={handleOpenChange}>
 			<DialogTrigger asChild>
-				<Button variant="outline" size="sm">
-					Edit Schedule
-				</Button>
+				{children ?? (
+					<Button variant="outline" size="sm">
+						Edit Schedule
+					</Button>
+				)}
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-4xl gap-6">
 				<div>
@@ -370,7 +388,7 @@ function EditScheduleDialog({
 
 											{isAdding ? (
 												<div className="flex flex-col gap-1.5 mt-1 pt-1 border-t">
-													<input
+													<Input
 														type="time"
 														value={addForm.startTime}
 														onChange={(e) =>
@@ -379,9 +397,9 @@ function EditScheduleDialog({
 																startTime: e.target.value,
 															}))
 														}
-														className="text-xs border rounded px-1.5 py-1 w-full bg-background"
+														className="text-xs px-1.5 w-full h-8"
 													/>
-													<input
+													<Input
 														type="time"
 														value={addForm.endTime}
 														onChange={(e) =>
@@ -390,10 +408,10 @@ function EditScheduleDialog({
 																endTime: e.target.value,
 															}))
 														}
-														className="text-xs border rounded px-1.5 py-1 w-full bg-background"
+														className="text-xs px-1.5 w-full h-8"
 													/>
 													<div className="flex items-center gap-1">
-														<input
+														<Input
 															type="number"
 															min={5}
 															step={5}
@@ -404,33 +422,37 @@ function EditScheduleDialog({
 																	slotDurationMinutes: Number(e.target.value),
 																}))
 															}
-															className="text-xs border rounded px-1.5 py-1 w-full bg-background"
+															className="text-xs px-1.5 w-full h-8"
 														/>
 														<span className="text-xs text-muted-foreground whitespace-nowrap">
 															min
 														</span>
 													</div>
 													<div className="flex gap-1">
-														<button
+														<Button
 															type="button"
+															size="sm"
 															onClick={() => handleAddSlot(day)}
 															disabled={!addForm.startTime || !addForm.endTime}
-															className="flex-1 text-xs bg-primary text-primary-foreground rounded py-1 disabled:opacity-40"
+															className="flex-1 text-xs"
 														>
 															Add
-														</button>
-														<button
+														</Button>
+														<Button
 															type="button"
+															variant="outline"
+															size="sm"
 															onClick={() => setAddingDay(null)}
-															className="flex-1 text-xs border rounded py-1 hover:bg-muted"
+															className="flex-1 text-xs"
 														>
 															Cancel
-														</button>
+														</Button>
 													</div>
 												</div>
 											) : (
-												<button
+												<Button
 													type="button"
+													variant="ghost"
 													onClick={() => {
 														setAddingDay(day);
 														setAddForm({
@@ -441,8 +463,8 @@ function EditScheduleDialog({
 													}}
 													className="mt-1 text-muted-foreground hover:text-foreground text-base self-center leading-none py-1 w-full"
 												>
-													+
-												</button>
+													<PlusIcon />
+												</Button>
 											)}
 										</div>
 									</div>
@@ -456,8 +478,12 @@ function EditScheduleDialog({
 					<DialogClose asChild>
 						<Button variant="outline">Cancel</Button>
 					</DialogClose>
-					<Button onClick={handleSave} disabled={saving} className="w-32">
-						{saving ? "Saving…" : "Save"}
+					<Button onClick={handleSave} disabled={saving}>
+						{saving ? (
+							<Loader2Icon className="animate-spin" />
+						) : (
+							<span>Save</span>
+						)}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

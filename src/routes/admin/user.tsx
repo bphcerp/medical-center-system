@@ -69,6 +69,7 @@ import {
 import useAuth from "@/lib/hooks/useAuth";
 import { handleErrors, titleCase } from "@/lib/utils";
 import { client } from "../api/$";
+import { EditScheduleDialog } from "./doctor-management";
 
 export const Route = createFileRoute("/admin/user")({
 	component: Admin,
@@ -286,9 +287,15 @@ function Admin() {
 														<Stethoscope /> Specialization
 													</Button>
 												</DoctorSpecialityDialog>
-												<Button variant="outline" size="sm">
-													<Calendar /> Schedule
-												</Button>
+												<EditScheduleDialog
+													doctorId={user.id}
+													doctorName={user.name}
+													categoryName={"bluah"}
+												>
+													<Button variant="outline" size="sm">
+														<Calendar /> Schedule
+													</Button>
+												</EditScheduleDialog>
 											</ButtonGroup>
 										</div>
 									)}
