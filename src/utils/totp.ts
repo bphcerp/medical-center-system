@@ -3,9 +3,9 @@ import path from "node:path";
 import { verifySync } from "otplib";
 
 const TOTP_OPTIONS = {
-	step: 30,
+	period: 30,
 	digits: 6,
-	window: 1,
+	epochTolerance: 30, 
 };
 
 function readSecret(name: string): string {
