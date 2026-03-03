@@ -1,7 +1,8 @@
-import { usersTable } from "@/db/auth";
+import { rolesTable, usersTable } from "@/db/auth";
 import "dotenv/config";
-import { desc, eq, getTableColumns } from "drizzle-orm";
+import { desc, eq, getTableColumns, sql } from "drizzle-orm";
 import z from "zod";
+import { doctorSpecialitiesTable, doctorsTable } from "@/db/doctor";
 import type { JWTPayload } from "@/lib/types/api";
 import { createStrictHono, strictValidator } from "@/lib/types/api";
 import { db } from ".";
@@ -34,9 +35,23 @@ const user = createStrictHono()
 		const { id, name, username, role } = getTableColumns(usersTable);
 
 		const users = await db
-			.select({ id, name, username, role })
+			.select({
+				id,
+				name,
+				username,
+				role,
+				assignedDoctor: doctorsTable,
+				isDoctor: sql<boolean>`'doctor' = ANY(${rolesTable.allowed})`,
+				speciality: doctorSpecialitiesTable,
+			})
 			.from(usersTable)
-			.orderBy(desc(role));
+			.innerJoin(rolesTable, eq(usersTable.role, rolesTable.id))
+			.leftJoin(doctorsTable, eq(usersTable.id, doctorsTable.id))
+			.leftJoin(
+				doctorSpecialitiesTable,
+				eq(doctorsTable.specialityId, doctorSpecialitiesTable.id),
+			)
+			.orderBy(desc(role), name, doctorSpecialitiesTable.name);
 
 		return c.json({ success: true, data: users });
 	})
