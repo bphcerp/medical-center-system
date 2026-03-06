@@ -152,7 +152,7 @@ function RouteComponent() {
 									</Select>
 								</Field>
 								<Field className="col-span-2">
-									<Button type="submit" size="lg">
+									<Button type="submit" className="text-base">
 										<Check />
 										Submit
 									</Button>
