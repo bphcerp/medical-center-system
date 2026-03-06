@@ -44,7 +44,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import type { doctorAvailabilityTypeEnum } from "@/db/doctor";
 import type { Day } from "@/lib/types/day";
-import { handleErrors } from "@/lib/utils";
+import { formatTime12, handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
 
 export const Route = createFileRoute("/admin/doctor-management")({
@@ -233,15 +233,6 @@ const DAY_ROWS: Day[][] = [
 	["monday", "tuesday", "wednesday", "thursday"],
 	["friday", "saturday", "sunday"],
 ];
-
-function formatTime12(t: string): string {
-	const [hStr, mStr] = t.split(":");
-	const h = Number(hStr);
-	const m = Number(mStr);
-	const period = h >= 12 ? "pm" : "am";
-	const h12 = h % 12 || 12;
-	return `${h12}:${String(m).padStart(2, "0")}${period}`;
-}
 
 export function EditScheduleDialog({
 	doctorId,

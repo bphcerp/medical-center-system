@@ -1,125 +1,143 @@
-import { ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { AlertCircle, ArrowRight, CalendarOff } from "lucide-react";
+import { useState } from "react";
+import type { Doctor } from "src/api/admin";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent } from "@/components/ui/card";
-import { Spinner } from "@/components/ui/spinner";
-import { handleErrors } from "@/lib/utils";
+import { formatTime12, handleErrors } from "@/lib/utils";
 import { client } from "@/routes/api/$";
-import type { Doctor } from "./types";
+import { Field, FieldContent, FieldLabel, FieldTitle } from "../ui/field";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+import type { Slot } from "./types";
 
-export default function StepViewAvailability({
-	categoryId,
-	categoryName,
+type SlotsResult =
+	| {
+			date: Date;
+			slots: Slot[];
+			available: true;
+	  }
+	| { available: false }
+	| null;
+
+export default function StepSelectTimeslot({
+	doctor,
 	onSelect,
 }: {
-	categoryId: number;
-	categoryName: string;
-	onSelect: (doctor: Doctor, date: Date) => void;
+	doctor: Doctor;
+	onSelect: (date: Date, slot: Slot) => void;
 }) {
-	const [doctors, setDoctors] = useState<Doctor[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
-	const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+	const [slotsResult, setSlotsResult] = useState<SlotsResult | null>(null);
 
-	useEffect(() => {
-		(async () => {
-			setLoading(true);
-			const res = await client.api.booking["doctors-by-speciality"][
-				":specialityId"
-			].$get({
-				param: { specialityId: categoryId.toString() },
-			});
-			const data = await handleErrors(res);
-			setDoctors(data ?? []);
-			setLoading(false);
-		})();
-	}, [categoryId]);
+	const handleDateChange = async (date?: Date) => {
+		if (!date) return;
 
-	const handleContinue = () => {
-		if (selectedDoctor && selectedDate) {
-			onSelect(selectedDoctor, selectedDate);
-		}
+		const res = await client.api.booking["available-slots"].$get({
+			query: {
+				doctorId: doctor.id.toString(),
+				date: format(date, "yyyy-MM-dd"),
+			},
+		});
+		const data = await handleErrors(res);
+
+		setSlotsResult(
+			data?.unavailable
+				? { available: false }
+				: {
+						date: date,
+						slots: data?.slots ?? [],
+						available: true,
+					},
+		);
 	};
 
-	if (loading) {
-		return (
-			<div className="flex justify-center items-center gap-2 py-12">
-				<Spinner />
-				<span className="text-muted-foreground">Loading doctors…</span>
-			</div>
-		);
-	}
-
-	if (doctors.length === 0) {
-		return (
-			<div className="text-center py-12 text-muted-foreground">
-				No doctors found in {categoryName}.
-			</div>
-		);
-	}
-
 	return (
-		<div className="flex flex-col gap-6">
-			<div className="text-center">
-				<Badge variant="secondary" className="text-sm px-4 py-2">
-					Category: {categoryName}
-				</Badge>
-			</div>
+		<div className="flex flex-col items-center gap-4 p-2">
+			<p className="text-center text-muted-foreground">
+				Select a timeslot for{" "}
+				<span className="font-semibold text-foreground">{doctor.name}</span>
+			</p>
 
-			<div className="grid gap-4">
-				{doctors.map((doc) => {
-					const isSelected = selectedDoctor?.doctorId === doc.doctorId;
-					return (
-						<Card
-							key={doc.doctorId}
-							className={`transition-all cursor-pointer ${
-								isSelected
-									? "ring-2 ring-primary border-primary"
-									: "hover:border-primary/40"
-							}`}
-							onClick={() => {
-								setSelectedDoctor(doc);
-								setSelectedDate(undefined);
-							}}
-						>
-							<CardContent className="p-4">
-								<div className="flex items-start justify-between gap-4">
-									<div>
-										<h3 className="font-semibold text-base">
-											Dr. {doc.doctorName}
-										</h3>
-										<Badge variant="outline" className="mt-1 capitalize">
-											{doc.doctorType}
-										</Badge>
-									</div>
-									{isSelected && (
-										<div className="shrink-0 pt-1">
-											<Calendar
-												mode="single"
-												selected={selectedDate}
-												onSelect={(date) => setSelectedDate(date ?? undefined)}
-												disabled={{ before: new Date() }}
-												className="rounded-md border"
-											/>
-										</div>
-									)}
-								</div>
-							</CardContent>
-						</Card>
-					);
-				})}
+			<div className="flex flex-wrap gap-6 items-stretch justify-start w-full">
+				<Calendar
+					mode="single"
+					selected={
+						slotsResult && "date" in slotsResult ? slotsResult.date : undefined
+					}
+					onSelect={handleDateChange}
+					disabled={{ before: new Date() }}
+					className="rounded-md border shrink-0"
+				/>
+				{slotsResult ? (
+					slotsResult.available ? (
+						slotsResult?.slots.length === 0 ? (
+							<Alert className="flex-1">
+								<AlertCircle className="size-4" />
+								<AlertTitle>No slots available</AlertTitle>
+								<AlertDescription>
+									All slots are booked for this date. Please select another
+									date.
+								</AlertDescription>
+							</Alert>
+						) : (
+							<SlotGrid
+								slots={slotsResult.slots}
+								onSelect={(slot) => onSelect(slotsResult.date, slot)}
+							/>
+						)
+					) : (
+						<Alert className="flex-1">
+							<CalendarOff className="size-4" />
+							<AlertTitle>Unavailable</AlertTitle>
+							<AlertDescription>
+								Doctor is unavailable on this date. Please select another date.
+							</AlertDescription>
+						</Alert>
+					)
+				) : (
+					<p className="text-muted-foreground text-sm py-4">
+						Select a date to see available slots.
+					</p>
+				)}
 			</div>
+		</div>
+	);
+}
+
+function SlotGrid({
+	slots,
+	onSelect,
+}: {
+	slots: Slot[];
+	onSelect: (slot: Slot) => void;
+}) {
+	const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+	return (
+		<div className="flex-1 min-w-md flex flex-col items-end justify-between gap-3">
+			<RadioGroup
+				name="slot"
+				className="grid grid-cols-3 gap-2 w-full"
+				value={JSON.stringify(selectedSlot)}
+				onValueChange={(v) => setSelectedSlot(JSON.parse(v))}
+			>
+				{slots.map((slot) => (
+					<FieldLabel key={slot.slotStart} className="cursor-pointer border-4">
+						<Field orientation="horizontal" className="py-3! px-4!">
+							<FieldContent>
+								<FieldTitle>{formatTime12(slot.slotStart)}</FieldTitle>
+							</FieldContent>
+							<RadioGroupItem value={JSON.stringify(slot)} />
+						</Field>
+					</FieldLabel>
+				))}
+			</RadioGroup>
 
 			<Button
-				onClick={handleContinue}
-				disabled={!selectedDoctor || !selectedDate}
-				className="w-full max-w-md mx-auto"
-				size="lg"
+				className="w-fit"
+				disabled={selectedSlot === null}
+				onClick={() => selectedSlot && onSelect(selectedSlot)}
 			>
-				View Time Slots
-				<ChevronRight className="size-4 ml-1" />
+				Continue <ArrowRight />
 			</Button>
 		</div>
 	);

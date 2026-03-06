@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, CheckIcon, ScanBarcode } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { identifierTypes } from "@/db/case";
 import { handleErrors, isBarcodeDetectionAvailable } from "@/lib/utils";
@@ -49,13 +49,20 @@ const registrationTypeDetails: RegistrationTypeDetails = {
 	},
 };
 
+export type RegistrationContext = "patient" | "reception" | "appointment";
+
 export function RegistrationForm({
 	setToken,
-	isPatientRegistering = true,
+	onPatientId,
+	registrationContext = "patient",
 }: {
-	setToken: (token: number) => void;
-	isPatientRegistering?: boolean;
+	setToken?: (token: number) => void;
+	onPatientId?: (id: number, name: string) => void;
+	registrationContext?: RegistrationContext;
 }) {
+	// control button focus so that registering is easier
+	const submitButtonRef = useRef<HTMLButtonElement>(null);
+
 	const id = useId();
 	const nameId = useId();
 	const emailId = useId();
@@ -102,6 +109,22 @@ export function RegistrationForm({
 
 	const handleRegister = async () => {
 		if (registrationType === null) return;
+
+		// Appointment booking context: the patient has already been looked up, just return their ID
+		if (registrationContext === "appointment") {
+			if (patientId === -1) {
+				toast.error(
+					"Patient not found. Please register them at reception first.",
+				);
+				return;
+			}
+			if (onPatientId) {
+				onPatientId?.(patientId, name);
+				resetState();
+			}
+			return;
+		}
+
 		const identifierType =
 			registrationTypeDetails[registrationType].identifierType;
 
@@ -136,7 +159,7 @@ export function RegistrationForm({
 			return;
 		}
 
-		setToken(registered.token);
+		setToken?.(registered.token);
 		resetState();
 	};
 
@@ -188,6 +211,7 @@ export function RegistrationForm({
 
 		setShowDetails(true);
 		setDisableForm(true);
+
 		if ("dependents" in existing) {
 			if (existing.dependents.length === 0) {
 				setPatientId(existing.professor.id);
@@ -224,7 +248,8 @@ export function RegistrationForm({
 		setName(existing.name);
 		setBirthdate(new Date(existing.birthdate));
 		setSex(existing.sex);
-		return;
+
+		submitButtonRef.current?.focus();
 	};
 
 	const handleBarcodeScan = async (scanned: string) => {
@@ -242,11 +267,13 @@ export function RegistrationForm({
 			}
 			className="flex flex-col gap-1"
 		>
-			<span className="font-semibold text-xl">
-				{registrationType === null
-					? initialRegisterText
-					: registrationTypeDetails[registrationType].title}
-			</span>
+			{(registrationContext !== "appointment" || showScanner) && (
+				<span className="font-semibold text-xl">
+					{registrationType === null
+						? initialRegisterText
+						: registrationTypeDetails[registrationType].title}
+				</span>
+			)}
 			{showScanner ? (
 				// Scanner form
 				<div className="pt-4">
@@ -273,7 +300,7 @@ export function RegistrationForm({
 									: registrationTypeDetails[registrationType].inputHint
 							}
 							required
-							autoFocus
+							autoFocus={!showDetails}
 						/>
 						{showDetails && (
 							<Button size={"lg"} variant={"outline"} onClick={resetState}>
@@ -361,16 +388,26 @@ export function RegistrationForm({
 				</div>
 			)}
 			<div className="pt-4 flex flex-col items-stretch w-full gap-4">
-				{!showScanner && (
-					<Button type="submit" size="lg" className="text-lg">
-						{showDetails ? "Register" : "Continue"}
-						{showDetails ? (
-							<CheckIcon className="size-5" />
-						) : (
-							<ArrowRight className="size-5" />
-						)}
-					</Button>
-				)}
+				{!showScanner &&
+					(registrationContext === "appointment" ? (
+						<Button type="submit" ref={submitButtonRef}>
+							Continue <ArrowRight />
+						</Button>
+					) : (
+						<Button
+							ref={submitButtonRef}
+							type="submit"
+							size="lg"
+							className="text-lg"
+						>
+							{showDetails ? "Register" : "Continue"}
+							{showDetails ? (
+								<CheckIcon className="size-5" />
+							) : (
+								<ArrowRight className="size-5" />
+							)}
+						</Button>
+					))}
 				{isBarcodeDetectionAvailable() &&
 					!showDetails &&
 					registrationType !== "visitor" && (
@@ -400,7 +437,7 @@ export function RegistrationForm({
 						onClick={registrationType === "visitor" ? unsetVisitor : setVisitor}
 						className="px-0 self-start"
 					>
-						{isPatientRegistering
+						{registrationContext === "patient"
 							? registrationType === "visitor"
 								? "I am not a visitor"
 								: "I am a visitor"

@@ -80,3 +80,12 @@ export const getAge = (birthdate: string) => {
 
 export const isBarcodeDetectionAvailable = () =>
 	window.BarcodeDetector !== undefined;
+
+export function formatTime12(t: string): string {
+	const [hStr, mStr] = t.split(":");
+	const h = Number(hStr);
+	const m = Number(mStr);
+	const period = h >= 12 ? "PM" : "AM";
+	const h12 = h % 12 || 12;
+	return `${h12}:${String(m).padStart(2, "0")} ${period}`;
+}

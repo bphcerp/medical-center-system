@@ -139,7 +139,7 @@ function NewPatientDialog() {
 				{token === null ? (
 					<RegistrationForm
 						setToken={handleToken}
-						isPatientRegistering={false}
+						registrationContext="reception"
 					/>
 				) : (
 					<div className="flex flex-col items-center gap-4">
