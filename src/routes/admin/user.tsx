@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import { type PropsWithChildren, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Textarea } from "src/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -62,6 +61,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import {
 	type DoctorAvailabilityType,
 	doctorAvailabilityTypes,

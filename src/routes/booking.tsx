@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { CalendarDays } from "lucide-react";
 import { useState } from "react";
-import { TokenDisplay } from "src/components/token-display";
 import type { Doctor } from "@/api/admin";
 import StepConfirmBooking from "@/components/booking/step-book-appointment";
 import StepSelectDoctor from "@/components/booking/step-select-category";
@@ -12,6 +11,7 @@ import {
 	INITIAL_STATE,
 	type Slot,
 } from "@/components/booking/types";
+import { TokenDisplay } from "@/components/token-display";
 import TopBar from "@/components/topbar";
 import {
 	Accordion,

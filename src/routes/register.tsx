@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { TokenDisplay } from "src/components/token-display";
 import { RegistrationForm } from "@/components/registration-card";
+import { TokenDisplay } from "@/components/token-display";
 import { Card } from "@/components/ui/card";
 
 export const Route = createFileRoute("/register")({

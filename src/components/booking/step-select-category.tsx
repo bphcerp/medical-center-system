@@ -1,6 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import { useMemo, useState } from "react";
-import type { Doctor } from "src/api/admin";
+import type { Doctor } from "@/api/admin";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
