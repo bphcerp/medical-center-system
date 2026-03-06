@@ -153,15 +153,14 @@ const booking = createStrictHono()
 			"query",
 			z.object({
 				doctorId: z.string(),
-				date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+				date: z.iso.date(),
 			}),
 		),
 		async (c) => {
 			const query = c.req.valid("query");
 			const doctorId = Number(query.doctorId);
 			const date = query.date;
-			const dateObj = new Date(`${date}T00:00:00`);
-			const dayOfWeek = daysOfWeek[dateObj.getDay()];
+			const dayOfWeek = daysOfWeek[new Date(date).getDay()];
 
 			const [override] = await db
 				.select()
@@ -222,7 +221,7 @@ const booking = createStrictHono()
 			if (timeWindows.length === 0) {
 				return c.json({
 					success: true,
-					data: { slots: [], unavailable: false },
+					data: { slots: [], unavailable: true },
 				});
 			}
 
@@ -262,9 +261,9 @@ const booking = createStrictHono()
 			z.object({
 				patientId: z.number().int().positive(),
 				doctorId: z.number().int().positive(),
-				appointmentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-				slotStart: z.string().regex(/^\d{2}:\d{2}$/),
-				slotEnd: z.string().regex(/^\d{2}:\d{2}$/),
+				appointmentDate: z.iso.date(),
+				slotStart: z.iso.time(),
+				slotEnd: z.iso.time(),
 				notes: z.string().optional(),
 			}),
 		),

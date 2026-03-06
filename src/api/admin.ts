@@ -16,6 +16,9 @@ import { createStrictHono, strictValidator } from "@/lib/types/api";
 import { db } from ".";
 import { rbacCheck } from "./rbac";
 
+export type Doctor =
+	(typeof admin._schema)["/doctor/all"]["$get"]["output"]["data"][number];
+
 const admin = createStrictHono()
 	.use(rbacCheck({ permissions: ["admin"] }))
 	.get("/otp-override-logs", async (c) => {
