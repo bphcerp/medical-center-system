@@ -1,10 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { CalendarDays } from "lucide-react";
 import { useState } from "react";
 import type { Doctor } from "@/api/admin";
 import StepConfirmBooking from "@/components/booking/step-book-appointment";
-import StepSelectDoctor from "@/components/booking/step-select-category";
+import StepSelectDoctor from "@/components/booking/step-select-doctor";
 import StepSelectTimeslot from "@/components/booking/step-view-availability";
 import {
 	type BookingState,
@@ -36,15 +35,10 @@ export const Route = createFileRoute("/booking")({
 		return { specialities: specialities ?? [], allDoctors: allDoctors ?? [] };
 	},
 	component: BookingPage,
-	staticData: {
-		requiredPermissions: ["admin"],
-		icon: CalendarDays,
-		name: "Appointment Booking",
-	},
 });
 
 function BookingPage() {
-	useAuth(["admin"]);
+	useAuth(["vitals"]);
 
 	const { specialities, allDoctors } = Route.useLoaderData();
 

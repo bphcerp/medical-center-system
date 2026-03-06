@@ -5,8 +5,8 @@ import {
 	useParams,
 	useRouter,
 } from "@tanstack/react-router";
-import { Activity, ClipboardPlus, Plus } from "lucide-react";
-import { useState } from "react";
+import { Activity, CalendarIcon, ClipboardPlus, Plus } from "lucide-react";
+import { type PropsWithChildren, useState } from "react";
 import { PatientTypeBadge } from "@/components/patient-type-badge";
 import { RegistrationForm } from "@/components/registration-card";
 import { TokenButton, TokenButtonTitle } from "@/components/token-button";
@@ -101,8 +101,17 @@ function Vitals() {
 							);
 						})}
 					</div>
-					<div className="sticky flex flex-col bottom-0 bg-linear-to-t from-background to-transparent from-70% via-85% to-100% pb-4 pt-10">
-						<NewPatientDialog />
+					<div className="sticky flex flex-wrap gap-4 bottom-0 bg-linear-to-t from-background to-transparent from-70% via-85% to-100% pb-4 pt-10">
+						<NewPatientDialog>
+							<Button variant="secondary" size="lg" className="flex-1">
+								<Plus /> New Patient
+							</Button>
+						</NewPatientDialog>
+						<Button variant="outline" size="lg" className="flex-1" asChild>
+							<Link to="/booking" className="flex-1 block">
+								<CalendarIcon /> Book Appointment
+							</Link>
+						</Button>
 					</div>
 				</div>
 				<div
@@ -118,7 +127,7 @@ function Vitals() {
 	);
 }
 
-function NewPatientDialog() {
+function NewPatientDialog({ children }: PropsWithChildren) {
 	const router = useRouter();
 	const [token, setTokenInternal] = useState<number | null>(null);
 
@@ -129,11 +138,7 @@ function NewPatientDialog() {
 
 	return (
 		<Dialog onOpenChange={(open) => !open && setTokenInternal(null)}>
-			<DialogTrigger asChild>
-				<Button variant="secondary" size="lg">
-					<Plus /> New Patient
-				</Button>
-			</DialogTrigger>
+			<DialogTrigger asChild>{children}</DialogTrigger>
 
 			<DialogContent>
 				{token === null ? (
