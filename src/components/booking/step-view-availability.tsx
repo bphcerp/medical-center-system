@@ -2,11 +2,17 @@ import { format } from "date-fns";
 import { AlertCircle, ArrowRight, CalendarOff } from "lucide-react";
 import { useState } from "react";
 import type { Doctor } from "src/api/admin";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { formatTime12, handleErrors } from "@/lib/utils";
+import { cn, formatTime12, handleErrors } from "@/lib/utils";
 import { client } from "@/routes/api/$";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "../ui/empty";
 import { Field, FieldContent, FieldLabel, FieldTitle } from "../ui/field";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import type { Slot } from "./types";
@@ -28,9 +34,11 @@ export default function StepSelectTimeslot({
 	onSelect: (date: Date, slot: Slot) => void;
 }) {
 	const [slotsResult, setSlotsResult] = useState<SlotsResult | null>(null);
+	const [loading, setLoading] = useState(false);
 
 	const handleDateChange = async (date?: Date) => {
 		if (!date) return;
+		setLoading(true);
 
 		const res = await client.api.booking["available-slots"].$get({
 			query: {
@@ -49,6 +57,8 @@ export default function StepSelectTimeslot({
 						available: true,
 					},
 		);
+
+		setLoading(false);
 	};
 
 	return (
@@ -71,31 +81,25 @@ export default function StepSelectTimeslot({
 				{slotsResult ? (
 					slotsResult.available ? (
 						slotsResult?.slots.length === 0 ? (
-							<Alert className="flex-1">
-								<AlertCircle className="size-4" />
-								<AlertTitle>No slots available</AlertTitle>
-								<AlertDescription>
-									All slots are booked for this date. Please select another
-									date.
-								</AlertDescription>
-							</Alert>
+							<AllSlotsBooked />
 						) : (
-							<SlotGrid
-								slots={slotsResult.slots}
-								onSelect={(slot) => onSelect(slotsResult.date, slot)}
-							/>
+							<div
+								className={cn(
+									"flex-1 flex items-stretch transition-opacity",
+									loading && "pointer-events-none opacity-50",
+								)}
+							>
+								<SlotGrid
+									slots={slotsResult.slots}
+									onSelect={(slot) => onSelect(slotsResult.date, slot)}
+								/>
+							</div>
 						)
 					) : (
-						<Alert className="flex-1">
-							<CalendarOff className="size-4" />
-							<AlertTitle>Unavailable</AlertTitle>
-							<AlertDescription>
-								Doctor is unavailable on this date. Please select another date.
-							</AlertDescription>
-						</Alert>
+						<DoctorUnavailable />
 					)
 				) : (
-					<p className="text-muted-foreground text-sm py-4">
+					<p className="text-muted-foreground text-sm py-4 m-auto">
 						Select a date to see available slots.
 					</p>
 				)}
@@ -140,5 +144,37 @@ function SlotGrid({
 				Continue <ArrowRight />
 			</Button>
 		</div>
+	);
+}
+
+function AllSlotsBooked() {
+	return (
+		<Empty>
+			<EmptyHeader>
+				<EmptyMedia variant="icon">
+					<AlertCircle />
+				</EmptyMedia>
+				<EmptyTitle>No slots available</EmptyTitle>
+				<EmptyDescription>
+					All slots are booked for this date. Please select another date.
+				</EmptyDescription>
+			</EmptyHeader>
+		</Empty>
+	);
+}
+
+function DoctorUnavailable() {
+	return (
+		<Empty>
+			<EmptyHeader>
+				<EmptyMedia variant="icon">
+					<CalendarOff />
+				</EmptyMedia>
+				<EmptyTitle>Doctor unavailable</EmptyTitle>
+				<EmptyDescription>
+					The doctor is unavailable on this date. Please select another date.
+				</EmptyDescription>
+			</EmptyHeader>
+		</Empty>
 	);
 }
