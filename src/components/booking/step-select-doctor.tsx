@@ -78,7 +78,7 @@ export default function StepSelectDoctor({
 			) : (
 				<RadioGroup
 					name="doctorId"
-					className="grid gap-2"
+					className="grid gap-2 max-h-[calc(100dvh-26rem)] overflow-y-scroll"
 					value={selectedDoctorId}
 					onValueChange={setSelectedDoctorId}
 				>
@@ -104,7 +104,7 @@ export default function StepSelectDoctor({
 			<Button
 				type="submit"
 				disabled={!selectedDoctorId}
-				className="w-fit self-end"
+				className="w-fit self-end sticky bottom-0"
 			>
 				Continue <ArrowRight />
 			</Button>

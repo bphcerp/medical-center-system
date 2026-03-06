@@ -68,7 +68,7 @@ export default function StepSelectTimeslot({
 				<span className="font-semibold text-foreground">{doctor.name}</span>
 			</p>
 
-			<div className="flex flex-wrap gap-6 items-stretch justify-start w-full">
+			<div className="flex flex-col md:flex-row gap-6 items-stretch justify-start w-full">
 				<Calendar
 					mode="single"
 					selected={
@@ -83,17 +83,14 @@ export default function StepSelectTimeslot({
 						slotsResult?.slots.length === 0 ? (
 							<AllSlotsBooked />
 						) : (
-							<div
+							<SlotGrid
+								slots={slotsResult.slots}
+								onSelectSlot={(slot) => onSelect(slotsResult.date, slot)}
 								className={cn(
-									"flex-1 flex items-stretch transition-opacity",
-									loading && "pointer-events-none opacity-50",
+									"transition-opacity",
+									loading && "opacity-50 pointer-events-none",
 								)}
-							>
-								<SlotGrid
-									slots={slotsResult.slots}
-									onSelect={(slot) => onSelect(slotsResult.date, slot)}
-								/>
-							</div>
+							/>
 						)
 					) : (
 						<DoctorUnavailable />
@@ -110,14 +107,20 @@ export default function StepSelectTimeslot({
 
 function SlotGrid({
 	slots,
-	onSelect,
+	onSelectSlot,
+	className,
 }: {
 	slots: Slot[];
-	onSelect: (slot: Slot) => void;
-}) {
+	onSelectSlot: (slot: Slot) => void;
+} & React.HTMLAttributes<"div">) {
 	const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
 	return (
-		<div className="flex-1 min-w-md flex flex-col items-end justify-between gap-3">
+		<div
+			className={cn(
+				"flex-1 min-w-md flex flex-col items-end justify-between gap-3",
+				className,
+			)}
+		>
 			<RadioGroup
 				name="slot"
 				className="grid grid-cols-3 gap-2 w-full"
@@ -139,7 +142,7 @@ function SlotGrid({
 			<Button
 				className="w-fit"
 				disabled={selectedSlot === null}
-				onClick={() => selectedSlot && onSelect(selectedSlot)}
+				onClick={() => selectedSlot && onSelectSlot(selectedSlot)}
 			>
 				Continue <ArrowRight />
 			</Button>

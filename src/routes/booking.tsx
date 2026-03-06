@@ -83,14 +83,14 @@ function BookingPage() {
 	};
 
 	return (
-		<div className="h-dvh">
+		<div className="h-dvh w-full">
 			<TopBar title="Appointment Booking" />
 			<div className="h-after-topbar">
 				<Accordion
 					type="single"
 					value={state.step.toString()}
 					onValueChange={handleStepChange}
-					className="max-w-3xl mx-auto"
+					className="max-w-3xl mx-auto py-2 px-4"
 				>
 					{mode === "scheduling" && (
 						<>
