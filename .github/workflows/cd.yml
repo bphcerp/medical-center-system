@@ -8,7 +8,7 @@ on:
 
 jobs:
   medc-staging:
-    runs-on: medc
+    runs-on: medc-local
     env:
       DOCKER_HOST: unix:///run/user/1003/docker.sock
     steps:
