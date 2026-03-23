@@ -14,7 +14,7 @@ jobs:
     steps:
       - name: Pull repo and deploy
         run: |
-          cd /opt/services/team-medc
+          cd /opt/services/team-medc/medc-staging
           git fetch origin main
           git checkout main
           git reset --hard origin/main
