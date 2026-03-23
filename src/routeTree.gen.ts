@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TotpRouteImport } from './routes/totp'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InventoryRouteImport } from './routes/inventory'
@@ -29,6 +30,11 @@ import { Route as AdminDoctorManagementRouteImport } from './routes/admin/doctor
 import { Route as HistoryPatientIdIndexRouteImport } from './routes/history.$patientId/index'
 import { Route as HistoryPatientIdCaseIdRouteImport } from './routes/history.$patientId/$caseId'
 
+const TotpRoute = TotpRouteImport.update({
+  id: '/totp',
+  path: '/totp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -135,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/totp': typeof TotpRoute
   '/admin/doctor-management': typeof AdminDoctorManagementRoute
   '/admin/otp-overrides': typeof AdminOtpOverridesRoute
   '/admin/role': typeof AdminRoleRoute
@@ -156,6 +163,7 @@ export interface FileRoutesByTo {
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/totp': typeof TotpRoute
   '/admin/doctor-management': typeof AdminDoctorManagementRoute
   '/admin/otp-overrides': typeof AdminOtpOverridesRoute
   '/admin/role': typeof AdminRoleRoute
@@ -178,6 +186,7 @@ export interface FileRoutesById {
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/totp': typeof TotpRoute
   '/admin/doctor-management': typeof AdminDoctorManagementRoute
   '/admin/otp-overrides': typeof AdminOtpOverridesRoute
   '/admin/role': typeof AdminRoleRoute
@@ -201,6 +210,7 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/login'
     | '/register'
+    | '/totp'
     | '/admin/doctor-management'
     | '/admin/otp-overrides'
     | '/admin/role'
@@ -222,6 +232,7 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/login'
     | '/register'
+    | '/totp'
     | '/admin/doctor-management'
     | '/admin/otp-overrides'
     | '/admin/role'
@@ -243,6 +254,7 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/login'
     | '/register'
+    | '/totp'
     | '/admin/doctor-management'
     | '/admin/otp-overrides'
     | '/admin/role'
@@ -265,6 +277,7 @@ export interface RootRouteChildren {
   InventoryRoute: typeof InventoryRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  TotpRoute: typeof TotpRoute
   ApiSplatRoute: typeof ApiSplatRoute
   ConsultationIdRoute: typeof ConsultationIdRoute
   HistoryPatientIdCaseIdRoute: typeof HistoryPatientIdCaseIdRoute
@@ -273,6 +286,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/totp': {
+      id: '/totp'
+      path: '/totp'
+      fullPath: '/totp'
+      preLoaderRoute: typeof TotpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -461,6 +481,7 @@ const rootRouteChildren: RootRouteChildren = {
   InventoryRoute: InventoryRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  TotpRoute: TotpRoute,
   ApiSplatRoute: ApiSplatRoute,
   ConsultationIdRoute: ConsultationIdRoute,
   HistoryPatientIdCaseIdRoute: HistoryPatientIdCaseIdRoute,
