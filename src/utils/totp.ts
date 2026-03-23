@@ -29,14 +29,21 @@ const secrets = [
  */
 export function validateAllTOTP(codes: [string, string, string]): boolean {
 	try {
-		return codes.every((code, i) => {
-			const result = verifySync({
-				token: code,
-				secret: secrets[i],
-				...TOTP_OPTIONS,
+		const availableSecrets = [...secrets];
+		for (const code of codes) {
+			const matchIndex = availableSecrets.findIndex((secret) => {
+				const result = verifySync({
+					token: code,
+					secret,
+					...TOTP_OPTIONS,
+				});
+				return result.valid;
 			});
-			return result.valid;
-		});
+
+			if (matchIndex === -1) return false;
+			availableSecrets.splice(matchIndex, 1);
+		}
+		return true;
 	} catch {
 		return false;
 	}
