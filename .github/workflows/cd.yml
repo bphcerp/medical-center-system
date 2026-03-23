@@ -9,12 +9,13 @@ on:
 jobs:
   medc-staging:
     runs-on: medc
+    env:
+      DOCKER_HOST: unix:///run/user/1003/docker.sock
     steps:
-      - name: Pull repo and update
+      - name: Pull repo and deploy
         run: |
-          cd /home/ubuntu
-          cd medc/staging
+          cd /opt/services/team-medc
+          git fetch origin main
           git checkout main
-          git reset --hard HEAD
-          git pull origin main
+          git reset --hard origin/main
           docker compose --profile prod up --build -d
