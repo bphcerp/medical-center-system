@@ -19,3 +19,4 @@ jobs:
           git checkout main
           git reset --hard origin/main
           docker compose --profile prod up --build -d
+          docker compose exec -T app-prod bun run db:migrate

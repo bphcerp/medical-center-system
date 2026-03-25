@@ -5,7 +5,7 @@ import "./compression-polyfill";
 
 export default defineConfig({
 	out: "./drizzle",
-	schema: "./src/db/*",
+	schema: "./src/db/*.ts",
 	dialect: "postgresql",
 	dbCredentials: {
 		url: env.DATABASE_URL,

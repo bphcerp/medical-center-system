@@ -16,6 +16,9 @@ FROM base AS production
 WORKDIR /usr/local/app
 COPY --from=install /temp/dev/package.json package.json
 COPY --from=build /usr/local/app/.output ./.output
+COPY drizzle ./drizzle
+COPY src/lib/env.ts ./src/lib/env.ts
+COPY src/scripts/migrate.ts ./src/scripts/migrate.ts
 
 ENV NODE_ENV production
 CMD ["bun", "run", "start"]

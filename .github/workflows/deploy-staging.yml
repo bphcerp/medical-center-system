@@ -1,0 +1,22 @@
+name: Redeploy Staging
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+
+jobs:
+  medc-staging:
+    runs-on: medc-oci
+    env:
+      DOCKER_HOST: unix:///run/user/1003/docker.sock
+    steps:
+      - name: Pull repo and deploy
+        run: |
+          cd /opt/services/team-medc/medc-staging
+          git fetch origin staging
+          git checkout staging
+          git reset --hard origin/staging
+          docker compose --profile dev up --build -d
+          docker compose exec -T app bun run db:migrate
