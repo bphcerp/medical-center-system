@@ -66,6 +66,19 @@ services:
       - "${FRONTEND_PORT}:3000"
     profiles:
       - "dev"
+  
+  pgweb:
+    image: sosedoff/pgweb
+    command: pgweb --listen 8090 --sessions
+    ports: 
+      - "${PGWEB_EXTERNAL_PORT:-8090}:8090" 
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - "dev"
+
 
   app-prod:
     build:
@@ -82,6 +95,7 @@ services:
       - "${FRONTEND_PORT}:3000"
     profiles:
       - "prod"
+
 
 volumes:
   postgres-data:
