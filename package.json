@@ -7,7 +7,14 @@
 		"start": "bun --bun .output/server/index.mjs",
 		"build": "vite build",
 		"serve": "vite preview",
-		"lint": "biome ci src/"
+		"lint": "biome ci src/",
+		"db:generate": "bunx drizzle-kit generate",
+		"db:migrate": "bun run ./src/scripts/migrate.ts",
+		"db:studio": "bunx drizzle-kit studio",
+		"docker:db:up:dev": "docker compose --profile dev up -d db",
+		"docker:db:up:prod": "docker compose --profile prod up -d db",
+		"db:migrate:dev": "bun run docker:db:up:dev && DB_HOST=localhost bun run db:migrate",
+		"db:migrate:prod": "bun run docker:db:up:prod && DB_HOST=localhost bun run db:migrate"
 	},
 	"dependencies": {
 		"@hono/zod-validator": "^0.7.4",
