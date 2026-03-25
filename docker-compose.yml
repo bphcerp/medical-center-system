@@ -71,7 +71,7 @@ services:
     image: sosedoff/pgweb
     command: pgweb --listen 8090 --sessions
     ports: 
-      - "8090:8090" 
+      - "${PGWEB_EXTERNAL_PORT:-8090}:8090" 
     env_file: .env
     depends_on:
       db:
