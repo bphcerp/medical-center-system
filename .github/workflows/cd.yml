@@ -1,4 +1,4 @@
-name: Redeploy Staging
+name: Redeploy Production
 
 on:
   push:
@@ -7,14 +7,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  medc-staging:
+  medc-production:
     runs-on: medc-local
     env:
       DOCKER_HOST: unix:///run/user/1003/docker.sock
     steps:
       - name: Pull repo and deploy
         run: |
-          cd /opt/services/team-medc/medc-staging
+          cd /opt/services/team-medc/medc-prod
           git fetch origin main
           git checkout main
           git reset --hard origin/main
