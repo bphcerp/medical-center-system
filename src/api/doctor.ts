@@ -259,7 +259,7 @@ const doctor = createStrictHono()
 
 			const { specialityId, availabilityType } = c.req.valid("json");
 
-			const [assignment] = await db
+			const [assigned] = await db
 				.insert(doctorsTable)
 				.values({ id, specialityId, availabilityType })
 				.onConflictDoUpdate({
@@ -268,7 +268,7 @@ const doctor = createStrictHono()
 				})
 				.returning();
 
-			return c.json({ success: true, data: assignment });
+			return c.json({ success: true, data: assigned });
 		},
 	)
 	.get(

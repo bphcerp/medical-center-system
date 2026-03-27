@@ -74,7 +74,7 @@ import { formatTime12, handleErrors, titleCase } from "@/lib/utils";
 import { client } from "../api/$";
 
 export const Route = createFileRoute("/admin/user")({
-	component: Admin,
+	component: User,
 	loader: async () => {
 		const usersRes = await client.api.user.all.$get();
 		const rolesRes = await client.api.role.all.$get();
@@ -100,7 +100,7 @@ type Filter = {
 type NewSpeciality = { name: string; description: string | null };
 type ExistingSpeciality = { id: number };
 
-function Admin() {
+function User() {
 	useAuth(["admin"]);
 
 	const router = useRouter();

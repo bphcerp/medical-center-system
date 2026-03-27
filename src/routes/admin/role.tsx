@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Pencil, Plus, ShieldUser, Trash, X } from "lucide-react";
-import type React from "react";
 import { useState } from "react";
+import { CircleButton } from "src/components/circle-button";
 import DeletableBadge from "@/components/deleteable-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +36,7 @@ import {
 	permissionDescriptions,
 	permissions,
 } from "@/lib/types/permissions";
-import { cn, handleErrors } from "@/lib/utils";
+import { handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
 
 export const Route = createFileRoute("/admin/role")({
@@ -101,12 +101,10 @@ function RolePage() {
 
 	return (
 		<>
-			<div className="flex items-center justify-between mb-3">
-				<span className="flex gap-4 items-center">
-					<h1 className="text-2xl font-bold inline">Role Management</h1>
-					<CreateRoleButton onCreate={handleCreateRole} />
-				</span>
-			</div>
+			<span className="flex gap-4 items-center mb-3">
+				<h1 className="text-2xl font-bold inline">Role Management</h1>
+				<CreateRoleButton onCreate={handleCreateRole} />
+			</span>
 			<Table>
 				<TableHeader>
 					<TableRow>
@@ -302,7 +300,7 @@ function DeleteButton({
 	return (
 		<Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
 			<DialogTrigger asChild>
-				<CircleButton className="hover:bg-destructive hover:text-destructive-foreground hover:border-destructive">
+				<CircleButton variant="destructive">
 					<Trash />
 				</CircleButton>
 			</DialogTrigger>
@@ -374,22 +372,5 @@ function RenameButton({
 				</form>
 			</DialogContent>
 		</Dialog>
-	);
-}
-
-function CircleButton({
-	children,
-	className,
-	...props
-}: React.ComponentProps<typeof Button>) {
-	return (
-		<Button
-			variant="card"
-			className={cn("h-7 w-7 disabled:bg-transparent rounded-full", className)}
-			size="sm"
-			{...props}
-		>
-			{children}
-		</Button>
 	);
 }
