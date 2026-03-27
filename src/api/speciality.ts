@@ -27,12 +27,12 @@ const speciality = createStrictHono()
 		async (c) => {
 			const { name, description } = c.req.valid("json");
 
-			const [category] = await db
+			const [speciality] = await db
 				.insert(doctorSpecialitiesTable)
 				.values({ name, description })
 				.returning();
 
-			return c.json({ success: true, data: category });
+			return c.json({ success: true, data: speciality });
 		},
 	);
 
