@@ -9,6 +9,14 @@ import {
 	sql,
 } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
+import { rolesTable, usersTable } from "src/db/auth";
+import {
+	doctorAvailabilityTypeEnum,
+	doctorScheduleTable,
+	doctorSpecialitiesTable,
+	doctorsTable,
+} from "src/db/doctor";
+import { dayOfWeekEnum } from "src/db/utils";
 import z from "zod";
 import {
 	casePrescriptionsTable,
@@ -35,6 +43,8 @@ import { createStrictHono, strictValidator } from "@/lib/types/api";
 import { getAge } from "@/lib/utils";
 import { db } from ".";
 import { rbacCheck } from "./rbac";
+import speciality from "./speciality";
+import { getPermissionsForUser } from "./utils";
 
 export const getCaseDetail = async (caseId: number) => {
 	const caseDetails = await db
@@ -174,7 +184,152 @@ export const getCaseDetail = async (caseId: number) => {
 	};
 };
 
+export type Doctor =
+	(typeof doctor._schema)["/all"]["$get"]["output"]["data"][number];
+
 const doctor = createStrictHono()
+	.route("/speciality", speciality)
+	// TODO: not everybody should be able to view
+	// all doctors, there should be a permission for this
+	.get("/all", async (c) => {
+		const doctors = await db
+			.select({
+				id: doctorsTable.id,
+				name: usersTable.name,
+				username: usersTable.username,
+				specialityId: doctorsTable.specialityId,
+				specialityName: doctorSpecialitiesTable.name,
+				specialityIsActive: doctorSpecialitiesTable.isActive,
+				availabilityType: doctorsTable.availabilityType,
+			})
+			.from(doctorsTable)
+			.innerJoin(usersTable, eq(usersTable.id, doctorsTable.id))
+			.innerJoin(
+				doctorSpecialitiesTable,
+				eq(doctorSpecialitiesTable.id, doctorsTable.specialityId),
+			);
+
+		return c.json({ success: true, data: doctors });
+	})
+	// These endpoints are for admin use only. Doctor endpoints come afterwards
+	.get("/unassigned", rbacCheck({ permissions: ["admin"] }), async (c) => {
+		const doctors = await db
+			.select({
+				id: usersTable.id,
+				name: usersTable.name,
+				username: usersTable.username,
+			})
+			.from(usersTable)
+			.innerJoin(rolesTable, eq(usersTable.role, rolesTable.id))
+			.leftJoin(doctorsTable, eq(usersTable.id, doctorsTable.id))
+			.where(
+				and(
+					arrayContains(rolesTable.allowed, ["doctor"]),
+					isNull(doctorsTable.id),
+				),
+			);
+
+		return c.json({ success: true, data: doctors });
+	})
+	.post(
+		"/:doctorId",
+		rbacCheck({ permissions: ["admin"] }),
+		strictValidator(
+			"param",
+			z.object({
+				doctorId: z.coerce.number().int().positive(),
+			}),
+		),
+		strictValidator(
+			"json",
+			z.object({
+				specialityId: z.number().int().positive(),
+				availabilityType: z.enum(doctorAvailabilityTypeEnum.enumValues),
+			}),
+		),
+		async (c) => {
+			const { doctorId: id } = c.req.valid("param");
+
+			if (!(await isDoctor(id))) {
+				return c.json(
+					{ success: false, error: { message: "User is not a doctor" } },
+					400,
+				);
+			}
+
+			const { specialityId, availabilityType } = c.req.valid("json");
+
+			const [assignment] = await db
+				.insert(doctorsTable)
+				.values({ id, specialityId, availabilityType })
+				.onConflictDoUpdate({
+					target: doctorsTable.id,
+					set: { specialityId, availabilityType },
+				})
+				.returning();
+
+			return c.json({ success: true, data: assignment });
+		},
+	)
+	.get(
+		"/:doctorId/schedule",
+		rbacCheck({ permissions: ["admin"] }),
+		strictValidator(
+			"param",
+			z.object({ doctorId: z.coerce.number().int().positive() }),
+		),
+		async (c) => {
+			const { doctorId } = c.req.valid("param");
+
+			const templates = await db
+				.select()
+				.from(doctorScheduleTable)
+				.where(eq(doctorScheduleTable.doctorId, doctorId))
+				.orderBy(doctorScheduleTable.dayOfWeek, doctorScheduleTable.startTime);
+
+			return c.json({ success: true, data: templates });
+		},
+	)
+	.put(
+		"/:doctorId/schedule",
+		rbacCheck({ permissions: ["admin"] }),
+		strictValidator(
+			"param",
+			z.object({ doctorId: z.coerce.number().int().positive() }),
+		),
+		strictValidator(
+			"json",
+			z.object({
+				slots: z
+					.array(
+						z.object({
+							dayOfWeek: z.enum(dayOfWeekEnum.enumValues),
+							startTime: z.iso.time(),
+							endTime: z.iso.time(),
+							slotDurationMinutes: z.number().int().positive(),
+						}),
+					)
+					.min(1),
+			}),
+		),
+		async (c) => {
+			const { doctorId } = c.req.valid("param");
+			const { slots } = c.req.valid("json");
+
+			await db.transaction(async (tx) => {
+				await tx
+					.delete(doctorScheduleTable)
+					.where(eq(doctorScheduleTable.doctorId, doctorId));
+
+				await tx
+					.insert(doctorScheduleTable)
+					.values(slots.map((s) => ({ doctorId, ...s })));
+			});
+
+			return c.json({ success: true, data: null });
+		},
+	)
+	// These endpoints are for doctor use only
 	.use(rbacCheck({ permissions: ["doctor"] }))
 	.get("/queue", async (c) => {
 		const payload = c.get("jwtPayload");
@@ -445,5 +600,10 @@ const doctor = createStrictHono()
 			});
 		},
 	);
+
+const isDoctor = async (id: number) => {
+	const perms = await getPermissionsForUser(id);
+	return perms.includes("doctor");
+};
 
 export default doctor;

@@ -76,7 +76,7 @@ export const Route = createFileRoute("/admin/user")({
 	loader: async () => {
 		const usersRes = await client.api.user.all.$get();
 		const rolesRes = await client.api.role.all.$get();
-		const specialitiesRes = await client.api.admin.specialization.all.$get();
+		const specialitiesRes = await client.api.doctor.speciality.all.$get();
 
 		const users = (await handleErrors(usersRes)) ?? [];
 		const roles = (await handleErrors(rolesRes)) ?? [];
@@ -136,7 +136,7 @@ function Admin() {
 	};
 
 	const createSpeciality = async (speciality: NewSpeciality) => {
-		const res = await client.api.admin.specialization.$post({
+		const res = await client.api.doctor.speciality.$post({
 			json: {
 				name: speciality.name,
 				description:
@@ -157,7 +157,7 @@ function Admin() {
 
 		if (!data) return;
 
-		const res = await client.api.admin.doctor[":doctorId"].$post({
+		const res = await client.api.doctor[":doctorId"].$post({
 			param: { doctorId: doctorId.toString() },
 			json: { specialityId: data.id, availabilityType },
 		});

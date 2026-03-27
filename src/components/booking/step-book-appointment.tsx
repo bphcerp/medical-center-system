@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { Check } from "lucide-react";
 import React, { type PropsWithChildren, useState } from "react";
 import { toast } from "sonner";
-import type { Doctor } from "@/api/admin";
+import type { Doctor } from "src/api/doctor";
 import { RegistrationForm } from "@/components/registration-card";
 import { Button } from "@/components/ui/button";
 import { cn, formatTime12, handleErrors } from "@/lib/utils";

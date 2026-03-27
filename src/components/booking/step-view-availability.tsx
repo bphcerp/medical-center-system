@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import { AlertCircle, ArrowRight, CalendarOff } from "lucide-react";
 import { useState } from "react";
-import type { Doctor } from "@/api/admin";
+import type { Doctor } from "@/api/doctor";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { cn, formatTime12, handleErrors } from "@/lib/utils";

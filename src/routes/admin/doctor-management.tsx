@@ -51,9 +51,9 @@ export const Route = createFileRoute("/admin/doctor-management")({
 	component: DoctorManagement,
 	loader: async () => {
 		const [doctorsRes, specializationsRes, unassignedRes] = await Promise.all([
-			client.api.admin.doctor.all.$get(),
-			client.api.admin.specialization.all.$get(),
-			client.api.admin.doctor.unassigned.$get(),
+			client.api.doctor.all.$get(),
+			client.api.doctor.speciality.all.$get(),
+			client.api.doctor.unassigned.$get(),
 		]);
 		const specializations = await handleErrors(specializationsRes);
 		const doctors = await handleErrors(doctorsRes);
@@ -78,7 +78,7 @@ function DoctorManagement() {
 		name: string,
 		description: string | undefined,
 	) => {
-		const res = await client.api.admin.specialization.$post({
+		const res = await client.api.doctor.speciality.$post({
 			json: { name, description },
 		});
 		const data = await handleErrors(res);
@@ -91,7 +91,7 @@ function DoctorManagement() {
 		specialityId: number,
 		availabilityType: (typeof doctorAvailabilityTypeEnum.enumValues)[number],
 	) => {
-		const res = await client.api.admin.doctor[":doctorId"].$post({
+		const res = await client.api.doctor[":doctorId"].$post({
 			param: { doctorId: doctorId.toString() },
 			json: { specialityId, availabilityType },
 		});
@@ -256,7 +256,7 @@ export function EditScheduleDialog({
 
 	useEffect(() => {
 		if (!isOpen) return;
-		client.api.admin.doctor[":doctorId"].schedule
+		client.api.doctor[":doctorId"].schedule
 			.$get({ param: { doctorId: doctorId.toString() } })
 			.then((res) => handleErrors(res))
 			.then((data) => {
@@ -312,7 +312,7 @@ export function EditScheduleDialog({
 				slotDurationMinutes: s.slotDurationMinutes,
 			})),
 		);
-		const res = await client.api.admin.doctor[":doctorId"].schedule.$put({
+		const res = await client.api.doctor[":doctorId"].schedule.$put({
 			param: { doctorId: doctorId.toString() },
 			json: { slots: allSlots },
 		});

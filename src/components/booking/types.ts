@@ -1,4 +1,4 @@
-import type { Doctor } from "@/api/admin";
+import type { Doctor } from "src/api/doctor";
 
 export type Speciality = {
 	id: number;

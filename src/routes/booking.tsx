@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { useState } from "react";
-import type { Doctor } from "@/api/admin";
+import type { Doctor } from "src/api/doctor";
 import StepConfirmBooking from "@/components/booking/step-book-appointment";
 import StepSelectDoctor from "@/components/booking/step-select-doctor";
 import StepSelectTimeslot from "@/components/booking/step-view-availability";
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/booking")({
 	loader: async () => {
 		const [specialitiesRes, doctorsRes] = await Promise.all([
 			client.api.booking.categories.$get(),
-			client.api.admin.doctor.all.$get(),
+			client.api.doctor.all.$get(),
 		]);
 		const [specialities, allDoctors] = await Promise.all([
 			handleErrors(specialitiesRes),
