@@ -25,7 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
 
-export const Route = createFileRoute("/admin/doctor-management")({
+export const Route = createFileRoute("/admin/specialities")({
 	component: DoctorManagement,
 	loader: async () => {
 		const specialitiesRes = await client.api.doctor.speciality.all.$get();

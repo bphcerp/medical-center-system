@@ -24,9 +24,9 @@ import { Route as LabCaseIdRouteImport } from './routes/lab/$caseId'
 import { Route as ConsultationIdRouteImport } from './routes/consultation.$id'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
 import { Route as AdminUserRouteImport } from './routes/admin/user'
+import { Route as AdminSpecialitiesRouteImport } from './routes/admin/specialities'
 import { Route as AdminRoleRouteImport } from './routes/admin/role'
 import { Route as AdminOtpOverridesRouteImport } from './routes/admin/otp-overrides'
-import { Route as AdminDoctorManagementRouteImport } from './routes/admin/doctor-management'
 import { Route as HistoryPatientIdIndexRouteImport } from './routes/history.$patientId/index'
 import { Route as HistoryPatientIdCaseIdRouteImport } from './routes/history.$patientId/$caseId'
 
@@ -105,6 +105,11 @@ const AdminUserRoute = AdminUserRouteImport.update({
   path: '/user',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminSpecialitiesRoute = AdminSpecialitiesRouteImport.update({
+  id: '/specialities',
+  path: '/specialities',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminRoleRoute = AdminRoleRouteImport.update({
   id: '/role',
   path: '/role',
@@ -113,11 +118,6 @@ const AdminRoleRoute = AdminRoleRouteImport.update({
 const AdminOtpOverridesRoute = AdminOtpOverridesRouteImport.update({
   id: '/otp-overrides',
   path: '/otp-overrides',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminDoctorManagementRoute = AdminDoctorManagementRouteImport.update({
-  id: '/doctor-management',
-  path: '/doctor-management',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const HistoryPatientIdIndexRoute = HistoryPatientIdIndexRouteImport.update({
@@ -142,9 +142,9 @@ export interface FileRoutesByFullPath {
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/admin/doctor-management': typeof AdminDoctorManagementRoute
   '/admin/otp-overrides': typeof AdminOtpOverridesRoute
   '/admin/role': typeof AdminRoleRoute
+  '/admin/specialities': typeof AdminSpecialitiesRoute
   '/admin/user': typeof AdminUserRoute
   '/api/$': typeof ApiSplatRoute
   '/consultation/$id': typeof ConsultationIdRoute
@@ -164,9 +164,9 @@ export interface FileRoutesByTo {
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/admin/doctor-management': typeof AdminDoctorManagementRoute
   '/admin/otp-overrides': typeof AdminOtpOverridesRoute
   '/admin/role': typeof AdminRoleRoute
+  '/admin/specialities': typeof AdminSpecialitiesRoute
   '/admin/user': typeof AdminUserRoute
   '/api/$': typeof ApiSplatRoute
   '/consultation/$id': typeof ConsultationIdRoute
@@ -187,9 +187,9 @@ export interface FileRoutesById {
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/admin/doctor-management': typeof AdminDoctorManagementRoute
   '/admin/otp-overrides': typeof AdminOtpOverridesRoute
   '/admin/role': typeof AdminRoleRoute
+  '/admin/specialities': typeof AdminSpecialitiesRoute
   '/admin/user': typeof AdminUserRoute
   '/api/$': typeof ApiSplatRoute
   '/consultation/$id': typeof ConsultationIdRoute
@@ -211,9 +211,9 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/login'
     | '/register'
-    | '/admin/doctor-management'
     | '/admin/otp-overrides'
     | '/admin/role'
+    | '/admin/specialities'
     | '/admin/user'
     | '/api/$'
     | '/consultation/$id'
@@ -233,9 +233,9 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/login'
     | '/register'
-    | '/admin/doctor-management'
     | '/admin/otp-overrides'
     | '/admin/role'
+    | '/admin/specialities'
     | '/admin/user'
     | '/api/$'
     | '/consultation/$id'
@@ -255,9 +255,9 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/login'
     | '/register'
-    | '/admin/doctor-management'
     | '/admin/otp-overrides'
     | '/admin/role'
+    | '/admin/specialities'
     | '/admin/user'
     | '/api/$'
     | '/consultation/$id'
@@ -391,6 +391,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUserRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/specialities': {
+      id: '/admin/specialities'
+      path: '/specialities'
+      fullPath: '/admin/specialities'
+      preLoaderRoute: typeof AdminSpecialitiesRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/role': {
       id: '/admin/role'
       path: '/role'
@@ -403,13 +410,6 @@ declare module '@tanstack/react-router' {
       path: '/otp-overrides'
       fullPath: '/admin/otp-overrides'
       preLoaderRoute: typeof AdminOtpOverridesRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/doctor-management': {
-      id: '/admin/doctor-management'
-      path: '/doctor-management'
-      fullPath: '/admin/doctor-management'
-      preLoaderRoute: typeof AdminDoctorManagementRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/history/$patientId/': {
@@ -430,16 +430,16 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteRouteChildren {
-  AdminDoctorManagementRoute: typeof AdminDoctorManagementRoute
   AdminOtpOverridesRoute: typeof AdminOtpOverridesRoute
   AdminRoleRoute: typeof AdminRoleRoute
+  AdminSpecialitiesRoute: typeof AdminSpecialitiesRoute
   AdminUserRoute: typeof AdminUserRoute
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
-  AdminDoctorManagementRoute: AdminDoctorManagementRoute,
   AdminOtpOverridesRoute: AdminOtpOverridesRoute,
   AdminRoleRoute: AdminRoleRoute,
+  AdminSpecialitiesRoute: AdminSpecialitiesRoute,
   AdminUserRoute: AdminUserRoute,
 }
 
