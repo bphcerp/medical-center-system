@@ -117,7 +117,7 @@ export const getCaseDetail = async (caseId: number) => {
 	// Fetch test status and files
 	const testDetails = await db
 		.select({
-			id: caseLabReportsTable.id,
+			id: caseLabReportsTable.testId,
 			fileId: labTestFilesTable.fileId,
 			filename: filesTable.filename,
 			status: caseLabReportsTable.status,
@@ -473,7 +473,36 @@ const doctor = createStrictHono()
 			const { caseId, consultationNotes, prescriptions, diagnosis, tests } =
 				c.req.valid("json");
 
-			await db.transaction(async (tx) => {
+			if (tests !== undefined) {
+				const validTests = await db
+					.select({ id: labTestsMasterTable.id })
+					.from(labTestsMasterTable)
+					.where(
+						and(
+							inArray(labTestsMasterTable.id, tests),
+							eq(labTestsMasterTable.isActive, true),
+						),
+					);
+
+				if (validTests.length !== tests.length) {
+					return c.json(
+						{
+							success: false,
+							error: {
+								message: "Some test IDs are invalid",
+								details: {
+									invalidTestIds: tests.filter(
+										(id) => !validTests.some((test) => test.id === id),
+									),
+								},
+							},
+						},
+						400,
+					);
+				}
+			}
+
+			const result = await db.transaction(async (tx) => {
 				const updated = await tx
 					.update(casesTable)
 					.set({
@@ -490,10 +519,7 @@ const doctor = createStrictHono()
 					.returning();
 
 				if (updated.length === 0) {
-					return c.json(
-						{ success: false, error: { message: "Case not found" } },
-						404,
-					);
+					return { ok: false as const, status: 404, message: "Case not found" };
 				}
 
 				if (prescriptions !== undefined) {
@@ -507,40 +533,38 @@ const doctor = createStrictHono()
 				}
 
 				if (tests !== undefined) {
-					const validTests = await tx
-						.select({ id: labTestsMasterTable.id })
-						.from(labTestsMasterTable)
-						.where(
-							and(
-								inArray(labTestsMasterTable.id, tests),
-								eq(labTestsMasterTable.isActive, true),
-							),
-						);
-
-					if (validTests.length !== tests.length) {
-						return c.json(
-							{
-								success: false,
-								error: {
-									message: "Some test IDs are invalid",
-									details: {
-										invalidTestIds: tests.filter(
-											(id) => !validTests.some((test) => test.id === id),
-										),
-									},
-								},
-							},
-							400,
-						);
-					}
-
-					await tx
-						.delete(caseLabReportsTable)
+					const existingReports = await tx
+						.select({ testId: caseLabReportsTable.testId })
+						.from(caseLabReportsTable)
 						.where(eq(caseLabReportsTable.caseId, caseId));
 
-					if (tests.length > 0) {
+					const existingTestIdSet = new Set(
+						existingReports.map((report) => report.testId),
+					);
+					const nextTestIdSet = new Set(tests);
+
+					const testIdsToDelete = existingReports
+						.map((report) => report.testId)
+						.filter((testId) => !nextTestIdSet.has(testId));
+
+					if (testIdsToDelete.length > 0) {
+						await tx
+							.delete(caseLabReportsTable)
+							.where(
+								and(
+									eq(caseLabReportsTable.caseId, caseId),
+									inArray(caseLabReportsTable.testId, testIdsToDelete),
+								),
+							);
+					}
+
+					const testIdsToInsert = tests.filter(
+						(testId) => !existingTestIdSet.has(testId),
+					);
+
+					if (testIdsToInsert.length > 0) {
 						await tx.insert(caseLabReportsTable).values(
-							tests.map((testId) => ({
+							testIdsToInsert.map((testId) => ({
 								caseId,
 								testId,
 								status: "Requested" as const,
@@ -548,7 +572,13 @@ const doctor = createStrictHono()
 						);
 					}
 				}
+
+				return { ok: true as const };
 			});
+
+			if (!result.ok) {
+				return c.json({ success: false, error: { message: result.message } }, 404);
+			}
 
 			return c.json({
 				success: true,
