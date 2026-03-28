@@ -1,5 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useId } from "react";
+import { useEffect, useId } from "react";
+import { toast } from "sonner";
+import { LoginErrors } from "src/lib/types/api";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -8,8 +11,13 @@ import { handleErrors } from "@/lib/utils";
 import Logo from "@/styles/logo.svg";
 import { client } from "./api/$";
 
+const loginSchema = z.object({
+	error: z.enum(LoginErrors).optional(),
+});
+
 export const Route = createFileRoute("/login")({
 	component: Login,
+	validateSearch: loginSchema,
 });
 
 function Login() {
@@ -17,6 +25,17 @@ function Login() {
 	const passwordId = useId();
 	const navigate = useNavigate();
 	const { allowedRoutes } = useAuth();
+
+	const { error } = Route.useSearch();
+
+	useEffect(() => {
+		if (error === "email_not_found") {
+			toast.error("No account found with this email.");
+		} else if (error) {
+			toast.error(`Could not sign in with Google: ${error}`);
+		}
+	}, [error]);
+
 	if (allowedRoutes.length > 0) {
 		navigate({ to: "/" });
 		return null;
@@ -37,6 +56,10 @@ function Login() {
 		navigate({
 			to: "/",
 		});
+	};
+
+	const handleGoogleLogin = () => {
+		window.location.assign("/api/oauth/google/start");
 	};
 
 	return (
@@ -70,6 +93,15 @@ function Login() {
 						</Field>
 						<Field>
 							<Button type="submit">Login</Button>
+						</Field>
+						<Field>
+							<Button
+								type="button"
+								variant="secondary"
+								onClick={handleGoogleLogin}
+							>
+								Continue with Google
+							</Button>
 						</Field>
 					</FieldGroup>
 				</FieldSet>

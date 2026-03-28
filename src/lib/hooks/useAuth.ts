@@ -7,11 +7,17 @@ import type { JWTPayload } from "@/lib/types/api";
 import type { Permission } from "../types/permissions";
 
 const useAuth = (requiredPermissions: Permission[] = []) => {
-	const { flatRoutes, navigate } = useRouter();
+	const { flatRoutes, navigate, state } = useRouter();
 	const [cookies] = useCookies<"token", CookieValues>(["token"]);
 
+	// The login route may have query parameters for errors, so we dont
+	const isLoginRoute = state.location.pathname === "/login";
+	console.error(state);
+
 	if (!cookies.token) {
-		navigate({ to: "/login" });
+		if (!isLoginRoute) {
+			navigate({ to: "/login" });
+		}
 		return { allowedRoutes: [] };
 	}
 
@@ -41,7 +47,9 @@ const useAuth = (requiredPermissions: Permission[] = []) => {
 	} catch (e) {
 		toast.error("Error decoding token in useAuth");
 		console.error("Error decoding token in useAuth:", e);
-		navigate({ to: "/login" });
+		if (!isLoginRoute) {
+			navigate({ to: "/login" });
+		}
 		return { allowedRoutes: [] };
 	}
 };
