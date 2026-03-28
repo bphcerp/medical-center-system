@@ -368,18 +368,20 @@ export const unauthenticated = createStrictHono()
 		strictValidator(
 			"json",
 			z.object({
+				name: z.string().min(1),
 				username: z.string().min(1),
 				password: z.string().min(1),
+				email: z.email(),
 			}),
 		),
 		async (c) => {
-			const { username, password } = c.req.valid("json");
+			const { username, password, email, name } = c.req.valid("json");
 			const hash = await Bun.password.hash(password, "bcrypt");
 			const [user] = await db
 				.insert(usersTable)
 				.values({
-					email: "",
-					name: "",
+					email: email,
+					name: name,
 					passwordHash: hash,
 					phone: "",
 					role: 1,

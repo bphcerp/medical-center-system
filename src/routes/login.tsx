@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useId } from "react";
 import { toast } from "sonner";
+import { Separator } from "src/components/ui/separator";
 import { LoginErrors } from "src/lib/types/api";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -63,7 +64,7 @@ function Login() {
 	};
 
 	return (
-		<div className="w-full flex flex-col items-center pt-8 lg:pt-24">
+		<div className="w-full h-full flex flex-col items-center pb-8 pt-8 lg:pt-24">
 			<div className="w-full items-center flex flex-col gap-8 pb-8">
 				<img src={Logo} alt="BITS Pilani Logo" className="size-36" />
 				<span className="text-2xl font-semibold">Medical Center System</span>
@@ -94,6 +95,7 @@ function Login() {
 						<Field>
 							<Button type="submit">Login</Button>
 						</Field>
+						<Separator />
 						<Field>
 							<Button
 								type="button"
@@ -106,6 +108,7 @@ function Login() {
 					</FieldGroup>
 				</FieldSet>
 			</form>
+			<div className="flex-1" />
 			<Link
 				to="/about"
 				className="mt-4 text-sm underline text-muted-foreground"

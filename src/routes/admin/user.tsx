@@ -3,13 +3,20 @@ import {
 	Calendar,
 	FilterIcon,
 	Loader2Icon,
+	Plus,
 	PlusIcon,
 	Search,
 	ShieldUser,
 	Stethoscope,
 	XIcon,
 } from "lucide-react";
-import { type PropsWithChildren, useEffect, useMemo, useState } from "react";
+import {
+	type PropsWithChildren,
+	useEffect,
+	useId,
+	useMemo,
+	useState,
+} from "react";
 import { toast } from "sonner";
 import type { Day } from "src/lib/types/day";
 import { Badge } from "@/components/ui/badge";
@@ -173,7 +180,10 @@ function User() {
 	return (
 		<>
 			<div className="flex flex-wrap items-center gap-4 justify-between mb-3">
-				<h1 className="font-bold text-2xl">Manage Staff</h1>
+				<span className="flex gap-4">
+					<h1 className="text-2xl font-bold inline">Manage Staff</h1>
+					<AddUserButton />
+				</span>
 				<div className="flex gap-4 items-center">
 					<div className="flex">
 						<InputGroup className="w-80">
@@ -860,6 +870,104 @@ function EditScheduleDialog({
 						)}
 					</Button>
 				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+function AddUserButton() {
+	const nameId = useId();
+	const usernameId = useId();
+	const emailId = useId();
+	const passwordId = useId();
+	const router = useRouter();
+
+	const [open, setOpen] = useState(false);
+
+	const handleAddUser = async (formData: FormData) => {
+		const name = formData.get("name") as string;
+		const username = formData.get("username") as string;
+		const email = formData.get("email") as string;
+		const password = formData.get("password") as string;
+
+		const res = await client.api.signup.$post({
+			json: { name, username, email, password },
+		});
+		const data = await handleErrors(res);
+		if (data) {
+			await router.invalidate();
+			setOpen(false);
+			toast.success("User created successfully");
+		}
+	};
+
+	return (
+		<Dialog open={open} onOpenChange={setOpen}>
+			<DialogTrigger asChild>
+				<Button variant="outline" size="sm" className="h-9">
+					<Plus /> Add User
+				</Button>
+			</DialogTrigger>
+
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Add User</DialogTitle>
+				</DialogHeader>
+				<form className="space-y-4" action={handleAddUser}>
+					<FieldSet>
+						<FieldGroup className="gap-4">
+							<Field>
+								<FieldLabel htmlFor={nameId}>Name</FieldLabel>
+								<Input
+									name="name"
+									type="text"
+									placeholder="Full name"
+									required
+								/>
+							</Field>
+
+							<Field>
+								<FieldLabel htmlFor={emailId}>Email</FieldLabel>
+								<Input
+									name="email"
+									type="email"
+									placeholder="user@example.com"
+									required
+								/>
+							</Field>
+
+							<Field>
+								<FieldLabel htmlFor={usernameId}>Username</FieldLabel>
+								<Input
+									name="username"
+									type="text"
+									placeholder="Username"
+									required
+								/>
+							</Field>
+
+							<Field>
+								<FieldLabel htmlFor={passwordId}>Password</FieldLabel>
+								<Input
+									id={passwordId}
+									name="password"
+									type="password"
+									placeholder="Password"
+									required
+								/>
+							</Field>
+						</FieldGroup>
+					</FieldSet>
+
+					<DialogFooter>
+						<DialogClose asChild>
+							<Button type="button" variant="outline">
+								Cancel
+							</Button>
+						</DialogClose>
+						<Button type="submit">Create User</Button>
+					</DialogFooter>
+				</form>
 			</DialogContent>
 		</Dialog>
 	);
