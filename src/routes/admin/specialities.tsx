@@ -1,6 +1,13 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Plus, Stethoscope } from "lucide-react";
 import { useId, useState } from "react";
+import {
+	Empty,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "src/components/ui/empty";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -62,32 +69,47 @@ function DoctorManagement() {
 				Doctor Specialities
 				<CreateSpecialityButton onCreate={handleCreateSpeciality} />
 			</h1>
-			<Table>
-				<TableHeader>
-					<TableRow>
-						<TableHead>Name</TableHead>
-						<TableHead>Description</TableHead>
-						<TableHead>Status</TableHead>
-					</TableRow>
-				</TableHeader>
-				<TableBody>
-					{specialities.map((sp) => (
-						<TableRow key={sp.id}>
-							<TableCell className="font-medium">{sp.name}</TableCell>
-							<TableCell className="text-muted-foreground">
-								{sp.description ?? "—"}
-							</TableCell>
-							<TableCell>
-								{sp.isActive ? (
-									<span className="text-green-600 font-medium">Active</span>
-								) : (
-									<span className="text-muted-foreground">Inactive</span>
-								)}
-							</TableCell>
+			{specialities.length === 0 ? (
+				<Empty className="mt-36">
+					<EmptyHeader>
+						<EmptyMedia>
+							<Stethoscope />
+						</EmptyMedia>
+						<EmptyTitle>No specialities yet.</EmptyTitle>
+						<EmptyDescription>
+							Create a speciality that doctors can be assigned to, so that
+							patients can find the right doctor for their needs.
+						</EmptyDescription>
+					</EmptyHeader>
+				</Empty>
+			) : (
+				<Table>
+					<TableHeader>
+						<TableRow>
+							<TableHead>Name</TableHead>
+							<TableHead>Description</TableHead>
+							<TableHead>Status</TableHead>
 						</TableRow>
-					))}
-				</TableBody>
-			</Table>
+					</TableHeader>
+					<TableBody>
+						{specialities.map((sp) => (
+							<TableRow key={sp.id}>
+								<TableCell className="font-medium">{sp.name}</TableCell>
+								<TableCell className="text-muted-foreground">
+									{sp.description ?? "—"}
+								</TableCell>
+								<TableCell>
+									{sp.isActive ? (
+										<span className="text-green-600 font-medium">Active</span>
+									) : (
+										<span className="text-muted-foreground">Inactive</span>
+									)}
+								</TableCell>
+							</TableRow>
+						))}
+					</TableBody>
+				</Table>
+			)}
 		</div>
 	);
 }
