@@ -1,5 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useId } from "react";
+import { useEffect, useId } from "react";
+import { toast } from "sonner";
+import { Separator } from "src/components/ui/separator";
+import { LoginErrors } from "src/lib/types/api";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -8,8 +12,13 @@ import { handleErrors } from "@/lib/utils";
 import Logo from "@/styles/logo.svg";
 import { client } from "./api/$";
 
+const loginSchema = z.object({
+	error: z.enum(LoginErrors).optional(),
+});
+
 export const Route = createFileRoute("/login")({
 	component: Login,
+	validateSearch: loginSchema,
 });
 
 function Login() {
@@ -17,6 +26,17 @@ function Login() {
 	const passwordId = useId();
 	const navigate = useNavigate();
 	const { allowedRoutes } = useAuth();
+
+	const { error } = Route.useSearch();
+
+	useEffect(() => {
+		if (error === "email_not_found") {
+			toast.error("No account found with this email.");
+		} else if (error) {
+			toast.error(`Could not sign in with Google: ${error}`);
+		}
+	}, [error]);
+
 	if (allowedRoutes.length > 0) {
 		navigate({ to: "/" });
 		return null;
@@ -39,8 +59,12 @@ function Login() {
 		});
 	};
 
+	const handleGoogleLogin = () => {
+		window.location.assign("/api/oauth/google/start");
+	};
+
 	return (
-		<div className="w-full flex flex-col items-center pt-8 lg:pt-24">
+		<div className="w-full h-full flex flex-col items-center pb-8 pt-8 lg:pt-24">
 			<div className="w-full items-center flex flex-col gap-8 pb-8">
 				<img src={Logo} alt="BITS Pilani Logo" className="size-36" />
 				<span className="text-2xl font-semibold">Medical Center System</span>
@@ -71,9 +95,20 @@ function Login() {
 						<Field>
 							<Button type="submit">Login</Button>
 						</Field>
+						<Separator />
+						<Field>
+							<Button
+								type="button"
+								variant="secondary"
+								onClick={handleGoogleLogin}
+							>
+								Continue with Google
+							</Button>
+						</Field>
 					</FieldGroup>
 				</FieldSet>
 			</form>
+			<div className="flex-1" />
 			<Link
 				to="/about"
 				className="mt-4 text-sm underline text-muted-foreground"
