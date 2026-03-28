@@ -25,6 +25,7 @@ export const usersTable = pgTable(
 		username: varchar({ length: 255 }).notNull().unique(),
 		passwordHash: varchar().notNull(),
 		email: varchar({ length: 255 }).notNull().unique(),
+		googleSub: varchar("google_sub", { length: 255 }).unique(),
 		name: varchar({ length: 255 }).notNull(),
 		phone: varchar({ length: 255 }).notNull(),
 		role: integer("role")
