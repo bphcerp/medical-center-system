@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useId, useState } from "react";
-import { CheckCircle2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -25,7 +25,7 @@ function TotpVerify() {
 	const code2Id = useId();
 	const code3Id = useId();
 
-	const navigate = useNavigate();
+	const _navigate = useNavigate();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [status, setStatus] = useState<"idle" | "valid" | "error">("idle");
 
