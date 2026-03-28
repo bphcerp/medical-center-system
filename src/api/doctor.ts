@@ -232,7 +232,7 @@ const doctor = createStrictHono()
 		return c.json({ success: true, data: doctors });
 	})
 	.post(
-		"/:doctorId",
+		"/assign/:doctorId",
 		rbacCheck({ permissions: ["admin"] }),
 		strictValidator(
 			"param",

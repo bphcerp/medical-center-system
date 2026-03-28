@@ -159,7 +159,7 @@ function User() {
 
 		if (!data) return;
 
-		const res = await client.api.doctor[":doctorId"].$post({
+		const res = await client.api.doctor.assign[":doctorId"].$post({
 			param: { doctorId: doctorId.toString() },
 			json: { specialityId: data.id, availabilityType },
 		});
