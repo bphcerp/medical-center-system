@@ -5,7 +5,7 @@ import { verifySync } from "otplib";
 const TOTP_OPTIONS = {
 	period: 30,
 	digits: 6,
-	epochTolerance: 30, 
+	epochTolerance: 30,
 };
 
 function readSecret(name: string): string {

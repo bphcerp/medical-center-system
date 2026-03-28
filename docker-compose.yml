@@ -37,6 +37,23 @@ services:
     profiles:
       - "dev"
       - "prod"
+      - "manual"
+
+  pgweb:
+    image: sosedoff/pgweb:latest
+    container_name: pgweb
+    ports:
+      - "12500:12500"
+    secrets:
+      - db_user
+      - db_name
+      - db_password
+    entrypoint: [ "sh", "-c" ]
+    command: >
+      'export USER=$$(cat /run/secrets/db_user) &&
+       export PASS=$$(cat /run/secrets/db_password) &&
+       export DB=$$(cat /run/secrets/db_name) &&
+       /usr/bin/pgweb --bind=0.0.0.0 --listen=12500 --url=postgres://$$USER:$$PASS@db:5432/$$DB?sslmode=disable'
 
   seaweedfs-master:
     image: chrislusf/seaweedfs:latest
@@ -98,6 +115,7 @@ services:
       - type: bind
         source: ./src
         target: /usr/local/app/src
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "${FRONTEND_PORT}:3000"
     profiles:

@@ -15,6 +15,7 @@ const config = defineConfig({
 			"pg",
 			"nodemailer",
 			"drizzle-orm",
+			"dockerode",
 		],
 	},
 	plugins: [
