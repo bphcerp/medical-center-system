@@ -9,6 +9,14 @@ import {
 	sql,
 } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
+import { rolesTable, usersTable } from "src/db/auth";
+import {
+	doctorAvailabilityTypeEnum,
+	doctorScheduleTable,
+	doctorSpecialitiesTable,
+	doctorsTable,
+} from "src/db/doctor";
+import { dayOfWeekEnum } from "src/db/utils";
 import z from "zod";
 import {
 	casePrescriptionsTable,
@@ -35,6 +43,8 @@ import { createStrictHono, strictValidator } from "@/lib/types/api";
 import { getAge } from "@/lib/utils";
 import { db } from ".";
 import { rbacCheck } from "./rbac";
+import speciality from "./speciality";
+import { getPermissionsForUser } from "./utils";
 
 export const getCaseDetail = async (caseId: number) => {
 	const caseDetails = await db
@@ -107,7 +117,7 @@ export const getCaseDetail = async (caseId: number) => {
 	// Fetch test status and files
 	const testDetails = await db
 		.select({
-			id: caseLabReportsTable.id,
+			id: caseLabReportsTable.testId,
 			fileId: labTestFilesTable.fileId,
 			filename: filesTable.filename,
 			status: caseLabReportsTable.status,
@@ -174,7 +184,152 @@ export const getCaseDetail = async (caseId: number) => {
 	};
 };
 
+export type Doctor =
+	(typeof doctor._schema)["/all"]["$get"]["output"]["data"][number];
+
 const doctor = createStrictHono()
+	.route("/speciality", speciality)
+	// TODO: not everybody should be able to view
+	// all doctors, there should be a permission for this
+	.get("/all", async (c) => {
+		const doctors = await db
+			.select({
+				id: doctorsTable.id,
+				name: usersTable.name,
+				username: usersTable.username,
+				specialityId: doctorsTable.specialityId,
+				specialityName: doctorSpecialitiesTable.name,
+				specialityIsActive: doctorSpecialitiesTable.isActive,
+				availabilityType: doctorsTable.availabilityType,
+			})
+			.from(doctorsTable)
+			.innerJoin(usersTable, eq(usersTable.id, doctorsTable.id))
+			.innerJoin(
+				doctorSpecialitiesTable,
+				eq(doctorSpecialitiesTable.id, doctorsTable.specialityId),
+			);
+
+		return c.json({ success: true, data: doctors });
+	})
+	// These endpoints are for admin use only. Doctor endpoints come afterwards
+	.get("/unassigned", rbacCheck({ permissions: ["admin"] }), async (c) => {
+		const doctors = await db
+			.select({
+				id: usersTable.id,
+				name: usersTable.name,
+				username: usersTable.username,
+			})
+			.from(usersTable)
+			.innerJoin(rolesTable, eq(usersTable.role, rolesTable.id))
+			.leftJoin(doctorsTable, eq(usersTable.id, doctorsTable.id))
+			.where(
+				and(
+					arrayContains(rolesTable.allowed, ["doctor"]),
+					isNull(doctorsTable.id),
+				),
+			);
+
+		return c.json({ success: true, data: doctors });
+	})
+	.post(
+		"/assign/:doctorId",
+		rbacCheck({ permissions: ["admin"] }),
+		strictValidator(
+			"param",
+			z.object({
+				doctorId: z.coerce.number().int().positive(),
+			}),
+		),
+		strictValidator(
+			"json",
+			z.object({
+				specialityId: z.number().int().positive(),
+				availabilityType: z.enum(doctorAvailabilityTypeEnum.enumValues),
+			}),
+		),
+		async (c) => {
+			const { doctorId: id } = c.req.valid("param");
+
+			if (!(await isDoctor(id))) {
+				return c.json(
+					{ success: false, error: { message: "User is not a doctor" } },
+					400,
+				);
+			}
+
+			const { specialityId, availabilityType } = c.req.valid("json");
+
+			const [assigned] = await db
+				.insert(doctorsTable)
+				.values({ id, specialityId, availabilityType })
+				.onConflictDoUpdate({
+					target: doctorsTable.id,
+					set: { specialityId, availabilityType },
+				})
+				.returning();
+
+			return c.json({ success: true, data: assigned });
+		},
+	)
+	.get(
+		"/:doctorId/schedule",
+		rbacCheck({ permissions: ["admin"] }),
+		strictValidator(
+			"param",
+			z.object({ doctorId: z.coerce.number().int().positive() }),
+		),
+		async (c) => {
+			const { doctorId } = c.req.valid("param");
+
+			const templates = await db
+				.select()
+				.from(doctorScheduleTable)
+				.where(eq(doctorScheduleTable.doctorId, doctorId))
+				.orderBy(doctorScheduleTable.dayOfWeek, doctorScheduleTable.startTime);
+
+			return c.json({ success: true, data: templates });
+		},
+	)
+	.put(
+		"/:doctorId/schedule",
+		rbacCheck({ permissions: ["admin"] }),
+		strictValidator(
+			"param",
+			z.object({ doctorId: z.coerce.number().int().positive() }),
+		),
+		strictValidator(
+			"json",
+			z.object({
+				slots: z
+					.array(
+						z.object({
+							dayOfWeek: z.enum(dayOfWeekEnum.enumValues),
+							startTime: z.iso.time(),
+							endTime: z.iso.time(),
+							slotDurationMinutes: z.number().int().positive(),
+						}),
+					)
+					.min(1),
+			}),
+		),
+		async (c) => {
+			const { doctorId } = c.req.valid("param");
+			const { slots } = c.req.valid("json");
+
+			await db.transaction(async (tx) => {
+				await tx
+					.delete(doctorScheduleTable)
+					.where(eq(doctorScheduleTable.doctorId, doctorId));
+
+				await tx
+					.insert(doctorScheduleTable)
+					.values(slots.map((s) => ({ doctorId, ...s })));
+			});
+
+			return c.json({ success: true, data: null });
+		},
+	)
+	// These endpoints are for doctor use only
 	.use(rbacCheck({ permissions: ["doctor"] }))
 	.get("/queue", async (c) => {
 		const payload = c.get("jwtPayload");
@@ -318,7 +473,36 @@ const doctor = createStrictHono()
 			const { caseId, consultationNotes, prescriptions, diagnosis, tests } =
 				c.req.valid("json");
 
-			await db.transaction(async (tx) => {
+			if (tests !== undefined) {
+				const validTests = await db
+					.select({ id: labTestsMasterTable.id })
+					.from(labTestsMasterTable)
+					.where(
+						and(
+							inArray(labTestsMasterTable.id, tests),
+							eq(labTestsMasterTable.isActive, true),
+						),
+					);
+
+				if (validTests.length !== tests.length) {
+					return c.json(
+						{
+							success: false,
+							error: {
+								message: "Some test IDs are invalid",
+								details: {
+									invalidTestIds: tests.filter(
+										(id) => !validTests.some((test) => test.id === id),
+									),
+								},
+							},
+						},
+						400,
+					);
+				}
+			}
+
+			const result = await db.transaction(async (tx) => {
 				const updated = await tx
 					.update(casesTable)
 					.set({
@@ -335,10 +519,7 @@ const doctor = createStrictHono()
 					.returning();
 
 				if (updated.length === 0) {
-					return c.json(
-						{ success: false, error: { message: "Case not found" } },
-						404,
-					);
+					return { ok: false as const, status: 404, message: "Case not found" };
 				}
 
 				if (prescriptions !== undefined) {
@@ -352,40 +533,38 @@ const doctor = createStrictHono()
 				}
 
 				if (tests !== undefined) {
-					const validTests = await tx
-						.select({ id: labTestsMasterTable.id })
-						.from(labTestsMasterTable)
-						.where(
-							and(
-								inArray(labTestsMasterTable.id, tests),
-								eq(labTestsMasterTable.isActive, true),
-							),
-						);
-
-					if (validTests.length !== tests.length) {
-						return c.json(
-							{
-								success: false,
-								error: {
-									message: "Some test IDs are invalid",
-									details: {
-										invalidTestIds: tests.filter(
-											(id) => !validTests.some((test) => test.id === id),
-										),
-									},
-								},
-							},
-							400,
-						);
-					}
-
-					await tx
-						.delete(caseLabReportsTable)
+					const existingReports = await tx
+						.select({ testId: caseLabReportsTable.testId })
+						.from(caseLabReportsTable)
 						.where(eq(caseLabReportsTable.caseId, caseId));
 
-					if (tests.length > 0) {
+					const existingTestIdSet = new Set(
+						existingReports.map((report) => report.testId),
+					);
+					const nextTestIdSet = new Set(tests);
+
+					const testIdsToDelete = existingReports
+						.map((report) => report.testId)
+						.filter((testId) => !nextTestIdSet.has(testId));
+
+					if (testIdsToDelete.length > 0) {
+						await tx
+							.delete(caseLabReportsTable)
+							.where(
+								and(
+									eq(caseLabReportsTable.caseId, caseId),
+									inArray(caseLabReportsTable.testId, testIdsToDelete),
+								),
+							);
+					}
+
+					const testIdsToInsert = tests.filter(
+						(testId) => !existingTestIdSet.has(testId),
+					);
+
+					if (testIdsToInsert.length > 0) {
 						await tx.insert(caseLabReportsTable).values(
-							tests.map((testId) => ({
+							testIdsToInsert.map((testId) => ({
 								caseId,
 								testId,
 								status: "Requested" as const,
@@ -393,7 +572,16 @@ const doctor = createStrictHono()
 						);
 					}
 				}
+
+				return { ok: true as const };
 			});
+
+			if (!result.ok) {
+				return c.json(
+					{ success: false, error: { message: result.message } },
+					404,
+				);
+			}
 
 			return c.json({
 				success: true,
@@ -445,5 +633,10 @@ const doctor = createStrictHono()
 			});
 		},
 	);
+
+const isDoctor = async (id: number) => {
+	const perms = await getPermissionsForUser(id);
+	return perms.includes("doctor");
+};
 
 export default doctor;

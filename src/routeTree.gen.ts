@@ -14,18 +14,18 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as DoctorRouteImport } from './routes/doctor'
 import { Route as AboutRouteImport } from './routes/about'
-import { Route as VitalsRouteRouteImport } from './routes/vitals/route'
+import { Route as ReceptionRouteRouteImport } from './routes/reception/route'
 import { Route as LabRouteRouteImport } from './routes/lab/route'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as VitalsTokenRouteImport } from './routes/vitals/$token'
+import { Route as ReceptionTokenRouteImport } from './routes/reception/$token'
 import { Route as LabCaseIdRouteImport } from './routes/lab/$caseId'
 import { Route as ConsultationIdRouteImport } from './routes/consultation.$id'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
 import { Route as AdminUserRouteImport } from './routes/admin/user'
+import { Route as AdminSpecialitiesRouteImport } from './routes/admin/specialities'
 import { Route as AdminRoleRouteImport } from './routes/admin/role'
 import { Route as AdminOtpOverridesRouteImport } from './routes/admin/otp-overrides'
-import { Route as AdminDoctorManagementRouteImport } from './routes/admin/doctor-management'
 import { Route as HistoryPatientIdIndexRouteImport } from './routes/history.$patientId/index'
 import { Route as HistoryPatientIdCaseIdRouteImport } from './routes/history.$patientId/$caseId'
 
@@ -54,9 +54,9 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
-const VitalsRouteRoute = VitalsRouteRouteImport.update({
-  id: '/vitals',
-  path: '/vitals',
+const ReceptionRouteRoute = ReceptionRouteRouteImport.update({
+  id: '/reception',
+  path: '/reception',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LabRouteRoute = LabRouteRouteImport.update({
@@ -74,10 +74,10 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const VitalsTokenRoute = VitalsTokenRouteImport.update({
+const ReceptionTokenRoute = ReceptionTokenRouteImport.update({
   id: '/$token',
   path: '/$token',
-  getParentRoute: () => VitalsRouteRoute,
+  getParentRoute: () => ReceptionRouteRoute,
 } as any)
 const LabCaseIdRoute = LabCaseIdRouteImport.update({
   id: '/$caseId',
@@ -99,6 +99,11 @@ const AdminUserRoute = AdminUserRouteImport.update({
   path: '/user',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminSpecialitiesRoute = AdminSpecialitiesRouteImport.update({
+  id: '/specialities',
+  path: '/specialities',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminRoleRoute = AdminRoleRouteImport.update({
   id: '/role',
   path: '/role',
@@ -107,11 +112,6 @@ const AdminRoleRoute = AdminRoleRouteImport.update({
 const AdminOtpOverridesRoute = AdminOtpOverridesRouteImport.update({
   id: '/otp-overrides',
   path: '/otp-overrides',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminDoctorManagementRoute = AdminDoctorManagementRouteImport.update({
-  id: '/doctor-management',
-  path: '/doctor-management',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const HistoryPatientIdIndexRoute = HistoryPatientIdIndexRouteImport.update({
@@ -129,20 +129,20 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/lab': typeof LabRouteRouteWithChildren
-  '/vitals': typeof VitalsRouteRouteWithChildren
+  '/reception': typeof ReceptionRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/doctor': typeof DoctorRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/admin/doctor-management': typeof AdminDoctorManagementRoute
   '/admin/otp-overrides': typeof AdminOtpOverridesRoute
   '/admin/role': typeof AdminRoleRoute
+  '/admin/specialities': typeof AdminSpecialitiesRoute
   '/admin/user': typeof AdminUserRoute
   '/api/$': typeof ApiSplatRoute
   '/consultation/$id': typeof ConsultationIdRoute
   '/lab/$caseId': typeof LabCaseIdRoute
-  '/vitals/$token': typeof VitalsTokenRoute
+  '/reception/$token': typeof ReceptionTokenRoute
   '/history/$patientId/$caseId': typeof HistoryPatientIdCaseIdRoute
   '/history/$patientId': typeof HistoryPatientIdIndexRoute
 }
@@ -150,20 +150,20 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/lab': typeof LabRouteRouteWithChildren
-  '/vitals': typeof VitalsRouteRouteWithChildren
+  '/reception': typeof ReceptionRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/doctor': typeof DoctorRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/admin/doctor-management': typeof AdminDoctorManagementRoute
   '/admin/otp-overrides': typeof AdminOtpOverridesRoute
   '/admin/role': typeof AdminRoleRoute
+  '/admin/specialities': typeof AdminSpecialitiesRoute
   '/admin/user': typeof AdminUserRoute
   '/api/$': typeof ApiSplatRoute
   '/consultation/$id': typeof ConsultationIdRoute
   '/lab/$caseId': typeof LabCaseIdRoute
-  '/vitals/$token': typeof VitalsTokenRoute
+  '/reception/$token': typeof ReceptionTokenRoute
   '/history/$patientId/$caseId': typeof HistoryPatientIdCaseIdRoute
   '/history/$patientId': typeof HistoryPatientIdIndexRoute
 }
@@ -172,20 +172,20 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/lab': typeof LabRouteRouteWithChildren
-  '/vitals': typeof VitalsRouteRouteWithChildren
+  '/reception': typeof ReceptionRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/doctor': typeof DoctorRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/admin/doctor-management': typeof AdminDoctorManagementRoute
   '/admin/otp-overrides': typeof AdminOtpOverridesRoute
   '/admin/role': typeof AdminRoleRoute
+  '/admin/specialities': typeof AdminSpecialitiesRoute
   '/admin/user': typeof AdminUserRoute
   '/api/$': typeof ApiSplatRoute
   '/consultation/$id': typeof ConsultationIdRoute
   '/lab/$caseId': typeof LabCaseIdRoute
-  '/vitals/$token': typeof VitalsTokenRoute
+  '/reception/$token': typeof ReceptionTokenRoute
   '/history/$patientId/$caseId': typeof HistoryPatientIdCaseIdRoute
   '/history/$patientId/': typeof HistoryPatientIdIndexRoute
 }
@@ -195,20 +195,20 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/lab'
-    | '/vitals'
+    | '/reception'
     | '/about'
     | '/doctor'
     | '/inventory'
     | '/login'
     | '/register'
-    | '/admin/doctor-management'
     | '/admin/otp-overrides'
     | '/admin/role'
+    | '/admin/specialities'
     | '/admin/user'
     | '/api/$'
     | '/consultation/$id'
     | '/lab/$caseId'
-    | '/vitals/$token'
+    | '/reception/$token'
     | '/history/$patientId/$caseId'
     | '/history/$patientId'
   fileRoutesByTo: FileRoutesByTo
@@ -216,20 +216,20 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/lab'
-    | '/vitals'
+    | '/reception'
     | '/about'
     | '/doctor'
     | '/inventory'
     | '/login'
     | '/register'
-    | '/admin/doctor-management'
     | '/admin/otp-overrides'
     | '/admin/role'
+    | '/admin/specialities'
     | '/admin/user'
     | '/api/$'
     | '/consultation/$id'
     | '/lab/$caseId'
-    | '/vitals/$token'
+    | '/reception/$token'
     | '/history/$patientId/$caseId'
     | '/history/$patientId'
   id:
@@ -237,20 +237,20 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/lab'
-    | '/vitals'
+    | '/reception'
     | '/about'
     | '/doctor'
     | '/inventory'
     | '/login'
     | '/register'
-    | '/admin/doctor-management'
     | '/admin/otp-overrides'
     | '/admin/role'
+    | '/admin/specialities'
     | '/admin/user'
     | '/api/$'
     | '/consultation/$id'
     | '/lab/$caseId'
-    | '/vitals/$token'
+    | '/reception/$token'
     | '/history/$patientId/$caseId'
     | '/history/$patientId/'
   fileRoutesById: FileRoutesById
@@ -259,7 +259,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   LabRouteRoute: typeof LabRouteRouteWithChildren
-  VitalsRouteRoute: typeof VitalsRouteRouteWithChildren
+  ReceptionRouteRoute: typeof ReceptionRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
   DoctorRoute: typeof DoctorRoute
   InventoryRoute: typeof InventoryRoute
@@ -308,11 +308,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/vitals': {
-      id: '/vitals'
-      path: '/vitals'
-      fullPath: '/vitals'
-      preLoaderRoute: typeof VitalsRouteRouteImport
+    '/reception': {
+      id: '/reception'
+      path: '/reception'
+      fullPath: '/reception'
+      preLoaderRoute: typeof ReceptionRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lab': {
@@ -336,12 +336,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/vitals/$token': {
-      id: '/vitals/$token'
+    '/reception/$token': {
+      id: '/reception/$token'
       path: '/$token'
-      fullPath: '/vitals/$token'
-      preLoaderRoute: typeof VitalsTokenRouteImport
-      parentRoute: typeof VitalsRouteRoute
+      fullPath: '/reception/$token'
+      preLoaderRoute: typeof ReceptionTokenRouteImport
+      parentRoute: typeof ReceptionRouteRoute
     }
     '/lab/$caseId': {
       id: '/lab/$caseId'
@@ -371,6 +371,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUserRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/specialities': {
+      id: '/admin/specialities'
+      path: '/specialities'
+      fullPath: '/admin/specialities'
+      preLoaderRoute: typeof AdminSpecialitiesRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/role': {
       id: '/admin/role'
       path: '/role'
@@ -383,13 +390,6 @@ declare module '@tanstack/react-router' {
       path: '/otp-overrides'
       fullPath: '/admin/otp-overrides'
       preLoaderRoute: typeof AdminOtpOverridesRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/doctor-management': {
-      id: '/admin/doctor-management'
-      path: '/doctor-management'
-      fullPath: '/admin/doctor-management'
-      preLoaderRoute: typeof AdminDoctorManagementRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/history/$patientId/': {
@@ -410,16 +410,16 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteRouteChildren {
-  AdminDoctorManagementRoute: typeof AdminDoctorManagementRoute
   AdminOtpOverridesRoute: typeof AdminOtpOverridesRoute
   AdminRoleRoute: typeof AdminRoleRoute
+  AdminSpecialitiesRoute: typeof AdminSpecialitiesRoute
   AdminUserRoute: typeof AdminUserRoute
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
-  AdminDoctorManagementRoute: AdminDoctorManagementRoute,
   AdminOtpOverridesRoute: AdminOtpOverridesRoute,
   AdminRoleRoute: AdminRoleRoute,
+  AdminSpecialitiesRoute: AdminSpecialitiesRoute,
   AdminUserRoute: AdminUserRoute,
 }
 
@@ -439,23 +439,23 @@ const LabRouteRouteWithChildren = LabRouteRoute._addFileChildren(
   LabRouteRouteChildren,
 )
 
-interface VitalsRouteRouteChildren {
-  VitalsTokenRoute: typeof VitalsTokenRoute
+interface ReceptionRouteRouteChildren {
+  ReceptionTokenRoute: typeof ReceptionTokenRoute
 }
 
-const VitalsRouteRouteChildren: VitalsRouteRouteChildren = {
-  VitalsTokenRoute: VitalsTokenRoute,
+const ReceptionRouteRouteChildren: ReceptionRouteRouteChildren = {
+  ReceptionTokenRoute: ReceptionTokenRoute,
 }
 
-const VitalsRouteRouteWithChildren = VitalsRouteRoute._addFileChildren(
-  VitalsRouteRouteChildren,
+const ReceptionRouteRouteWithChildren = ReceptionRouteRoute._addFileChildren(
+  ReceptionRouteRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
   LabRouteRoute: LabRouteRouteWithChildren,
-  VitalsRouteRoute: VitalsRouteRouteWithChildren,
+  ReceptionRouteRoute: ReceptionRouteRouteWithChildren,
   AboutRoute: AboutRoute,
   DoctorRoute: DoctorRoute,
   InventoryRoute: InventoryRoute,
