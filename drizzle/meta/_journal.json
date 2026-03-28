@@ -15,6 +15,13 @@
       "when": 1774713992736,
       "tag": "0001_google_oauth",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774722215474,
+      "tag": "0002_cleanup_redundant_unique_indexes",
+      "breakpoints": true
     }
   ]
 }

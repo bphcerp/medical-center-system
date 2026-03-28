@@ -7,7 +7,6 @@ import {
 	real,
 	text,
 	timestamp,
-	uniqueIndex,
 	varchar,
 } from "drizzle-orm/pg-core";
 import z from "zod";
@@ -59,15 +58,11 @@ export const medicineCategoryEnum = pgEnum(
 	medicineCategories,
 );
 
-export const diseasesTable = pgTable(
-	"diseases",
-	{
-		id: integer().primaryKey().generatedAlwaysAsIdentity(),
-		name: varchar({ length: 1023 }).notNull(),
-		icd: varchar({ length: 255 }).notNull().unique(),
-	},
-	(table) => [uniqueIndex("icd_idx").on(table.icd)],
-);
+export const diseasesTable = pgTable("diseases", {
+	id: integer().primaryKey().generatedAlwaysAsIdentity(),
+	name: varchar({ length: 1023 }).notNull(),
+	icd: varchar({ length: 255 }).notNull().unique(),
+});
 
 export const medicinesTable = pgTable("medicines", {
 	id: integer().primaryKey().generatedAlwaysAsIdentity(),
