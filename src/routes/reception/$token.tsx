@@ -18,7 +18,7 @@ import VitalsCard from "@/components/vitals-card";
 import { handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
 
-export const Route = createFileRoute("/vitals/$token")({
+export const Route = createFileRoute("/reception/$token")({
 	loader: async (c) => {
 		const token = Number(c.params.token);
 
@@ -105,7 +105,7 @@ function RouteComponent() {
 			return;
 		}
 		toast.success("Case created successfully!");
-		navigate({ to: "/vitals" });
+		navigate({ to: "/reception" });
 	};
 
 	return (
@@ -152,7 +152,7 @@ function RouteComponent() {
 									</Select>
 								</Field>
 								<Field className="col-span-2">
-									<Button type="submit" size="lg">
+									<Button type="submit" className="text-base">
 										<Check />
 										Submit
 									</Button>

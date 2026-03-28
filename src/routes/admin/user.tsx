@@ -2,21 +2,30 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import {
 	Calendar,
 	FilterIcon,
+	Loader2Icon,
+	Plus,
 	PlusIcon,
 	Search,
 	ShieldUser,
 	Stethoscope,
 	XIcon,
 } from "lucide-react";
-import { type PropsWithChildren, useMemo, useState } from "react";
+import {
+	type PropsWithChildren,
+	useEffect,
+	useId,
+	useMemo,
+	useState,
+} from "react";
 import { toast } from "sonner";
-import { Textarea } from "src/components/ui/textarea";
+import type { Day } from "src/lib/types/day";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
+	DialogClose,
 	DialogContent,
 	DialogDescription,
 	DialogFooter,
@@ -62,21 +71,21 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import {
 	type DoctorAvailabilityType,
 	doctorAvailabilityTypes,
 } from "@/db/doctor";
 import useAuth from "@/lib/hooks/useAuth";
-import { handleErrors, titleCase } from "@/lib/utils";
+import { formatTime12, handleErrors, titleCase } from "@/lib/utils";
 import { client } from "../api/$";
-import { EditScheduleDialog } from "./doctor-management";
 
 export const Route = createFileRoute("/admin/user")({
-	component: Admin,
+	component: User,
 	loader: async () => {
 		const usersRes = await client.api.user.all.$get();
 		const rolesRes = await client.api.role.all.$get();
-		const specialitiesRes = await client.api.admin.specialization.all.$get();
+		const specialitiesRes = await client.api.doctor.speciality.all.$get();
 
 		const users = (await handleErrors(usersRes)) ?? [];
 		const roles = (await handleErrors(rolesRes)) ?? [];
@@ -98,7 +107,7 @@ type Filter = {
 type NewSpeciality = { name: string; description: string | null };
 type ExistingSpeciality = { id: number };
 
-function Admin() {
+function User() {
 	useAuth(["admin"]);
 
 	const router = useRouter();
@@ -136,7 +145,7 @@ function Admin() {
 	};
 
 	const createSpeciality = async (speciality: NewSpeciality) => {
-		const res = await client.api.admin.specialization.$post({
+		const res = await client.api.doctor.speciality.$post({
 			json: {
 				name: speciality.name,
 				description:
@@ -157,7 +166,7 @@ function Admin() {
 
 		if (!data) return;
 
-		const res = await client.api.admin.doctor[":doctorId"].$post({
+		const res = await client.api.doctor.assign[":doctorId"].$post({
 			param: { doctorId: doctorId.toString() },
 			json: { specialityId: data.id, availabilityType },
 		});
@@ -171,7 +180,10 @@ function Admin() {
 	return (
 		<>
 			<div className="flex flex-wrap items-center gap-4 justify-between mb-3">
-				<h1 className="font-bold text-2xl">Manage Staff</h1>
+				<span className="flex gap-4">
+					<h1 className="text-2xl font-bold inline">Manage Staff</h1>
+					<AddUserButton />
+				</span>
 				<div className="flex gap-4 items-center">
 					<div className="flex">
 						<InputGroup className="w-80">
@@ -290,7 +302,7 @@ function Admin() {
 												<EditScheduleDialog
 													doctorId={user.id}
 													doctorName={user.name}
-													categoryName={"bluah"}
+													specialityName={"bluah"}
 												>
 													<Button variant="outline" size="sm">
 														<Calendar /> Schedule
@@ -597,5 +609,366 @@ function SpecialityField({
 				</>
 			)}
 		</FieldSet>
+	);
+}
+
+type SlotEntry = {
+	key: string;
+	startTime: string;
+	endTime: string;
+	slotDurationMinutes: number;
+};
+
+const DAY_ROWS: Day[][] = [
+	["monday", "tuesday", "wednesday", "thursday"],
+	["friday", "saturday", "sunday"],
+];
+
+// TODO: improve this UI
+function EditScheduleDialog({
+	doctorId,
+	doctorName,
+	specialityName,
+	children,
+}: PropsWithChildren<{
+	doctorId: number;
+	doctorName: string;
+	specialityName: string;
+}>) {
+	const [isOpen, setIsOpen] = useState(false);
+	const [slots, setSlots] = useState<Record<string, SlotEntry[]>>({});
+	const [addingDay, setAddingDay] = useState<string | null>(null);
+	const [addForm, setAddForm] = useState({
+		startTime: "",
+		endTime: "",
+		slotDurationMinutes: 15,
+	});
+	const [saving, setSaving] = useState(false);
+
+	useEffect(() => {
+		if (!isOpen) return;
+		client.api.doctor[":doctorId"].schedule
+			.$get({ param: { doctorId: doctorId.toString() } })
+			.then((res) => handleErrors(res))
+			.then((data) => {
+				if (!data) return;
+				const grouped: Record<string, SlotEntry[]> = {};
+				for (const t of data) {
+					if (!grouped[t.dayOfWeek]) grouped[t.dayOfWeek] = [];
+					grouped[t.dayOfWeek].push({
+						key: crypto.randomUUID(),
+						startTime: t.startTime.slice(0, 5),
+						endTime: t.endTime.slice(0, 5),
+						slotDurationMinutes: t.slotDurationMinutes,
+					});
+				}
+				setSlots(grouped);
+			});
+	}, [isOpen, doctorId]);
+
+	const handleOpenChange = (open: boolean) => {
+		setIsOpen(open);
+		if (!open) {
+			setSlots({});
+			setAddingDay(null);
+			setAddForm({ startTime: "", endTime: "", slotDurationMinutes: 15 });
+		}
+	};
+
+	const handleAddSlot = (day: string) => {
+		if (!addForm.startTime || !addForm.endTime) return;
+		setSlots((prev) => ({
+			...prev,
+			[day]: [...(prev[day] ?? []), { key: crypto.randomUUID(), ...addForm }],
+		}));
+		setAddingDay(null);
+		setAddForm({ startTime: "", endTime: "", slotDurationMinutes: 15 });
+	};
+
+	const handleRemoveSlot = (day: string, key: string) => {
+		setSlots((prev) => ({
+			...prev,
+			[day]: (prev[day] ?? []).filter((s) => s.key !== key),
+		}));
+	};
+
+	const handleSave = async () => {
+		setSaving(true);
+
+		const allSlots = Object.entries(slots).flatMap(([day, daySlots]) =>
+			daySlots.map((s) => ({
+				dayOfWeek: day as Day,
+				startTime: s.startTime,
+				endTime: s.endTime,
+				slotDurationMinutes: s.slotDurationMinutes,
+			})),
+		);
+		const res = await client.api.doctor[":doctorId"].schedule.$put({
+			param: { doctorId: doctorId.toString() },
+			json: { slots: allSlots },
+		});
+		await handleErrors(res);
+
+		setSaving(false);
+
+		setIsOpen(false);
+	};
+
+	return (
+		<Dialog open={isOpen} onOpenChange={handleOpenChange}>
+			<DialogTrigger asChild>
+				{children ?? (
+					<Button variant="outline" size="sm">
+						Edit Schedule
+					</Button>
+				)}
+			</DialogTrigger>
+			<DialogContent className="sm:max-w-4xl gap-6">
+				<div>
+					<p className="text-muted-foreground text-xs italic mb-0.5">
+						Editing schedule for
+					</p>
+					<DialogTitle className="text-xl">{doctorName}</DialogTitle>
+					<p className="text-muted-foreground text-sm mt-0.5">
+						{specialityName}
+					</p>
+				</div>
+
+				<div className="flex flex-col gap-4">
+					{DAY_ROWS.map((row) => (
+						<div
+							key={row.join("-")}
+							className="grid gap-px bg-border border rounded-lg overflow-hidden"
+							style={{ gridTemplateColumns: `repeat(${row.length}, 1fr)` }}
+						>
+							{row.map((day) => {
+								const daySlots = slots[day] ?? [];
+								const isAdding = addingDay === day;
+
+								return (
+									<div key={day} className="bg-background flex flex-col">
+										<div className="bg-muted/50 text-center py-2 font-medium text-sm capitalize border-b">
+											{day.charAt(0).toUpperCase() + day.slice(1)}
+										</div>
+										<div className="flex flex-col gap-1 p-2 flex-1">
+											{daySlots.map((slot) => (
+												<div
+													key={slot.key}
+													className="group flex items-center justify-between text-xs bg-muted/40 rounded px-2 py-1.5 gap-1"
+												>
+													<span className="tabular-nums">
+														{formatTime12(slot.startTime)} –{" "}
+														{formatTime12(slot.endTime)}
+													</span>
+													<button
+														type="button"
+														onClick={() => handleRemoveSlot(day, slot.key)}
+														className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity shrink-0"
+													>
+														×
+													</button>
+												</div>
+											))}
+
+											{isAdding ? (
+												<div className="flex flex-col gap-1.5 mt-1 pt-1 border-t">
+													<Input
+														type="time"
+														value={addForm.startTime}
+														onChange={(e) =>
+															setAddForm((f) => ({
+																...f,
+																startTime: e.target.value,
+															}))
+														}
+														className="text-xs px-1.5 w-full h-8"
+													/>
+													<Input
+														type="time"
+														value={addForm.endTime}
+														onChange={(e) =>
+															setAddForm((f) => ({
+																...f,
+																endTime: e.target.value,
+															}))
+														}
+														className="text-xs px-1.5 w-full h-8"
+													/>
+													<div className="flex items-center gap-1">
+														<Input
+															type="number"
+															min={5}
+															step={5}
+															value={addForm.slotDurationMinutes}
+															onChange={(e) =>
+																setAddForm((f) => ({
+																	...f,
+																	slotDurationMinutes: Number(e.target.value),
+																}))
+															}
+															className="text-xs px-1.5 w-full h-8"
+														/>
+														<span className="text-xs text-muted-foreground whitespace-nowrap">
+															min
+														</span>
+													</div>
+													<div className="flex gap-1">
+														<Button
+															type="button"
+															size="sm"
+															onClick={() => handleAddSlot(day)}
+															disabled={!addForm.startTime || !addForm.endTime}
+															className="flex-1 text-xs"
+														>
+															Add
+														</Button>
+														<Button
+															type="button"
+															variant="outline"
+															size="sm"
+															onClick={() => setAddingDay(null)}
+															className="flex-1 text-xs"
+														>
+															Cancel
+														</Button>
+													</div>
+												</div>
+											) : (
+												<Button
+													type="button"
+													variant="ghost"
+													onClick={() => {
+														setAddingDay(day);
+														setAddForm({
+															startTime: "",
+															endTime: "",
+															slotDurationMinutes: 15,
+														});
+													}}
+													className="mt-1 text-muted-foreground hover:text-foreground text-base self-center leading-none py-1 w-full"
+												>
+													<PlusIcon />
+												</Button>
+											)}
+										</div>
+									</div>
+								);
+							})}
+						</div>
+					))}
+				</div>
+
+				<DialogFooter>
+					<DialogClose asChild>
+						<Button variant="outline">Cancel</Button>
+					</DialogClose>
+					<Button onClick={handleSave} disabled={saving}>
+						{saving ? (
+							<Loader2Icon className="animate-spin" />
+						) : (
+							<span>Save</span>
+						)}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+function AddUserButton() {
+	const nameId = useId();
+	const usernameId = useId();
+	const emailId = useId();
+	const passwordId = useId();
+	const router = useRouter();
+
+	const [open, setOpen] = useState(false);
+
+	const handleAddUser = async (formData: FormData) => {
+		const name = formData.get("name") as string;
+		const username = formData.get("username") as string;
+		const email = formData.get("email") as string;
+		const password = formData.get("password") as string;
+
+		const res = await client.api.signup.$post({
+			json: { name, username, email, password },
+		});
+		const data = await handleErrors(res);
+		if (data) {
+			await router.invalidate();
+			setOpen(false);
+			toast.success("User created successfully");
+		}
+	};
+
+	return (
+		<Dialog open={open} onOpenChange={setOpen}>
+			<DialogTrigger asChild>
+				<Button variant="outline" size="sm" className="h-9">
+					<Plus /> Add User
+				</Button>
+			</DialogTrigger>
+
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Add User</DialogTitle>
+				</DialogHeader>
+				<form className="space-y-4" action={handleAddUser}>
+					<FieldSet>
+						<FieldGroup className="gap-4">
+							<Field>
+								<FieldLabel htmlFor={nameId}>Name</FieldLabel>
+								<Input
+									name="name"
+									type="text"
+									placeholder="Full name"
+									required
+								/>
+							</Field>
+
+							<Field>
+								<FieldLabel htmlFor={emailId}>Email</FieldLabel>
+								<Input
+									name="email"
+									type="email"
+									placeholder="user@example.com"
+									required
+								/>
+							</Field>
+
+							<Field>
+								<FieldLabel htmlFor={usernameId}>Username</FieldLabel>
+								<Input
+									name="username"
+									type="text"
+									placeholder="Username"
+									required
+								/>
+							</Field>
+
+							<Field>
+								<FieldLabel htmlFor={passwordId}>Password</FieldLabel>
+								<Input
+									id={passwordId}
+									name="password"
+									type="password"
+									placeholder="Password"
+									required
+								/>
+							</Field>
+						</FieldGroup>
+					</FieldSet>
+
+					<DialogFooter>
+						<DialogClose asChild>
+							<Button type="button" variant="outline">
+								Cancel
+							</Button>
+						</DialogClose>
+						<Button type="submit">Create User</Button>
+					</DialogFooter>
+				</form>
+			</DialogContent>
+		</Dialog>
 	);
 }

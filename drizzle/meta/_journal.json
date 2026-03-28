@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1774429546063,
+      "tag": "0000_magenta_toad_men",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1774713992736,
+      "tag": "0001_google_oauth",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774722215474,
+      "tag": "0002_cleanup_redundant_unique_indexes",
+      "breakpoints": true
+    }
+  ]
+}

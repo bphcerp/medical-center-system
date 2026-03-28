@@ -186,9 +186,8 @@ const TestsCard = ({
 									<span className="font-medium text-muted-foreground">
 										({item.category})
 									</span>
-									{readonly ? (
-										<LabTestStatusBadge status={item.status} />
-									) : (
+									<LabTestStatusBadge status={item.status} />
+									{!readonly && (
 										<Button
 											variant="destructive"
 											onClick={() => handleRemoveTestItem(item.id)}
@@ -198,7 +197,7 @@ const TestsCard = ({
 										</Button>
 									)}
 								</div>
-								{readonly && (
+								{(readonly || item.files.length > 0) && (
 									<div>
 										{item.files.length > 0 ? (
 											<>

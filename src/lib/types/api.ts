@@ -419,3 +419,20 @@ export const strictJwt = (options: {
 			);
 		}
 	}) as StrictHandler;
+
+export const LoginErrors = [
+	"oauth_not_configured",
+	"missing_code_or_state",
+	"state_invalid",
+	"token_exchange_failed",
+	"token_invalid",
+	"id_token_verification_failed",
+	"issuer_invalid",
+	"nonce_mismatch",
+	"email_not_found",
+	"google_claims_invalid",
+	"google_sub_mismatch",
+	"google_oauth_error",
+] as const;
+
+export type LoginError = (typeof LoginErrors)[number];

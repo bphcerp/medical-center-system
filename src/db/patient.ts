@@ -19,35 +19,27 @@ export const patientsTable = pgTable("patients", {
 	sex: sexTypeEnum("sex").notNull(),
 });
 
-export const studentsTable = pgTable(
-	"students",
-	{
-		id: integer().primaryKey().generatedAlwaysAsIdentity(),
-		studentId: varchar({ length: 255 }).notNull().unique(),
-		email: varchar({ length: 255 }).notNull().unique(),
-		phone: varchar({ length: 255 }).notNull(),
-		patientId: integer()
-			.unique()
-			.references(() => patientsTable.id)
-			.notNull(),
-	},
-	(table) => [uniqueIndex("student_id_idx").on(table.studentId)],
-);
+export const studentsTable = pgTable("students", {
+	id: integer().primaryKey().generatedAlwaysAsIdentity(),
+	studentId: varchar({ length: 255 }).notNull().unique(),
+	email: varchar({ length: 255 }).notNull().unique(),
+	phone: varchar({ length: 255 }).notNull(),
+	patientId: integer()
+		.unique()
+		.references(() => patientsTable.id)
+		.notNull(),
+});
 
-export const professorsTable = pgTable(
-	"professors",
-	{
-		id: integer().primaryKey().generatedAlwaysAsIdentity(),
-		psrn: varchar({ length: 255 }).notNull().unique(),
-		email: varchar({ length: 255 }).notNull().unique(),
-		phone: varchar({ length: 255 }).notNull(),
-		patientId: integer()
-			.unique()
-			.references(() => patientsTable.id)
-			.notNull(),
-	},
-	(table) => [uniqueIndex("psrn_idx").on(table.psrn)],
-);
+export const professorsTable = pgTable("professors", {
+	id: integer().primaryKey().generatedAlwaysAsIdentity(),
+	psrn: varchar({ length: 255 }).notNull().unique(),
+	email: varchar({ length: 255 }).notNull().unique(),
+	phone: varchar({ length: 255 }).notNull(),
+	patientId: integer()
+		.unique()
+		.references(() => patientsTable.id)
+		.notNull(),
+});
 
 export const dependentsTable = pgTable(
 	"dependents",
@@ -61,19 +53,17 @@ export const dependentsTable = pgTable(
 			.references(() => patientsTable.id)
 			.notNull(),
 	},
-	(table) => [uniqueIndex("dependent_psrn_idx").on(table.psrn)],
+	(table) => [
+		uniqueIndex("dependent_psrn_idx").on(table.psrn, table.patientId),
+	],
 );
 
-export const visitorsTable = pgTable(
-	"visitors",
-	{
-		id: integer().primaryKey().generatedAlwaysAsIdentity(),
-		email: varchar({ length: 255 }).notNull(),
-		phone: varchar({ length: 255 }).notNull().unique(),
-		patientId: integer()
-			.unique()
-			.references(() => patientsTable.id)
-			.notNull(),
-	},
-	(table) => [uniqueIndex("visitor_phone_idx").on(table.phone)],
-);
+export const visitorsTable = pgTable("visitors", {
+	id: integer().primaryKey().generatedAlwaysAsIdentity(),
+	email: varchar({ length: 255 }).notNull(),
+	phone: varchar({ length: 255 }).notNull().unique(),
+	patientId: integer()
+		.unique()
+		.references(() => patientsTable.id)
+		.notNull(),
+});

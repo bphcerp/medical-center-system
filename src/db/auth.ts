@@ -1,11 +1,5 @@
 import { sql } from "drizzle-orm";
-import {
-	integer,
-	pgTable,
-	text,
-	uniqueIndex,
-	varchar,
-} from "drizzle-orm/pg-core";
+import { integer, pgTable, text, varchar } from "drizzle-orm/pg-core";
 
 export const permissionsTable = pgTable("permissions", {
 	permission: text("permission").primaryKey(),
@@ -18,18 +12,15 @@ export const rolesTable = pgTable("roles", {
 	allowed: text("allowed").array().notNull().default(sql`'{}'::text[]`),
 });
 
-export const usersTable = pgTable(
-	"users",
-	{
-		id: integer().primaryKey().generatedAlwaysAsIdentity(),
-		username: varchar({ length: 255 }).notNull().unique(),
-		passwordHash: varchar().notNull(),
-		email: varchar({ length: 255 }).notNull().unique(),
-		name: varchar({ length: 255 }).notNull(),
-		phone: varchar({ length: 255 }).notNull(),
-		role: integer("role")
-			.notNull()
-			.references(() => rolesTable.id),
-	},
-	(table) => [uniqueIndex("username_idx").on(table.username)],
-);
+export const usersTable = pgTable("users", {
+	id: integer().primaryKey().generatedAlwaysAsIdentity(),
+	username: varchar({ length: 255 }).notNull().unique(),
+	passwordHash: varchar().notNull(),
+	email: varchar({ length: 255 }).notNull().unique(),
+	googleSub: varchar("google_sub", { length: 255 }).unique(),
+	name: varchar({ length: 255 }).notNull(),
+	phone: varchar({ length: 255 }).notNull(),
+	role: integer("role")
+		.notNull()
+		.references(() => rolesTable.id),
+});
