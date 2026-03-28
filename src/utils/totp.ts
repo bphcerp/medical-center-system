@@ -1,6 +1,5 @@
-import fs from "node:fs";
-import path from "node:path";
 import { verifySync } from "otplib";
+import { getSecret } from "@/utils/getSecret";
 
 const TOTP_OPTIONS = {
 	period: 30,
@@ -8,19 +7,10 @@ const TOTP_OPTIONS = {
 	epochTolerance: 30,
 };
 
-function readSecret(name: string): string {
-	const secretPath = path.resolve("secrets", name);
-	try {
-		return fs.readFileSync(`/run/secrets/${name}`, "utf8").trim();
-	} catch {
-		return fs.readFileSync(secretPath, "utf8").trim();
-	}
-}
-
 const secrets = [
-	readSecret("totpToken1.txt"),
-	readSecret("totpToken2.txt"),
-	readSecret("totpToken3.txt"),
+	getSecret("TOTP_TOKEN_1"),
+	getSecret("TOTP_TOKEN_2"),
+	getSecret("TOTP_TOKEN_3"),
 ];
 
 /**

@@ -11,6 +11,12 @@ secrets:
     file: ./secrets/email_user.txt
   email_pass:
     file: ./secrets/email_pass.txt
+  totp_token_1:
+    file: ./secrets/totpToken1.txt
+  totp_token_2:
+    file: ./secrets/totpToken2.txt
+  totp_token_3:
+    file: ./secrets/totpToken3.txt
 
 services:
   db:
@@ -104,6 +110,9 @@ services:
       JWT_SECRET_FILE: /run/secrets/jwt_secret
       EMAIL_USER_FILE: /run/secrets/email_user
       EMAIL_PASS_FILE: /run/secrets/email_pass
+      TOTP_TOKEN_1_FILE: /run/secrets/totp_token_1
+      TOTP_TOKEN_2_FILE: /run/secrets/totp_token_2
+      TOTP_TOKEN_3_FILE: /run/secrets/totp_token_3
     secrets:
       - db_user
       - db_password
@@ -111,6 +120,9 @@ services:
       - jwt_secret
       - email_user
       - email_pass
+      - totp_token_1
+      - totp_token_2
+      - totp_token_3
     volumes:
       - type: bind
         source: ./src
@@ -139,6 +151,9 @@ services:
       JWT_SECRET_FILE: /run/secrets/jwt_secret
       EMAIL_USER_FILE: /run/secrets/email_user
       EMAIL_PASS_FILE: /run/secrets/email_pass
+      TOTP_TOKEN_1_FILE: /run/secrets/totp_token_1
+      TOTP_TOKEN_2_FILE: /run/secrets/totp_token_2
+      TOTP_TOKEN_3_FILE: /run/secrets/totp_token_3
     secrets:
       - db_user
       - db_password
@@ -146,6 +161,9 @@ services:
       - jwt_secret
       - email_user
       - email_pass
+      - totp_token_1
+      - totp_token_2
+      - totp_token_3
     ports:
       - "${FRONTEND_PORT}:3000"
     profiles:
