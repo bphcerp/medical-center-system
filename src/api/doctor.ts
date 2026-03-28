@@ -577,7 +577,10 @@ const doctor = createStrictHono()
 			});
 
 			if (!result.ok) {
-				return c.json({ success: false, error: { message: result.message } }, 404);
+				return c.json(
+					{ success: false, error: { message: result.message } },
+					404,
+				);
 			}
 
 			return c.json({
