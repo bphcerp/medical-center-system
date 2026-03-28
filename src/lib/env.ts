@@ -22,9 +22,16 @@ const serverSchema = z.object({
 	SEAWEEDFS_MASTER: z.url().min(1),
 	EMAIL_USER: z.string().min(1),
 	EMAIL_PASS: z.string().min(1),
+	GOOGLE_CLIENT_SECRET: z.string(),
+	GOOGLE_CLIENT_ID: z.string(),
+	GOOGLE_REDIRECT_URI: z.string(),
+	OAUTH_STATE_TTL_SECONDS: z.coerce.number().int().positive().default(300),
 });
 
-const parsed = serverSchema.parse(process.env);
+const parsed = serverSchema.parse(process.env, {
+	error: (_) =>
+		"invalid/missing environment variables, please check .env.example for a list of required variables",
+});
 
 export const DATABASE_URL = `postgres://${parsed.POSTGRES_USER}:${parsed.POSTGRES_PASSWORD}@${parsed.DB_HOST}:${parsed.PGPORT}/${parsed.POSTGRES_DB}`;
 export const PROD = parsed.NODE_ENV === "production";
