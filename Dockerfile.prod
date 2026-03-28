@@ -15,6 +15,7 @@ RUN bun run build
 FROM base AS production
 WORKDIR /usr/local/app
 COPY --from=install /temp/dev/package.json package.json
+COPY --from=install /temp/dev/node_modules ./node_modules
 COPY --from=build /usr/local/app/.output ./.output
 COPY drizzle ./drizzle
 COPY src/lib/env.ts ./src/lib/env.ts
