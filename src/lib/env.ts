@@ -26,6 +26,24 @@ const serverSchema = z.object({
 	GOOGLE_CLIENT_ID: z.string(),
 	GOOGLE_REDIRECT_URI: z.string(),
 	OAUTH_STATE_TTL_SECONDS: z.coerce.number().int().positive().default(300),
+	TOTP_TOKEN_1: z.string().default(""),
+	TOTP_TOKEN_2: z.string().default(""),
+	TOTP_TOKEN_3: z.string().default(""),
+	DB_ACCESS_ALLOWED_EMAILS: z.string().default(""),
+	DB_ACCESS_SESSION_TTL_SECONDS: z.coerce.number().int().positive().default(60),
+	DB_ACCESS_MAX_DURATION_MINUTES: z.coerce
+		.number()
+		.int()
+		.positive()
+		.default(15),
+	DB_ACCESS_MAX_FAILED_ATTEMPTS: z.coerce.number().int().positive().default(5),
+	DB_ACCESS_FAILED_ATTEMPT_WINDOW_MINUTES: z.coerce
+		.number()
+		.int()
+		.positive()
+		.default(10),
+	DB_ACCESS_PGWEB_CONTAINER_NAME: z.string().default("medical-center-pgweb"),
+	DB_ACCESS_PGWEB_INTERNAL_URL: z.url().default("http://pgweb:8090"),
 });
 
 const parsed = serverSchema.parse(process.env, {

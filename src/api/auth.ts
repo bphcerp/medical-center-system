@@ -27,6 +27,7 @@ import type { Permission } from "@/lib/types/permissions";
 import { db } from ".";
 import admin from "./admin";
 import booking from "./booking";
+import dbAccess from "./dbAccess";
 import doctor from "./doctor";
 import files from "./files";
 import inventory from "./inventory";
@@ -105,6 +106,13 @@ const clearAuthCookies = (c: Context) => {
 		httpOnly: true,
 		domain: authCookieDomain,
 		secure: env.PROD,
+	});
+	deleteCookie(c, "db_access_session", {
+		path: "/api/dbAccess",
+		httpOnly: true,
+		domain: authCookieDomain,
+		secure: env.PROD,
+		sameSite: "Strict",
 	});
 };
 
@@ -614,6 +622,7 @@ export const authenticated = createStrictHono()
 	.route("/user", user)
 	.route("/vitals", vitals)
 	.route("/doctor", doctor)
+	.route("/dbAccess", dbAccess)
 	.route("/lab", lab)
 	.route("/files", files)
 	.route("/inventory", inventory)
