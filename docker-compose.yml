@@ -62,6 +62,7 @@ services:
       - type: bind
         source: ./src
         target: /usr/local/app/src
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "${FRONTEND_PORT}:3000"
     profiles:
@@ -69,15 +70,22 @@ services:
   
   pgweb:
     image: sosedoff/pgweb
-    command: pgweb --listen 8090 --sessions
-    ports: 
-      - "${PGWEB_EXTERNAL_PORT:-8090}:8090" 
+    container_name: "${DB_ACCESS_PGWEB_CONTAINER_NAME:-medical-center-pgweb}"
+    command:
+      [
+        "--bind=0.0.0.0",
+        "--listen=8090",
+        "--url=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${PGPORT}/${POSTGRES_DB}?sslmode=disable",
+      ]
     env_file: .env
+    expose:
+      - "8090"
     depends_on:
       db:
         condition: service_healthy
     profiles:
       - "dev"
+      - "prod"
 
 
   app-prod:
@@ -91,6 +99,8 @@ services:
         condition: service_healthy
     env_file:
       - .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "${FRONTEND_PORT}:3000"
     profiles:
