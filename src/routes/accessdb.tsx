@@ -46,6 +46,9 @@ type DbAccessApiPayload<T> =
 	| { success: true; data: T }
 	| { success: false; error: { message: string } };
 
+const PGWEB_CONNECTION_RETRY_COUNT = 2;
+const PGWEB_CONNECTION_RETRY_DELAY_MS = 1000;
+
 const formatRemaining = (valueMs: number) => {
 	if (valueMs <= 0) {
 		return "expired";
@@ -218,20 +221,45 @@ function AccessDbPage() {
 		setIsPgwebReady(false);
 		setPgwebLoadError(null);
 
+		let lastError: Error | null = null;
+
 		try {
-			const response = await fetch("/api/dbAccess/proxy/", {
-				cache: "no-store",
-				credentials: "same-origin",
-			});
+			for (
+				let attempt = 0;
+				attempt <= PGWEB_CONNECTION_RETRY_COUNT;
+				attempt++
+			) {
+				try {
+					const response = await fetch("/api/dbAccess/proxy/", {
+						cache: "no-store",
+						credentials: "same-origin",
+					});
 
-			if (!response.ok) {
-				throw new Error("pgweb is still starting up");
+					if (!response.ok) {
+						throw new Error("pgweb is still starting up");
+					}
+
+					setIsPgwebReady(true);
+					return;
+				} catch (error) {
+					lastError =
+						error instanceof Error
+							? error
+							: new Error("pgweb is still starting up");
+
+					if (attempt === PGWEB_CONNECTION_RETRY_COUNT) {
+						throw lastError;
+					}
+
+					await new Promise((resolve) =>
+						window.setTimeout(resolve, PGWEB_CONNECTION_RETRY_DELAY_MS),
+					);
+				}
 			}
-
-			setIsPgwebReady(true);
 		} catch (error) {
 			setPgwebLoadError(
-				error instanceof Error ? error.message : "pgweb is still starting up",
+				(error instanceof Error ? error : lastError)?.message ??
+					"pgweb is still starting up",
 			);
 		} finally {
 			setIsPgwebLoading(false);
