@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, DatabaseZap, Lock, Timer } from "lucide-react";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import TopBar from "@/components/topbar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -92,6 +92,9 @@ function AccessDbPage() {
 	const [isClosing, setIsClosing] = useState(false);
 	const [now, setNow] = useState(Date.now());
 	const [loadError, setLoadError] = useState<string | null>(null);
+	const [isPgwebLoading, setIsPgwebLoading] = useState(false);
+	const [isPgwebReady, setIsPgwebReady] = useState(false);
+	const [pgwebLoadError, setPgwebLoadError] = useState<string | null>(null);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -209,6 +212,42 @@ function AccessDbPage() {
 		status?.session.active,
 		status?.session.canAccessPgweb,
 	]);
+
+	const probePgweb = useCallback(async () => {
+		setIsPgwebLoading(true);
+		setIsPgwebReady(false);
+		setPgwebLoadError(null);
+
+		try {
+			const response = await fetch("/api/dbAccess/proxy/", {
+				cache: "no-store",
+				credentials: "same-origin",
+			});
+
+			if (!response.ok) {
+				throw new Error("pgweb is still starting up");
+			}
+
+			setIsPgwebReady(true);
+		} catch (error) {
+			setPgwebLoadError(
+				error instanceof Error ? error.message : "pgweb is still starting up",
+			);
+		} finally {
+			setIsPgwebLoading(false);
+		}
+	}, []);
+
+	useEffect(() => {
+		if (!status?.session.active || !status.session.canAccessPgweb) {
+			setIsPgwebLoading(false);
+			setIsPgwebReady(false);
+			setPgwebLoadError(null);
+			return;
+		}
+
+		void probePgweb();
+	}, [probePgweb, status?.session.active, status?.session.canAccessPgweb]);
 
 	// const inactivityRemaining = useMemo(() => {
 	// 	if (!status?.session.expiresAt) {
@@ -495,11 +534,40 @@ function AccessDbPage() {
 
 							<Card className="overflow-hidden">
 								<CardContent className="p-0">
-									<iframe
-										title="Database Access"
-										src="/api/dbAccess/proxy/"
-										className="w-full min-h-[70vh] border-0"
-									/>
+									{isPgwebReady ? (
+										<iframe
+											title="Database Access"
+											src="/api/dbAccess/proxy/"
+											className="w-full min-h-[70vh] border-0"
+										/>
+									) : (
+										<div className="min-h-[70vh] flex items-center justify-center p-8">
+											{isPgwebLoading ? (
+												<div className="flex items-center gap-3 text-muted-foreground">
+													<Spinner className="size-5" />
+													<span>Starting pgweb container...</span>
+												</div>
+											) : (
+												<Alert variant="destructive" className="max-w-xl">
+													<AlertTriangle className="size-4" />
+													<AlertTitle>pgweb Did Not Load</AlertTitle>
+													<AlertDescription className="space-y-4">
+														<div>
+															{pgwebLoadError ??
+																"pgweb could not be reached yet."}
+														</div>
+														<Button
+															type="button"
+															variant="outline"
+															onClick={() => void probePgweb()}
+														>
+															Try Again
+														</Button>
+													</AlertDescription>
+												</Alert>
+											)}
+										</div>
+									)}
 								</CardContent>
 							</Card>
 						</div>
