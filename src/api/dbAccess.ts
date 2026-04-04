@@ -121,7 +121,7 @@ const getDbAccessConfigurationIssues = () => {
 		issues.push("DB_ACCESS_PGWEB_INTERNAL_URL is missing");
 	}
 
-	if (!existsSync("/var/run/docker.sock")) {
+	if (!existsSync(env.DOCKER_SOCKET_PATH)) {
 		issues.push("Docker socket is not mounted into the app container");
 	}
 
@@ -229,7 +229,7 @@ const createDockerRequest = ({
 	}>((resolve, reject) => {
 		const request = httpRequest(
 			{
-				socketPath: "/var/run/docker.sock",
+				socketPath: env.DOCKER_SOCKET_PATH,
 				path,
 				method,
 				headers: body
@@ -575,7 +575,7 @@ const initializeDbAccessLifecycle = () => {
 		interval.unref?.();
 	}
 
-	if (!store.startupCleanupTriggered && existsSync("/var/run/docker.sock")) {
+	if (!store.startupCleanupTriggered && existsSync(env.DOCKER_SOCKET_PATH)) {
 		store.startupCleanupTriggered = true;
 		void ensurePgwebStopped().then(
 			async () => {

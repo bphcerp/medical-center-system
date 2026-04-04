@@ -62,7 +62,7 @@ services:
       - type: bind
         source: ./src
         target: /usr/local/app/src
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DOCKER_HOST_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
     ports:
       - "${FRONTEND_PORT}:3000"
     profiles:
@@ -101,7 +101,7 @@ services:
     env_file:
       - .env
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DOCKER_HOST_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
     ports:
       - "${FRONTEND_PORT}:3000"
     profiles:
