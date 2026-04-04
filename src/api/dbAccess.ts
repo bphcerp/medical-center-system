@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import type { IncomingHttpHeaders } from "node:http";
 import { request as httpRequest } from "node:http";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { z } from "zod";
 import { dbAccessAuditLogsTable } from "@/db/dbAccess";
@@ -14,7 +15,6 @@ import {
 	strictValidator,
 } from "@/lib/types/api";
 import { validateAllTotpCodes } from "@/utils/totp";
-import { db } from ".";
 
 const HEARTBEAT_INTERVAL_SECONDS = 3;
 const DB_ACCESS_COOKIE_NAME = "db_access_session";
@@ -23,6 +23,11 @@ const FRONTEND_ORIGIN = new URL(env.FRONTEND_URL).origin;
 const AUTH_COOKIE_DOMAIN = env.FRONTEND_URL.replace("https://", "")
 	.replace("http://", "")
 	.split(":")[0];
+const db = drizzle({
+	connection: {
+		connectionString: env.DATABASE_URL,
+	},
+});
 
 type DbAccessAuditAction =
 	| "session_opened"

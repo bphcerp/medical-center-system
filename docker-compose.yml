@@ -76,6 +76,7 @@ services:
         "--bind=0.0.0.0",
         "--listen=${DB_ACCESS_PGWEB_INTERNAL_PORT}",
         "--url=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${PGPORT}/${POSTGRES_DB}?sslmode=disable",
+        "--readonly",
       ]
     env_file: .env
     expose:
