@@ -11,6 +11,7 @@ jobs:
     runs-on: medc-local
     env:
       DOCKER_HOST: unix:///run/user/1003/docker.sock
+      DOCKER_HOST_SOCKET: /run/user/1003/docker.sock
     steps:
       - name: Pull repo and deploy
         run: |

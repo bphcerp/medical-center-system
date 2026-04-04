@@ -42,6 +42,7 @@ const serverSchema = z.object({
 		.int()
 		.positive()
 		.default(10),
+	DOCKER_SOCKET_PATH: z.string().default("/var/run/docker.sock"),
 	DB_ACCESS_PGWEB_CONTAINER_NAME: z.string().default("medical-center-pgweb"),
 	DB_ACCESS_PGWEB_INTERNAL_URL: z.url().default("http://pgweb:8090"),
 });
