@@ -1,5 +1,5 @@
 import { useRouter } from "@tanstack/react-router";
-import { Download, File, Plus, TestTube, Trash, Undo } from "lucide-react";
+import { Eye, File, Plus, TestTube, Trash, Undo } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 import { handleErrors } from "@/lib/utils";
@@ -250,7 +250,8 @@ const LabTestUpdateSheet = ({
 													target="_blank"
 													rel="noopener noreferrer"
 												>
-													<Download />
+													<Eye className="size-4" />
+													<span className="ml-1">View</span>
 												</a>
 											</Button>
 											<Button

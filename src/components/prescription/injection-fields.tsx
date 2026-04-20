@@ -21,6 +21,10 @@ const PrescriptionInjectionFields = ({
 	) {
 		return null;
 	}
+
+	const dosageFilled = !!item.case_prescriptions.dosage;
+	const frequencyFilled = !!item.case_prescriptions.frequency;
+
 	return (
 		<div className="flex flex-wrap gap-2 items-center w-full">
 			<Input
@@ -31,7 +35,11 @@ const PrescriptionInjectionFields = ({
 				placeholder="Dosage (mg/mL/units)"
 				className="h-10 flex-1 min-w-[120px]"
 			/>
-			<PrescriptionFrequencySelector item={item} handleUpdate={handleUpdate} />
+			<PrescriptionFrequencySelector
+				item={item}
+				handleUpdate={handleUpdate}
+				disabled={!dosageFilled}
+			/>
 			<DurationInput
 				duration={item.case_prescriptions.duration}
 				durationUnit={item.case_prescriptions.durationUnit}
@@ -41,6 +49,7 @@ const PrescriptionInjectionFields = ({
 				onDurationUnitChange={(value) =>
 					handleUpdate(item.medicines.id, "durationUnit", value)
 				}
+				disabled={!frequencyFilled}
 			/>
 			<Select
 				value={item.case_prescriptions.categoryData.injectionRoute}
@@ -50,6 +59,7 @@ const PrescriptionInjectionFields = ({
 						injectionRoute: value,
 					})
 				}
+				disabled={!dosageFilled}
 			>
 				<SelectTrigger className="h-8 flex-1 min-w-[120px]">
 					<SelectValue placeholder="Route" />

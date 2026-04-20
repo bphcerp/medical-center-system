@@ -6,6 +6,7 @@ import {
 	History,
 	RefreshCw,
 	TriangleAlert,
+	X,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
@@ -22,6 +23,13 @@ import TestsCard from "@/components/tests-card";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import VitalsCard from "@/components/vitals-card";
 import useAuth from "@/lib/hooks/useAuth";
@@ -102,6 +110,14 @@ function ConsultationPage() {
 
 	const [finalizeButtonValue, setFinalizeButtonValue] =
 		useState<FinalizeButtonValue>("Finalize (OPD)");
+
+	// New local state for prescription sections (printout only, not persisted to DB)
+	const [chiefComplaints, setChiefComplaints] = useState<string>("");
+	const [clinicalRemarks, setClinicalRemarks] = useState<string>("");
+
+	// Modal state for prescription preview
+	const [prescriptionModalOpen, setPrescriptionModalOpen] = useState(false);
+
 	const {
 		consultationNotes,
 		diagnosisItems,
@@ -121,6 +137,7 @@ function ConsultationPage() {
 		prescriptions,
 		tests: testsFromCase,
 	});
+
 	const contentRef = useRef<HTMLDivElement>(null);
 	const reactToPrintFn = useReactToPrint({
 		contentRef,
@@ -131,6 +148,15 @@ function ConsultationPage() {
 		},
 	});
 	const [openFinalizeDialog, setOpenFinalizeDialog] = useState(false);
+
+	// Determine if the Finalize button should be disabled
+	const isFinalizeDisabled =
+		consultationNotes.trim() === "" &&
+		diagnosisItems.length === 0 &&
+		prescriptionItems.length === 0 &&
+		testItems.length === 0 &&
+		chiefComplaints.trim() === "" &&
+		clinicalRemarks.trim() === "";
 
 	if (!caseDetail) {
 		return (
@@ -183,6 +209,11 @@ function ConsultationPage() {
 		navigate({
 			to: "/doctor",
 		});
+	}
+
+	// Open prescription preview modal instead of auto-printing
+	function handleOpenPrescriptionPreview() {
+		setPrescriptionModalOpen(true);
 	}
 
 	return (
@@ -242,6 +273,18 @@ function ConsultationPage() {
 						<span className="hidden md:inline">View History</span>
 					</Button>
 				</div>
+
+				{/* Chief Complaints textarea */}
+				<Card className="mb-4 p-4">
+					<Label className="font-semibold text-lg">Chief Complaints</Label>
+					<Textarea
+						value={chiefComplaints}
+						onChange={(e) => setChiefComplaints(e.target.value)}
+						className="mt-2 resize-none min-h-20"
+						placeholder="Enter patient's chief complaints (e.g., fever for 3 days, headache, cough)..."
+					/>
+				</Card>
+
 				<Card className="mb-4 p-0">
 					<VitalsCard vitals={caseDetail.cases} condensed />
 				</Card>
@@ -275,6 +318,20 @@ function ConsultationPage() {
 						/>
 					</div>
 				</div>
+
+				{/* Clinical Remarks / Addendum textarea */}
+				<Card className="mt-4 p-4">
+					<Label className="font-semibold text-lg">
+						Clinical Remarks / Addendum
+					</Label>
+					<Textarea
+						value={clinicalRemarks}
+						onChange={(e) => setClinicalRemarks(e.target.value)}
+						className="mt-2 resize-none min-h-24"
+						placeholder="Additional clinical notes, patient history, follow-up instructions, referral details, or any remarks that don't fit in other sections..."
+					/>
+				</Card>
+
 				<FinalizeCaseDialog
 					open={openFinalizeDialog}
 					onOpenChange={setOpenFinalizeDialog}
@@ -282,10 +339,13 @@ function ConsultationPage() {
 				/>
 
 				<FinalizeCaseCard
-					handleFinalize={reactToPrintFn}
+					handleFinalize={handleOpenPrescriptionPreview}
 					finalizeButtonValue={finalizeButtonValue}
 					setFinalizeButtonValue={setFinalizeButtonValue}
+					disabled={isFinalizeDisabled}
 				/>
+
+				{/* Hidden printable content */}
 				<div className="hidden">
 					<div ref={contentRef}>
 						<PrescriptionPrintout
@@ -293,6 +353,8 @@ function ConsultationPage() {
 							prescriptionItems={prescriptionItems}
 							diagnosisItems={diagnosisItems}
 							consultationNotes={consultationNotes}
+							chiefComplaints={chiefComplaints}
+							clinicalRemarks={clinicalRemarks}
 							testItems={testItems}
 							finalizeValue={finalizeButtonValue}
 							doctor={user}
@@ -300,6 +362,60 @@ function ConsultationPage() {
 					</div>
 				</div>
 			</div>
+
+			{/* Prescription Preview Modal */}
+			<Dialog
+				open={prescriptionModalOpen}
+				onOpenChange={setPrescriptionModalOpen}
+			>
+				<DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle className="flex items-center justify-between">
+							Prescription Preview
+						</DialogTitle>
+					</DialogHeader>
+					<div className="border rounded bg-white text-black">
+						<PrescriptionPrintout
+							caseDetail={caseDetail}
+							prescriptionItems={prescriptionItems}
+							diagnosisItems={diagnosisItems}
+							consultationNotes={consultationNotes}
+							chiefComplaints={chiefComplaints}
+							clinicalRemarks={clinicalRemarks}
+							testItems={testItems}
+							finalizeValue={finalizeButtonValue}
+							doctor={user}
+						/>
+					</div>
+					<DialogFooter className="flex gap-2 sm:justify-between">
+						<Button
+							variant="outline"
+							onClick={() => setPrescriptionModalOpen(false)}
+						>
+							<X className="mr-1 size-4" />
+							Close
+						</Button>
+						<div className="flex gap-2">
+							<Button
+								variant="outline"
+								onClick={() => {
+									reactToPrintFn();
+								}}
+							>
+								Print / Save as PDF
+							</Button>
+							<Button
+								onClick={() => {
+									setPrescriptionModalOpen(false);
+									setOpenFinalizeDialog(true);
+								}}
+							>
+								{finalizeButtonValue}
+							</Button>
+						</div>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

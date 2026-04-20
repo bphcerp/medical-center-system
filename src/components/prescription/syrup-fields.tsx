@@ -18,6 +18,9 @@ const PrescriptionSyrupFields = ({
 		return null;
 	}
 
+	const dosageFilled = !!item.case_prescriptions.dosage;
+	const frequencyFilled = !!item.case_prescriptions.frequency;
+
 	return (
 		<div className="flex flex-wrap gap-2 items-center w-full">
 			<Input
@@ -35,11 +38,13 @@ const PrescriptionSyrupFields = ({
 			<PrescriptionFrequencySelector
 				item={item}
 				handleUpdate={handleUpdatePrescriptionItem}
+				disabled={!dosageFilled}
 			/>
 			<MealTimeSelector
 				item={item}
 				handleUpdate={handleUpdatePrescriptionItem}
 				category="Liquids/Syrups"
+				disabled={!frequencyFilled}
 			/>
 			<DurationInput
 				duration={item.case_prescriptions.duration}
@@ -50,6 +55,7 @@ const PrescriptionSyrupFields = ({
 				onDurationUnitChange={(value) =>
 					handleUpdatePrescriptionItem(item.medicines.id, "durationUnit", value)
 				}
+				disabled={!frequencyFilled}
 			/>
 			<Comment item={item} handleUpdate={handleUpdatePrescriptionItem} />
 		</div>
