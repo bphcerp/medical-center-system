@@ -53,20 +53,17 @@ const PrescriptionPrintout = ({
 			<div className="border border-black divide-solid divide-y divide-black mx-4 flex flex-col text-black bg-white">
 				<div className="flex gap-4 justify-between px-4 py-2">
 					<span>
-						<span className="font-bold">Date &amp; Time:</span>{" "}
-						{timestamp}
+						<span className="font-bold">Date &amp; Time:</span> {timestamp}
 					</span>
 					<span>
-						<span className="font-bold">Case No.:</span>{" "}
-						{caseDetail.cases.id}
+						<span className="font-bold">Case No.:</span> {caseDetail.cases.id}
 					</span>
 					<span>
 						<span className="font-bold">Patient Type:</span>{" "}
 						{caseDetail.patient.type.toUpperCase()}
 					</span>
 					<span>
-						<span className="font-bold">PSRN/ID:</span>{" "}
-						{caseDetail.identifier}
+						<span className="font-bold">PSRN/ID:</span> {caseDetail.identifier}
 					</span>
 				</div>
 				<div className="flex gap-4 justify-between px-4 py-2">
@@ -125,7 +122,9 @@ const PrescriptionPrintout = ({
 			{/* Chief Complaints */}
 			{chiefComplaints && (
 				<div className="border border-black border-t-0 mx-4 px-4 py-2 text-black bg-white">
-					<h2 className="text-base font-bold underline mb-1">Chief Complaints</h2>
+					<h2 className="text-base font-bold underline mb-1">
+						Chief Complaints
+					</h2>
 					<p className="whitespace-pre-wrap">{chiefComplaints}</p>
 				</div>
 			)}
@@ -142,7 +141,9 @@ const PrescriptionPrintout = ({
 					</div>
 					{testItems.length > 0 && (
 						<div className="pt-3">
-							<h2 className="text-lg font-bold underline mb-2">Investigations Advised</h2>
+							<h2 className="text-lg font-bold underline mb-2">
+								Investigations Advised
+							</h2>
 							<ul className="flex flex-col list-inside divide-y divide-black divide-solid gap-2">
 								{testItems.map((item) => (
 									<li key={item.id} className="pb-2 list-disc">
@@ -174,7 +175,9 @@ const PrescriptionPrintout = ({
 					</div>
 					{prescriptionItems.length > 0 && (
 						<div className="min-h-52 pt-3">
-							<h2 className="text-lg font-bold underline mb-2">Rx — Prescription</h2>
+							<h2 className="text-lg font-bold underline mb-2">
+								Rx — Prescription
+							</h2>
 							<div className="pb-4 space-y-2">
 								{prescriptionItems.map((item) => (
 									<div
@@ -208,7 +211,9 @@ const PrescriptionPrintout = ({
 											)}
 											{item.case_prescriptions.frequency && (
 												<div className="flex items-start gap-2">
-													<span className="font-medium min-w-20">Frequency:</span>
+													<span className="font-medium min-w-20">
+														Frequency:
+													</span>
 													<span className="flex-1">
 														{item.case_prescriptions.frequency}
 													</span>
@@ -217,7 +222,9 @@ const PrescriptionPrintout = ({
 											{item.case_prescriptions.duration &&
 												item.case_prescriptions.durationUnit && (
 													<div className="flex items-start gap-2">
-														<span className="font-medium min-w-20">Duration:</span>
+														<span className="font-medium min-w-20">
+															Duration:
+														</span>
 														<span className="flex-1">
 															{item.case_prescriptions.duration}{" "}
 															{item.case_prescriptions.durationUnit}
@@ -229,7 +236,9 @@ const PrescriptionPrintout = ({
 												"mealTiming" in item.case_prescriptions.categoryData &&
 												item.case_prescriptions.categoryData.mealTiming && (
 													<div className="flex items-start gap-2">
-														<span className="font-medium min-w-20">Meal Timing:</span>
+														<span className="font-medium min-w-20">
+															Meal Timing:
+														</span>
 														<span className="flex-1">
 															{item.case_prescriptions.categoryData.mealTiming}
 														</span>
@@ -238,9 +247,12 @@ const PrescriptionPrintout = ({
 											{item.case_prescriptions.categoryData &&
 												"applicationArea" in
 													item.case_prescriptions.categoryData &&
-												item.case_prescriptions.categoryData.applicationArea && (
+												item.case_prescriptions.categoryData
+													.applicationArea && (
 													<div className="flex items-start gap-2">
-														<span className="font-medium min-w-20">Application:</span>
+														<span className="font-medium min-w-20">
+															Application:
+														</span>
 														<span className="flex-1">
 															{
 																item.case_prescriptions.categoryData
@@ -303,7 +315,9 @@ const PrescriptionPrintout = ({
 
 			{/* Emergency Contact */}
 			<div className="border border-black border-t-0 mx-4 px-4 py-3 mb-4 text-black bg-white">
-				<h2 className="text-base font-bold underline mb-2">Emergency Contacts</h2>
+				<h2 className="text-base font-bold underline mb-2">
+					Emergency Contacts
+				</h2>
 				<div className="grid grid-cols-2 gap-x-8 gap-y-1 text-sm">
 					<div className="flex justify-between">
 						<span className="font-medium">Medical Centre:</span>
@@ -320,10 +334,14 @@ const PrescriptionPrintout = ({
 				</div>
 				<div className="mt-3 pt-2 border-t border-black text-sm">
 					<span className="font-medium">Patient Emergency Contact:</span>{" "}
-					<span className="border-b border-black inline-block min-w-64">&nbsp;</span>
+					<span className="border-b border-black inline-block min-w-64">
+						&nbsp;
+					</span>
 					&nbsp;&nbsp;
 					<span className="font-medium">Relation:</span>{" "}
-					<span className="border-b border-black inline-block min-w-32">&nbsp;</span>
+					<span className="border-b border-black inline-block min-w-32">
+						&nbsp;
+					</span>
 				</div>
 			</div>
 
@@ -345,7 +363,8 @@ const PrescriptionPrintout = ({
 				</div>
 				<div className="text-sm text-black self-end">
 					<p className="text-xs italic">
-						This prescription is computer generated and is valid without a physical signature.
+						This prescription is computer generated and is valid without a
+						physical signature.
 					</p>
 				</div>
 			</div>
