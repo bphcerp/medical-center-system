@@ -41,19 +41,25 @@ function AdminDashboard() {
 			!route.id.includes("$"),
 	);
 
-	const items = childRoutes.map((route) => ({
-		title:
-			route.options.staticData?.name ??
-			(route.path
-				? route.path
-						.charAt(0)
-						.toUpperCase()
-						.concat(route.path.slice(1))
-						.replace(/-/g, " ")
-				: "Unknown"),
-		url: route.fullPath,
-		icon: route.options.staticData?.icon ?? ShieldUser,
-	}));
+	const items = childRoutes
+		.map((route) => ({
+			title:
+				route.options.staticData?.name ??
+				(route.path
+					? route.path
+							.charAt(0)
+							.toUpperCase()
+							.concat(route.path.slice(1))
+							.replace(/-/g, " ")
+					: "Unknown"),
+			url: route.fullPath,
+			icon: route.options.staticData?.icon ?? ShieldUser,
+		}))
+		.sort((a, b) => {
+			if (a.url.endsWith("/analytics")) return 1;
+			if (b.url.endsWith("/analytics")) return -1;
+			return 0;
+		});
 
 	useEffect(() => {
 		if (location.pathname === "/admin" && items.length > 0) {
@@ -83,8 +89,8 @@ function AdminDashboard() {
 					) : undefined
 				}
 			/>
-			<div className="flex h-after-topbar">
-				<Sidebar className="relative h-full">
+			<div className="flex h-after-topbar min-h-0 overflow-hidden">
+				<Sidebar className="relative h-full shrink-0">
 					<SidebarContent>
 						<SidebarGroup>
 							{isMobile && (
@@ -127,7 +133,7 @@ function AdminDashboard() {
 						</SidebarGroup>
 					</SidebarContent>
 				</Sidebar>
-				<main className="w-full px-6 py-4">
+				<main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-6 py-4">
 					<Outlet />
 				</main>
 			</div>
