@@ -1,65 +1,55 @@
 import { Input } from "@/components/ui/input";
-import Comment from "./comment";
 import {
+	DosageSelector,
 	DurationInput,
 	MealTimeSelector,
 	PrescriptionFrequencySelector,
 } from "./selectors";
 import type { PrescriptionItemProps } from "./types";
 
-const PrescriptionSyrupFields = ({
+export default function PrescriptionSyrupFields({
 	item,
-	handleUpdate: handleUpdatePrescriptionItem,
-}: PrescriptionItemProps) => {
-	if (
-		!item.case_prescriptions.categoryData ||
-		item.case_prescriptions.categoryData.category !== "Liquids/Syrups"
-	) {
+	handleUpdate,
+}: PrescriptionItemProps) {
+	if (item.medicines.category !== "Liquids/Syrups") {
 		return null;
 	}
 
-	const dosageFilled = !!item.case_prescriptions.dosage;
-	const frequencyFilled = !!item.case_prescriptions.frequency;
-
 	return (
-		<div className="flex flex-wrap gap-2 items-center w-full">
-			<Input
-				value={item.case_prescriptions.dosage}
-				onChange={(e) =>
-					handleUpdatePrescriptionItem(
-						item.medicines.id,
-						"dosage",
-						e.target.value,
-					)
-				}
-				placeholder="Dosage (mL/teaspoon/mg)"
-				className="h-10 flex-1 min-w-[120px]"
-			/>
-			<PrescriptionFrequencySelector
+		<div className="flex flex-wrap gap-2 w-full">
+			<DosageSelector
 				item={item}
-				handleUpdate={handleUpdatePrescriptionItem}
-				disabled={!dosageFilled}
+				handleUpdate={handleUpdate}
+				values={["2.5ml", "5ml", "10ml", "15ml", "20ml"]}
 			/>
-			<MealTimeSelector
-				item={item}
-				handleUpdate={handleUpdatePrescriptionItem}
-				category="Liquids/Syrups"
-				disabled={!frequencyFilled}
-			/>
+
+			<PrescriptionFrequencySelector item={item} handleUpdate={handleUpdate} />
+
 			<DurationInput
 				duration={item.case_prescriptions.duration}
 				durationUnit={item.case_prescriptions.durationUnit}
 				onDurationChange={(value) =>
-					handleUpdatePrescriptionItem(item.medicines.id, "duration", value)
+					handleUpdate(item.medicines.id, "duration", value)
 				}
 				onDurationUnitChange={(value) =>
-					handleUpdatePrescriptionItem(item.medicines.id, "durationUnit", value)
+					handleUpdate(item.medicines.id, "durationUnit", value)
 				}
-				disabled={!frequencyFilled}
 			/>
-			<Comment item={item} handleUpdate={handleUpdatePrescriptionItem} />
+
+			<MealTimeSelector
+				item={item}
+				handleUpdate={handleUpdate}
+				category="Liquids/Syrups"
+			/>
+
+			<Input
+				placeholder="Notes (e.g., dilute in water)..."
+				value={item.case_prescriptions.comment || ""}
+				onChange={(e) =>
+					handleUpdate(item.medicines.id, "comment", e.target.value)
+				}
+				className="h-8 flex-1 min-w-[150px]"
+			/>
 		</div>
 	);
-};
-
-export default PrescriptionSyrupFields;
+}

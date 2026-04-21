@@ -18,9 +18,6 @@ const PrescriptionExternalFields = ({
 		return null;
 	}
 
-	const dosageFilled = !!item.case_prescriptions.dosage;
-	const frequencyFilled = !!item.case_prescriptions.frequency;
-
 	return (
 		<div className="flex flex-wrap gap-2 items-center w-full">
 			<DosageSelector
@@ -34,11 +31,7 @@ const PrescriptionExternalFields = ({
 					"As needed",
 				]}
 			/>
-			<PrescriptionFrequencySelector
-				item={item}
-				handleUpdate={handleUpdate}
-				disabled={!dosageFilled}
-			/>
+			<PrescriptionFrequencySelector item={item} handleUpdate={handleUpdate} />
 			<DurationInput
 				duration={item.case_prescriptions.duration}
 				durationUnit={item.case_prescriptions.durationUnit}
@@ -48,7 +41,6 @@ const PrescriptionExternalFields = ({
 				onDurationUnitChange={(value) =>
 					handleUpdate(item.medicines.id, "durationUnit", value)
 				}
-				disabled={!frequencyFilled}
 			/>
 			<Input
 				value={item.case_prescriptions.categoryData.applicationArea}
@@ -60,7 +52,6 @@ const PrescriptionExternalFields = ({
 				}
 				placeholder="Application area"
 				className="h-10 flex-1 min-w-[120px]"
-				disabled={!dosageFilled}
 			/>
 			<Comment item={item} handleUpdate={handleUpdate} />
 		</div>

@@ -459,6 +459,8 @@ const doctor = createStrictHono()
 			z.object({
 				caseId: z.number().int().positive(),
 				consultationNotes: z.string().optional(),
+				chiefComplaints: z.string().optional(),
+				clinicalRemarks: z.string().optional(),
 				// Allow empty array to clear diagnosis, tests and prescriptions
 				diagnosis: z.array(z.number().int().positive()).optional(),
 				prescriptions: z
@@ -470,8 +472,15 @@ const doctor = createStrictHono()
 		async (c) => {
 			const payload = c.get("jwtPayload");
 			const userId = payload.id;
-			const { caseId, consultationNotes, prescriptions, diagnosis, tests } =
-				c.req.valid("json");
+			const {
+				caseId,
+				consultationNotes,
+				chiefComplaints,
+				clinicalRemarks,
+				prescriptions,
+				diagnosis,
+				tests,
+			} = c.req.valid("json");
 
 			if (tests !== undefined) {
 				const validTests = await db
@@ -507,6 +516,8 @@ const doctor = createStrictHono()
 					.update(casesTable)
 					.set({
 						...(consultationNotes !== undefined ? { consultationNotes } : {}),
+						...(chiefComplaints !== undefined ? { chiefComplaints } : {}),
+						...(clinicalRemarks !== undefined ? { clinicalRemarks } : {}),
 						...(diagnosis !== undefined ? { diagnosis } : {}),
 					})
 					.where(

@@ -7,6 +7,7 @@ import { client } from "@/routes/api/$";
 import { LabTestStatusBadge } from "./lab-test-status-badge";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import {
 	Empty,
 	EmptyContent,
@@ -65,6 +66,11 @@ const LabTestUpdateSheet = ({
 			file,
 		})),
 	);
+	const [previewFile, setPreviewFile] = useState<{
+		url: string;
+		filename: string;
+		revokeUrl?: boolean;
+	} | null>(null);
 	const router = useRouter();
 	useEffect(() => {
 		setStatus(test.status);
@@ -76,6 +82,14 @@ const LabTestUpdateSheet = ({
 			})),
 		);
 	}, [test]);
+
+	useEffect(() => {
+		return () => {
+			if (previewFile?.revokeUrl) {
+				URL.revokeObjectURL(previewFile.url);
+			}
+		};
+	}, [previewFile]);
 
 	const hasChanges =
 		files.some((f) => f.action !== "keep") || test.status !== status;
@@ -136,184 +150,224 @@ const LabTestUpdateSheet = ({
 		}
 	};
 
+	const handlePreview = (file: FileDiff) => {
+		if (file.action === "remove") {
+			return;
+		}
+
+		if ("filename" in file.file) {
+			setPreviewFile({
+				url: `/api/files/${file.file.fileId}`,
+				filename: file.file.filename,
+			});
+			return;
+		}
+
+		setPreviewFile({
+			url: URL.createObjectURL(file.file),
+			filename: file.file.name,
+			revokeUrl: true,
+		});
+	};
+
 	return (
-		<SheetContent className="sm:min-w-xl min-w-screen">
-			<SheetHeader>
-				<SheetTitle className="gap-2 flex items-center w-11/12">
-					<span className="text-left line-clamp-2">{test.testName}</span>
-					<LabTestStatusBadge status={status} />
-				</SheetTitle>
-				<Input
-					type="file"
-					accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-					onChange={(e) => {
-						const files = e.target.files;
-						if (!files || files.length === 0) return;
-						const newFiles: FileDiff[] = [];
-						for (let i = 0; i < files.length; i++) {
-							newFiles.push({
-								id: Date.now() + i,
-								action: "add",
-								file: files[i],
-							});
-						}
-						setFiles((prev) => [...prev, ...newFiles]);
-					}}
-					value={""}
-					multiple
-					hidden
-					id={fileInputId}
-				/>
-			</SheetHeader>
-			<div className="flex flex-col gap-6 px-4">
-				<div className="flex gap-3 items-center">
-					<Checkbox
-						id={checkboxId}
-						checked={status !== "Requested"}
-						className="w-6 h-6 rounded"
-						onCheckedChange={() => handleCheck()}
+		<>
+			<SheetContent className="sm:min-w-xl min-w-screen">
+				<SheetHeader>
+					<SheetTitle className="gap-2 flex items-center w-11/12">
+						<span className="text-left line-clamp-2">{test.testName}</span>
+						<LabTestStatusBadge status={status} />
+					</SheetTitle>
+					<Input
+						type="file"
+						accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+						onChange={(e) => {
+							const files = e.target.files;
+							if (!files || files.length === 0) return;
+							const newFiles: FileDiff[] = [];
+							for (let i = 0; i < files.length; i++) {
+								newFiles.push({
+									id: Date.now() + i,
+									action: "add",
+									file: files[i],
+								});
+							}
+							setFiles((prev) => [...prev, ...newFiles]);
+						}}
+						value={""}
+						multiple
+						hidden
+						id={fileInputId}
 					/>
-					<Label htmlFor={checkboxId} className="text-md">
-						Sample Collected
-					</Label>
-				</div>
-				<div className="flex flex-col gap-2">
-					{status === "Requested" ? (
-						<Empty className="border border-dashed">
-							<EmptyHeader>
-								<EmptyMedia variant="icon">
-									<TestTube />
-								</EmptyMedia>
-								<EmptyTitle>Sample not collected</EmptyTitle>
-								<EmptyDescription>
-									Mark the sample as collected to upload test reports.
-								</EmptyDescription>
-							</EmptyHeader>
-						</Empty>
-					) : (
-						<>
-							<div className="flex items-center gap-3">
-								<Label className="font-medium text-lg">Uploaded Files</Label>
-								{files.length === 0 || (
-									<Button variant="default" size="sm" asChild>
-										<Label htmlFor={fileInputId}>
-											<Plus />
-											Add files
-										</Label>
-									</Button>
-								)}
-							</div>
-							{files.length === 0 ? (
-								<Empty className="border border-dashed">
-									<EmptyHeader>
-										<EmptyMedia variant="icon">
-											<File />
-										</EmptyMedia>
-										<EmptyTitle>No files uploaded</EmptyTitle>
-										<EmptyDescription>
-											Upload test reports to lab requests to mark them as
-											complete.
-										</EmptyDescription>
-									</EmptyHeader>
-									<EmptyContent>
-										<Button variant="outline" size="sm" asChild>
-											<Label htmlFor={fileInputId}>Choose file</Label>
+				</SheetHeader>
+				<div className="flex flex-col gap-6 px-4">
+					<div className="flex gap-3 items-center">
+						<Checkbox
+							id={checkboxId}
+							checked={status !== "Requested"}
+							className="w-6 h-6 rounded"
+							onCheckedChange={() => handleCheck()}
+						/>
+						<Label htmlFor={checkboxId} className="text-md">
+							Sample Collected
+						</Label>
+					</div>
+					<div className="flex flex-col gap-2">
+						{status === "Requested" ? (
+							<Empty className="border border-dashed">
+								<EmptyHeader>
+									<EmptyMedia variant="icon">
+										<TestTube />
+									</EmptyMedia>
+									<EmptyTitle>Sample not collected</EmptyTitle>
+									<EmptyDescription>
+										Mark the sample as collected to upload test reports.
+									</EmptyDescription>
+								</EmptyHeader>
+							</Empty>
+						) : (
+							<>
+								<div className="flex items-center gap-3">
+									<Label className="font-medium text-lg">Uploaded Files</Label>
+									{files.length === 0 || (
+										<Button variant="default" size="sm" asChild>
+											<Label htmlFor={fileInputId}>
+												<Plus />
+												Add files
+											</Label>
 										</Button>
-									</EmptyContent>
-								</Empty>
-							) : (
-								files.map((file) => (
-									<div
-										key={file.id}
-										className="flex items-center justify-between"
-									>
-										<span
-											className={`flex overflow-hidden ${file.action === "add" ? "text-bits-green" : file.action === "remove" ? "text-bits-red" : "text-foreground"} gap-1 items-center`}
+									)}
+								</div>
+								{files.length === 0 ? (
+									<Empty className="border border-dashed">
+										<EmptyHeader>
+											<EmptyMedia variant="icon">
+												<File />
+											</EmptyMedia>
+											<EmptyTitle>No files uploaded</EmptyTitle>
+											<EmptyDescription>
+												Upload test reports to lab requests to mark them as
+												complete.
+											</EmptyDescription>
+										</EmptyHeader>
+										<EmptyContent>
+											<Button variant="outline" size="sm" asChild>
+												<Label htmlFor={fileInputId}>Choose file</Label>
+											</Button>
+										</EmptyContent>
+									</Empty>
+								) : (
+									files.map((file) => (
+										<div
+											key={file.id}
+											className="flex items-center justify-between"
 										>
-											{file.action === "add" && <Plus className="size-4" />}
 											<span
-												className={`truncate transition duration-300 decoration-2 ${file.action === "remove" ? "line-through decoration-bits-red/60" : "decoration-bits-red/0"}`}
+												className={`flex overflow-hidden ${file.action === "add" ? "text-bits-green" : file.action === "remove" ? "text-bits-red" : "text-foreground"} gap-1 items-center`}
 											>
-												{"filename" in file.file
-													? file.file.filename
-													: file.file.name}
+												{file.action === "add" && <Plus className="size-4" />}
+												<span
+													className={`truncate transition duration-300 decoration-2 ${file.action === "remove" ? "line-through decoration-bits-red/60" : "decoration-bits-red/0"}`}
+												>
+													{"filename" in file.file
+														? file.file.filename
+														: file.file.name}
+												</span>
 											</span>
-										</span>
-										<div className="flex gap-1">
-											<Button variant="link" className="text-sm px-4" asChild>
-												<a
-													href={
-														"filename" in file.file
-															? `/api/files/${file.file.fileId}`
-															: URL.createObjectURL(file.file)
-													}
-													target="_blank"
-													rel="noopener noreferrer"
+											<div className="flex gap-1">
+												<Button
+													variant="link"
+													className="text-sm px-4"
+													disabled={file.action === "remove"}
+													onClick={() => handlePreview(file)}
 												>
 													<Eye className="size-4" />
 													<span className="ml-1">View</span>
-												</a>
-											</Button>
-											<Button
-												variant="ghost"
-												data-slot={file.action}
-												className={`text-sm px-4 duration-300 transition ${
-													file.action === "remove"
-														? "text-bits-red bg-bits-red/10 hover:text-foreground hover:bg-accent"
-														: "text-foreground bg-accent hover:text-bits-red hover:bg-bits-red/10"
-												}`}
-												onClick={() => {
-													if (file.action === "add") {
-														setFiles((prev) =>
-															prev.filter((f) => f.id !== file.id),
-														);
-													} else if (file.action === "remove") {
-														setFiles((prev) =>
-															prev.map((f) =>
-																f.id === file.id && f.action === "remove"
-																	? { ...f, action: "keep" }
-																	: f,
-															),
-														);
-													} else {
-														setFiles((prev) =>
-															prev.map((f) =>
-																f.id === file.id && f.action === "keep"
-																	? { ...f, action: "remove" }
-																	: f,
-															),
-														);
-													}
-												}}
-											>
-												{file.action === "add" ? (
-													<Trash />
-												) : file.action === "remove" ? (
-													<Undo />
-												) : (
-													<Trash />
-												)}
-											</Button>
+												</Button>
+												<Button
+													variant="ghost"
+													data-slot={file.action}
+													className={`text-sm px-4 duration-300 transition ${
+														file.action === "remove"
+															? "text-bits-red bg-bits-red/10 hover:text-foreground hover:bg-accent"
+															: "text-foreground bg-accent hover:text-bits-red hover:bg-bits-red/10"
+													}`}
+													onClick={() => {
+														if (file.action === "add") {
+															setFiles((prev) =>
+																prev.filter((f) => f.id !== file.id),
+															);
+														} else if (file.action === "remove") {
+															setFiles((prev) =>
+																prev.map((f) =>
+																	f.id === file.id && f.action === "remove"
+																		? { ...f, action: "keep" }
+																		: f,
+																),
+															);
+														} else {
+															setFiles((prev) =>
+																prev.map((f) =>
+																	f.id === file.id && f.action === "keep"
+																		? { ...f, action: "remove" }
+																		: f,
+																),
+															);
+														}
+													}}
+												>
+													{file.action === "add" ? (
+														<Trash />
+													) : file.action === "remove" ? (
+														<Undo />
+													) : (
+														<Trash />
+													)}
+												</Button>
+											</div>
 										</div>
-									</div>
-								))
-							)}
-						</>
-					)}
+									))
+								)}
+							</>
+						)}
+					</div>
 				</div>
-			</div>
-			<SheetFooter>
-				<Button
-					disabled={!hasChanges}
-					className="w-full"
-					onClick={async () => {
-						await handleSave();
-					}}
-				>
-					Save Changes
-				</Button>
-			</SheetFooter>
-		</SheetContent>
+				<SheetFooter>
+					<Button
+						disabled={!hasChanges}
+						className="w-full"
+						onClick={async () => {
+							await handleSave();
+						}}
+					>
+						Save Changes
+					</Button>
+				</SheetFooter>
+			</SheetContent>
+			<Dialog
+				open={previewFile !== null}
+				onOpenChange={(open) => {
+					if (!open) {
+						setPreviewFile(null);
+					}
+				}}
+			>
+				<DialogContent className="max-w-5xl h-[90vh] p-0 overflow-hidden flex flex-col">
+					<DialogHeader className="px-4 pt-4">
+						<DialogTitle className="truncate">
+							{previewFile?.filename ?? "Report preview"}
+						</DialogTitle>
+					</DialogHeader>
+					{previewFile && (
+						<iframe
+							src={previewFile.url}
+							title={previewFile.filename}
+							className="min-h-0 flex-1 w-full border-0 bg-white"
+						/>
+					)}
+				</DialogContent>
+			</Dialog>
+		</>
 	);
 };
 

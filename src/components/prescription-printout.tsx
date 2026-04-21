@@ -38,22 +38,22 @@ const PrescriptionPrintout = ({
 	});
 
 	return (
-		<>
-			<div className="w-full font-serif text-black bg-white">
+		<div className="relative w-full bg-white text-black font-serif">
+			<div className="relative w-full text-black bg-white">
 				<img
 					src={Logo}
 					alt="BITS Pilani Logo"
-					className="absolute size-20 top-8 left-8"
+					className="absolute size-20 top-0 left-19"
 					style={{ filter: "grayscale(100%)" }}
 				/>
-				<h1 className="text-xl font-bold uppercase underline my-8 w-full text-center pt-8 text-black">
+				<h1 className="text-xl font-bold uppercase underline my-8 w-full text-center pt-8 text-black ml-[120px] pr-8">
 					Medical Center, BITS Pilani Hyderabad Campus
 				</h1>
 			</div>
 			<div className="border border-black divide-solid divide-y divide-black mx-4 flex flex-col text-black bg-white">
 				<div className="flex gap-4 justify-between px-4 py-2">
 					<span>
-						<span className="font-bold">Date &amp; Time:</span> {timestamp}
+						<span className="font-bold">Date:</span> {timestamp}
 					</span>
 					<span>
 						<span className="font-bold">Case No.:</span> {caseDetail.cases.id}
@@ -176,7 +176,7 @@ const PrescriptionPrintout = ({
 					{prescriptionItems.length > 0 && (
 						<div className="min-h-52 pt-3">
 							<h2 className="text-lg font-bold underline mb-2">
-								Rx — Prescription
+								Rx - Prescription
 							</h2>
 							<div className="pb-4 space-y-2">
 								{prescriptionItems.map((item) => (
@@ -294,11 +294,11 @@ const PrescriptionPrintout = ({
 				</div>
 			</div>
 
-			{/* Clinical Remarks / Addendum */}
+			{/* History, Assessment and Plan */}
 			{clinicalRemarks && (
 				<div className="border border-black border-t-0 mx-4 px-4 py-2 text-black bg-white">
 					<h2 className="text-base font-bold underline mb-1">
-						Clinical Remarks / Addendum
+						History, Assessment and Plan
 					</h2>
 					<p className="whitespace-pre-wrap">{clinicalRemarks}</p>
 				</div>
@@ -313,8 +313,32 @@ const PrescriptionPrintout = ({
 				</div>
 			</div>
 
+			{/* Footer */}
+			<div className="px-4 w-full flex justify-between text-black bg-white pb-4">
+				<div className="flex gap-2 items-center">
+					<img
+						src={Logo}
+						alt="BITS Pilani Logo"
+						className="size-16"
+						style={{ filter: "grayscale(100%)" }}
+					/>
+					<div className="flex flex-col text-sm text-black">
+						<span>Birla Institute of Technology &amp; Science Pilani</span>
+						<span>Hyderabad Campus</span>
+						<span>Jawahar Nagar, Shameerpet Mandal</span>
+						<span>Hyderabad - 500078, Telangana, India</span>
+					</div>
+				</div>
+				<div className="text-sm text-black self-end">
+					<p className="text-xs italic">
+						This prescription is computer generated and is valid without a
+						physical signature.
+					</p>
+				</div>
+			</div>
+
 			{/* Emergency Contact */}
-			<div className="border border-black border-t-0 mx-4 px-4 py-3 mb-4 text-black bg-white">
+			<div className="border border-black mx-4 px-4 py-3 mb-4 text-black bg-white">
 				<h2 className="text-base font-bold underline mb-2">
 					Emergency Contacts
 				</h2>
@@ -344,31 +368,7 @@ const PrescriptionPrintout = ({
 					</span>
 				</div>
 			</div>
-
-			{/* Footer */}
-			<div className="px-4 w-full flex justify-between text-black bg-white pb-4">
-				<div className="flex gap-2 items-center">
-					<img
-						src={Logo}
-						alt="BITS Pilani Logo"
-						className="size-16"
-						style={{ filter: "grayscale(100%)" }}
-					/>
-					<div className="flex flex-col text-sm text-black">
-						<span>Birla Institute of Technology &amp; Science Pilani</span>
-						<span>Hyderabad Campus</span>
-						<span>Jawahar Nagar, Shameerpet Mandal</span>
-						<span>Hyderabad - 500078, Telangana, India</span>
-					</div>
-				</div>
-				<div className="text-sm text-black self-end">
-					<p className="text-xs italic">
-						This prescription is computer generated and is valid without a
-						physical signature.
-					</p>
-				</div>
-			</div>
-		</>
+		</div>
 	);
 };
 

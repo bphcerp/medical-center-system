@@ -18,9 +18,6 @@ const PrescriptionCapsuleFields = ({
 		return null;
 	}
 
-	const dosageFilled = !!item.case_prescriptions.dosage;
-	const frequencyFilled = !!item.case_prescriptions.frequency;
-
 	return (
 		<div className="flex flex-wrap gap-2 items-center w-full">
 			<DosageSelector
@@ -28,16 +25,11 @@ const PrescriptionCapsuleFields = ({
 				handleUpdate={handleUpdate}
 				values={["1/4 tablet", "1/2 tablet", "1 tablet", "2 tablets"]}
 			/>
-			<PrescriptionFrequencySelector
-				item={item}
-				handleUpdate={handleUpdate}
-				disabled={!dosageFilled}
-			/>
+			<PrescriptionFrequencySelector item={item} handleUpdate={handleUpdate} />
 			<MealTimeSelector
 				item={item}
 				handleUpdate={handleUpdate}
 				category="Capsule/Tablet"
-				disabled={!frequencyFilled}
 			/>
 			<DurationInput
 				duration={item.case_prescriptions.duration}
@@ -48,7 +40,6 @@ const PrescriptionCapsuleFields = ({
 				onDurationUnitChange={(value) =>
 					handleUpdate(item.medicines.id, "durationUnit", value)
 				}
-				disabled={!frequencyFilled}
 			/>
 			<Comment item={item} handleUpdate={handleUpdate} />
 		</div>

@@ -111,19 +111,19 @@ function ConsultationPage() {
 	const [finalizeButtonValue, setFinalizeButtonValue] =
 		useState<FinalizeButtonValue>("Finalize (OPD)");
 
-	// New local state for prescription sections (printout only, not persisted to DB)
-	const [chiefComplaints, setChiefComplaints] = useState<string>("");
-	const [clinicalRemarks, setClinicalRemarks] = useState<string>("");
-
 	// Modal state for prescription preview
 	const [prescriptionModalOpen, setPrescriptionModalOpen] = useState(false);
 
 	const {
 		consultationNotes,
+		chiefComplaints,
+		clinicalRemarks,
 		diagnosisItems,
 		prescriptionItems,
 		testItems,
 		setConsultationNotes,
+		setChiefComplaints,
+		setClinicalRemarks,
 		setDiagnosisItems,
 		setPrescriptionItems,
 		setTestItems,
@@ -141,19 +141,28 @@ function ConsultationPage() {
 	const contentRef = useRef<HTMLDivElement>(null);
 	const reactToPrintFn = useReactToPrint({
 		contentRef,
-		onAfterPrint: () => {
-			setTimeout(() => {
-				setOpenFinalizeDialog(true);
-			}, 500);
-		},
 	});
 	const [openFinalizeDialog, setOpenFinalizeDialog] = useState(false);
 
-	// Determine if the Finalize button should be disabled
+	const hasPrescriptionContent = prescriptionItems.some((item) => {
+		const prescription = item.case_prescriptions;
+		const categoryData = prescription.categoryData;
+
+		return (
+			prescription.dosage.trim() !== "" ||
+			prescription.frequency.trim() !== "" ||
+			prescription.duration.trim() !== "" ||
+			(prescription.comment?.trim() ?? "") !== "" ||
+			(categoryData &&
+				"applicationArea" in categoryData &&
+				categoryData.applicationArea.trim() !== "")
+		);
+	});
+
 	const isFinalizeDisabled =
 		consultationNotes.trim() === "" &&
 		diagnosisItems.length === 0 &&
-		prescriptionItems.length === 0 &&
+		!hasPrescriptionContent &&
 		testItems.length === 0 &&
 		chiefComplaints.trim() === "" &&
 		clinicalRemarks.trim() === "";
@@ -189,7 +198,7 @@ function ConsultationPage() {
 
 		// autosave endpoint -> finalize the case
 		try {
-			await autosave();
+			await autosave(true);
 		} catch (error) {
 			toast.error("Failed to save case data");
 			console.error("Error saving case data:", error);
@@ -322,13 +331,13 @@ function ConsultationPage() {
 				{/* Clinical Remarks / Addendum textarea */}
 				<Card className="mt-4 p-4">
 					<Label className="font-semibold text-lg">
-						Clinical Remarks / Addendum
+						History, Assessment and Plan
 					</Label>
 					<Textarea
 						value={clinicalRemarks}
 						onChange={(e) => setClinicalRemarks(e.target.value)}
 						className="mt-2 resize-none min-h-24"
-						placeholder="Additional clinical notes, patient history, follow-up instructions, referral details, or any remarks that don't fit in other sections..."
+						placeholder="Relevant history, assessment, plan, follow-up instructions, referral details, or other clinical notes..."
 					/>
 				</Card>
 
@@ -345,8 +354,8 @@ function ConsultationPage() {
 					disabled={isFinalizeDisabled}
 				/>
 
-				{/* Hidden printable content */}
-				<div className="hidden">
+				{/* Printable content kept offscreen so print styles still apply. */}
+				<div className="fixed -left-[10000px] top-0 w-[210mm] bg-white">
 					<div ref={contentRef}>
 						<PrescriptionPrintout
 							caseDetail={caseDetail}
@@ -368,7 +377,7 @@ function ConsultationPage() {
 				open={prescriptionModalOpen}
 				onOpenChange={setPrescriptionModalOpen}
 			>
-				<DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+				<DialogContent className="w-[95vw] sm:max-w-4xl md:max-w-5xl max-h-[90vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle className="flex items-center justify-between">
 							Prescription Preview
