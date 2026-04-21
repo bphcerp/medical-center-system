@@ -58,6 +58,8 @@ services:
         condition: service_healthy
     env_file:
       - .env
+    environment:
+      - TSR_TMP_DIR=/usr/local/app/src/.tanstack/tmp
     volumes:
       - type: bind
         source: ./src
@@ -65,6 +67,7 @@ services:
       - ${DOCKER_HOST_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
     ports:
       - "${FRONTEND_PORT}:3000"
+      - "4983:4983" # for drizzle studio
     profiles:
       - "dev"
   

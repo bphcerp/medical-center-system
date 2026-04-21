@@ -165,10 +165,12 @@ export function RegistrationForm({
 
 	const handleCheckExisting = async (identifier: string) => {
 		const identifierValue = identifier.toLowerCase();
+		const isProfessorPsrn = /^h\d{4}$/i.test(identifierValue);
+		const isStudentHIdentifier = /^h\d{8}$/i.test(identifierValue);
 
 		let type: RegistrationType = "visitor";
 		if (registrationType !== "visitor") {
-			if (identifierValue.startsWith("h")) {
+			if (isProfessorPsrn && !isStudentHIdentifier) {
 				type = "professor";
 			} else {
 				type = "student";
@@ -253,6 +255,7 @@ export function RegistrationForm({
 	};
 
 	const handleBarcodeScan = async (scanned: string) => {
+		console.log(scanned);
 		await handleCheckExisting(scanned);
 		setShowScanner(false);
 		setIdentifier(scanned);
@@ -455,9 +458,22 @@ type IdScannerProps = {
 	onScan: (scannedId: string) => void;
 };
 const validateResult = (scanned: string) => {
-	const studentIdPattern = /^((F)(20\d{2})(\d{4}))H$/i;
+	const studentIdPattern = /^(([FDPH])(20\d{2})(\d{4}))H$/i;
+	const professorIdPattern = /^(?:\*PSRN(\d{4})\*|PSRN(\d{4}))$/i;
+	const normalizedProfessorIdPattern = /^((H)(\d{4}))$/i;
 
-	return studentIdPattern.exec(scanned);
+	const professorMatch = professorIdPattern.exec(scanned);
+	if (professorMatch) {
+		return normalizedProfessorIdPattern.exec(`H${professorMatch[1]}`);
+	}
+
+	const studentMatch = studentIdPattern.exec(scanned);
+	if (studentMatch && studentMatch[2].toUpperCase() === "D") {
+		const normalizedStudent = `F${studentMatch[3]}${studentMatch[4]}H`;
+		return studentIdPattern.exec(normalizedStudent);
+	}
+
+	return studentMatch;
 };
 function IdScanner({ onScan }: IdScannerProps) {
 	const [text, setText] = useState<string | null>(null);
