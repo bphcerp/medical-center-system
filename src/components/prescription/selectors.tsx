@@ -9,22 +9,16 @@ import { mealTimings } from "@/db/case";
 import { Input } from "../ui/input";
 import type { PrescriptionItemProps } from "./types";
 
-interface PrescriptionFrequencySelectorProps extends PrescriptionItemProps {
-	disabled?: boolean;
-}
-
 const PrescriptionFrequencySelector = ({
 	item,
 	handleUpdate: handleUpdatePrescriptionItem,
-	disabled,
-}: PrescriptionFrequencySelectorProps) => {
+}: PrescriptionItemProps) => {
 	return (
 		<Select
 			value={item.case_prescriptions.frequency}
 			onValueChange={(value) =>
 				handleUpdatePrescriptionItem(item.medicines.id, "frequency", value)
 			}
-			disabled={disabled}
 		>
 			<SelectTrigger className="h-8 flex-1 min-w-[100px]">
 				<SelectValue placeholder="Frequency" />
@@ -48,14 +42,12 @@ const PrescriptionFrequencySelector = ({
 
 interface MealTimeSelectorProps extends PrescriptionItemProps {
 	category: "Capsule/Tablet" | "Liquids/Syrups";
-	disabled?: boolean;
 }
 
 const MealTimeSelector = ({
 	item,
 	handleUpdate: handleUpdatePrescriptionItem,
 	category,
-	disabled,
 }: MealTimeSelectorProps) => {
 	if (
 		!item.case_prescriptions.categoryData ||
@@ -73,7 +65,6 @@ const MealTimeSelector = ({
 					mealTiming: value,
 				})
 			}
-			disabled={disabled}
 		>
 			<SelectTrigger className="h-8 flex-1 min-w-[100px]">
 				<SelectValue placeholder="Meal Timing" />
@@ -94,13 +85,11 @@ const DurationInput = ({
 	durationUnit,
 	onDurationChange,
 	onDurationUnitChange,
-	disabled,
 }: {
 	duration: string;
 	durationUnit?: string;
 	onDurationChange: (value: string) => void;
 	onDurationUnitChange: (value: string) => void;
-	disabled?: boolean;
 }) => {
 	return (
 		<>
@@ -110,12 +99,10 @@ const DurationInput = ({
 				onChange={(e) => onDurationChange(e.target.value)}
 				placeholder="0"
 				className="h-10 w-15"
-				disabled={disabled}
 			/>
 			<Select
 				value={durationUnit || "days"}
 				onValueChange={onDurationUnitChange}
-				disabled={disabled}
 			>
 				<SelectTrigger className="h-8 w-28">
 					<SelectValue />
@@ -132,14 +119,12 @@ const DurationInput = ({
 
 interface DosageSelectorProps extends PrescriptionItemProps {
 	values: string[];
-	disabled?: boolean;
 }
 
 const DosageSelector = ({
 	item,
 	handleUpdate: handleUpdatePrescriptionItem,
 	values,
-	disabled,
 }: DosageSelectorProps) => {
 	return (
 		<Select
@@ -147,7 +132,6 @@ const DosageSelector = ({
 			onValueChange={(value) =>
 				handleUpdatePrescriptionItem(item.medicines.id, "dosage", value)
 			}
-			disabled={disabled}
 		>
 			<SelectTrigger className="h-8 flex-1 min-w-20">
 				<SelectValue placeholder="Dosage" />
