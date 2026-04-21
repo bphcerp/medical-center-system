@@ -1,15 +1,11 @@
 import "dotenv/config";
 import { count, desc, eq, gte, sql } from "drizzle-orm";
+import z from "zod";
 import { usersTable } from "@/db/auth";
-import {
-	casePrescriptionsTable,
-	casesTable,
-	medicinesTable,
-} from "@/db/case";
+import { casePrescriptionsTable, casesTable, medicinesTable } from "@/db/case";
 import { otpOverrideLogsTable } from "@/db/otp";
 import { patientsTable } from "@/db/patient";
 import { createStrictHono, strictValidator } from "@/lib/types/api";
-import z from "zod";
 import { db } from ".";
 import { rbacCheck } from "./rbac";
 
@@ -80,10 +76,7 @@ const admin = createStrictHono()
 					medicinesTable,
 					eq(casePrescriptionsTable.medicineId, medicinesTable.id),
 				)
-				.innerJoin(
-					casesTable,
-					eq(casePrescriptionsTable.caseId, casesTable.id),
-				)
+				.innerJoin(casesTable, eq(casePrescriptionsTable.caseId, casesTable.id))
 				.where(gte(casesTable.createdAt, since))
 				.groupBy(medicinesTable.id, medicinesTable.drug, medicinesTable.brand)
 				.orderBy(desc(count()))
