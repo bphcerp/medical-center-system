@@ -321,7 +321,6 @@ export function RegistrationForm({
 										name="person"
 										onValueChange={(v) => {
 											const option = JSON.parse(v);
-											console.log(option);
 											setPatientId(option.id);
 											setName(option.name);
 											setBirthdate(new Date(option.birthdate));
