@@ -321,9 +321,10 @@ export function RegistrationForm({
 										name="person"
 										onValueChange={(v) => {
 											const option = JSON.parse(v);
+											console.log(option);
 											setPatientId(option.id);
 											setName(option.name);
-											setBirthdate(option.birthdate);
+											setBirthdate(new Date(option.birthdate));
 											setSex(option.sex);
 										}}
 									>
