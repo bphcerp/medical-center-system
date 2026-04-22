@@ -349,7 +349,7 @@ export function RegistrationForm({
 											const option = JSON.parse(v);
 											setPatientId(option.id);
 											setName(option.name);
-											setBirthdate(option.birthdate);
+											setBirthdate(new Date(option.birthdate));
 											setSex(option.sex);
 										}}
 									>
