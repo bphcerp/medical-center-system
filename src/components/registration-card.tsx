@@ -1,13 +1,13 @@
 import { ArrowLeft, ArrowRight, CheckIcon, ScanBarcode } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { identifierTypes } from "@/db/case";
 import {
-	handleErrors,
-	type IdResult,
-	isBarcodeDetectionAvailable,
+	type IdentifierResult,
+	type IdentifierType,
+	normalizeIdentifier,
 	validateIdentifier,
-} from "@/lib/utils";
+} from "@/lib/identifier";
+import { handleErrors, isBarcodeDetectionAvailable } from "@/lib/utils";
 import { client } from "@/routes/api/$";
 import { BarcodeScanner } from "./barcode-scanner";
 import { Button } from "./ui/button";
@@ -29,7 +29,7 @@ type RegistrationTypeDetails = {
 		title: string;
 		labelText: string;
 		inputHint: string;
-		identifierType: (typeof identifierTypes)[number];
+		identifierType: IdentifierType;
 	};
 };
 
@@ -124,7 +124,7 @@ export function RegistrationForm({
 				return;
 			}
 			if (onPatientId) {
-				onPatientId?.(patientId, name);
+				onPatientId(patientId, name);
 				resetState();
 			}
 			return;
@@ -132,12 +132,20 @@ export function RegistrationForm({
 
 		const identifierType =
 			registrationTypeDetails[registrationType].identifierType;
+		const normalizedIdentifier = normalizeIdentifier(
+			identifier,
+			identifierType,
+		);
+		if (!normalizedIdentifier) {
+			toast.error("Invalid identifier format.");
+			return;
+		}
 
 		const res = disableForm
 			? await client.api.register.$post({
 					json: {
-						identifier,
-						identifierType,
+						identifier: normalizedIdentifier.identifier,
+						identifierType: normalizedIdentifier.type,
 						patientId,
 					},
 				})
@@ -152,15 +160,11 @@ export function RegistrationForm({
 							.toString()
 							.padStart(2, "0")}`,
 						sex: sex as "male" | "female",
-						phone: identifier as string,
+						phone: normalizedIdentifier.identifier,
 					},
 				});
 		const registered = await handleErrors(res);
-		if (res.status === 400) {
-			return;
-		}
 		if (!registered) {
-			resetState();
 			return;
 		}
 
@@ -168,33 +172,52 @@ export function RegistrationForm({
 		resetState();
 	};
 
-	const handleCheckExisting = async (identifier: string) => {
-		const identifierValue = identifier.toLowerCase();
-		const isProfessorPsrn = /^h\d{4}$/i.test(identifierValue);
-		const isStudentHIdentifier = /^h\d{8}$/i.test(identifierValue);
+	const handleCheckExisting = async (rawIdentifier: string) => {
+		const expectedType =
+			registrationType === "visitor"
+				? registrationTypeDetails.visitor.identifierType
+				: undefined;
+		const normalizedIdentifier = normalizeIdentifier(
+			rawIdentifier,
+			expectedType,
+		);
 
-		let type: RegistrationType = "visitor";
-		if (registrationType !== "visitor") {
-			if (isProfessorPsrn && !isStudentHIdentifier) {
-				type = "professor";
-			} else {
-				type = "student";
-			}
+		if (!normalizedIdentifier) {
+			toast.error(
+				registrationType === "visitor"
+					? "Enter a valid phone number."
+					: "Enter a valid student ID or PSRN.",
+			);
+			return;
 		}
 
-		const identifierType = registrationTypeDetails[type].identifierType;
+		if (
+			registrationType !== "visitor" &&
+			normalizedIdentifier.type === "phone"
+		) {
+			setVisitor();
+			return;
+		}
+
+		const type: RegistrationType =
+			normalizedIdentifier.type === "student_id"
+				? "student"
+				: normalizedIdentifier.type === "psrn"
+					? "professor"
+					: "visitor";
+
+		setIdentifier(normalizedIdentifier.identifier);
 
 		const res = await client.api.existing.$get({
 			query: {
-				identifier: identifierValue,
-				identifierType,
+				identifier: normalizedIdentifier.identifier,
+				type: normalizedIdentifier.type,
 			},
 		});
 		const existing = await handleErrors(res);
 
 		// For actual errors, handle them
 		if (!existing) {
-			resetState();
 			return;
 		}
 
@@ -260,10 +283,8 @@ export function RegistrationForm({
 	};
 
 	const handleBarcodeScan = async (scanned: string) => {
-		console.log(scanned);
 		await handleCheckExisting(scanned);
 		setShowScanner(false);
-		setIdentifier(scanned);
 	};
 
 	const initialRegisterText = showScanner ? "Scan ID Card" : "Register";
@@ -466,11 +487,13 @@ type IdScannerProps = {
 function IdScanner({ onScan }: IdScannerProps) {
 	const [text, setText] = useState<string | null>(null);
 
-	const handleScan = (scanned: IdResult) => {
+	const handleScan = (scanned: IdentifierResult) => {
 		setText(
-			scanned.type === "student_id" ? scanned.split.join(" ") : scanned.code,
+			scanned.type === "student_id"
+				? scanned.split.join(" ")
+				: scanned.identifier,
 		);
-		onScan(scanned.code);
+		onScan(scanned.identifier);
 	};
 
 	if (text === null) {
