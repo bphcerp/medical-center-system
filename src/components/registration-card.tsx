@@ -2,7 +2,12 @@ import { ArrowLeft, ArrowRight, CheckIcon, ScanBarcode } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { identifierTypes } from "@/db/case";
-import { handleErrors, isBarcodeDetectionAvailable } from "@/lib/utils";
+import {
+	handleErrors,
+	type IdResult,
+	isBarcodeDetectionAvailable,
+	validateIdentifier,
+} from "@/lib/utils";
 import { client } from "@/routes/api/$";
 import { BarcodeScanner } from "./barcode-scanner";
 import { Button } from "./ui/button";
@@ -457,37 +462,21 @@ export function RegistrationForm({
 type IdScannerProps = {
 	onScan: (scannedId: string) => void;
 };
-const validateResult = (scanned: string) => {
-	const studentIdPattern = /^(([FDPH])(20\d{2})(\d{4}))H$/i;
-	const professorIdPattern = /^(?:\*PSRN(\d{4})\*|PSRN(\d{4}))$/i;
-	const normalizedProfessorIdPattern = /^((H)(\d{4}))$/i;
 
-	const professorMatch = professorIdPattern.exec(scanned);
-	if (professorMatch) {
-		return normalizedProfessorIdPattern.exec(`H${professorMatch[1]}`);
-	}
-
-	const studentMatch = studentIdPattern.exec(scanned);
-	if (studentMatch && studentMatch[2].toUpperCase() === "D") {
-		const normalizedStudent = `F${studentMatch[3]}${studentMatch[4]}H`;
-		return studentIdPattern.exec(normalizedStudent);
-	}
-
-	return studentMatch;
-};
 function IdScanner({ onScan }: IdScannerProps) {
 	const [text, setText] = useState<string | null>(null);
 
-	const handleScan = (scanned: RegExpExecArray) => {
-		setText(scanned.slice(2).join(" "));
-		const extractedId = scanned[1];
-		onScan(extractedId);
+	const handleScan = (scanned: IdResult) => {
+		setText(
+			scanned.type === "student_id" ? scanned.split.join(" ") : scanned.code,
+		);
+		onScan(scanned.code);
 	};
 
 	if (text === null) {
 		return (
 			<BarcodeScanner
-				validateResult={validateResult}
+				validateResult={validateIdentifier}
 				onScanSuccess={handleScan}
 			/>
 		);
