@@ -7,7 +7,7 @@ import {
 	normalizeIdentifier,
 	validateIdentifier,
 } from "@/lib/identifier";
-import { handleErrors, isBarcodeDetectionAvailable } from "@/lib/utils";
+import { getAge, handleErrors, isBarcodeDetectionAvailable } from "@/lib/utils";
 import { client } from "@/routes/api/$";
 import { BarcodeScanner } from "./barcode-scanner";
 import { Button } from "./ui/button";
@@ -288,6 +288,7 @@ export function RegistrationForm({
 	};
 
 	const initialRegisterText = showScanner ? "Scan ID Card" : "Register";
+	const age = getAge(birthdate.toISOString());
 
 	return (
 		<form
@@ -361,7 +362,10 @@ export function RegistrationForm({
 												<SelectItem
 													key={`${option.id}|${option.name}|${option.birthdate}|${option.sex}`}
 													value={JSON.stringify(option)}
-												>{`${option.name} | ${option.birthdate} | ${option.sex}`}</SelectItem>
+													className="flex flex-row justify-baseline"
+												>
+													<span className="text-base">{option.name}</span>
+												</SelectItem>
 											))}
 										</SelectContent>
 									</Select>
@@ -391,11 +395,20 @@ export function RegistrationForm({
 									/>
 								</>
 							)}
-							<DatePicker
-								disabled={disableForm}
-								onChange={(date) => date && setBirthdate(date)}
-								value={birthdate}
-							/>
+							<div className="flex items-end gap-3">
+								<div className="flex-1 [&>div]:w-full [&_button#date]:w-full">
+									<DatePicker
+										disabled={disableForm}
+										onChange={(date) => date && setBirthdate(date)}
+										value={birthdate}
+									/>
+								</div>
+								{age > 0 && (
+									<span className="text-sm text-muted-foreground whitespace-nowrap mb-2">
+										{age} y.o.
+									</span>
+								)}
+							</div>
 							<Label htmlFor={sexId}>Sex</Label>
 							<Select
 								required
