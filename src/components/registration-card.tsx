@@ -1,8 +1,13 @@
 import { ArrowLeft, ArrowRight, CheckIcon, ScanBarcode } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { identifierTypes } from "@/db/case";
-import { handleErrors, isBarcodeDetectionAvailable } from "@/lib/utils";
+import {
+	type IdentifierResult,
+	type IdentifierType,
+	normalizeIdentifier,
+	validateIdentifier,
+} from "@/lib/identifier";
+import { getAge, handleErrors, isBarcodeDetectionAvailable } from "@/lib/utils";
 import { client } from "@/routes/api/$";
 import { BarcodeScanner } from "./barcode-scanner";
 import { Button } from "./ui/button";
@@ -24,7 +29,7 @@ type RegistrationTypeDetails = {
 		title: string;
 		labelText: string;
 		inputHint: string;
-		identifierType: (typeof identifierTypes)[number];
+		identifierType: IdentifierType;
 	};
 };
 
@@ -119,7 +124,7 @@ export function RegistrationForm({
 				return;
 			}
 			if (onPatientId) {
-				onPatientId?.(patientId, name);
+				onPatientId(patientId, name);
 				resetState();
 			}
 			return;
@@ -127,12 +132,20 @@ export function RegistrationForm({
 
 		const identifierType =
 			registrationTypeDetails[registrationType].identifierType;
+		const normalizedIdentifier = normalizeIdentifier(
+			identifier,
+			identifierType,
+		);
+		if (!normalizedIdentifier) {
+			toast.error("Invalid identifier format.");
+			return;
+		}
 
 		const res = disableForm
 			? await client.api.register.$post({
 					json: {
-						identifier,
-						identifierType,
+						identifier: normalizedIdentifier.identifier,
+						identifierType: normalizedIdentifier.type,
 						patientId,
 					},
 				})
@@ -147,15 +160,11 @@ export function RegistrationForm({
 							.toString()
 							.padStart(2, "0")}`,
 						sex: sex as "male" | "female",
-						phone: identifier as string,
+						phone: normalizedIdentifier.identifier,
 					},
 				});
 		const registered = await handleErrors(res);
-		if (res.status === 400) {
-			return;
-		}
 		if (!registered) {
-			resetState();
 			return;
 		}
 
@@ -163,31 +172,52 @@ export function RegistrationForm({
 		resetState();
 	};
 
-	const handleCheckExisting = async (identifier: string) => {
-		const identifierValue = identifier.toLowerCase();
+	const handleCheckExisting = async (rawIdentifier: string) => {
+		const expectedType =
+			registrationType === "visitor"
+				? registrationTypeDetails.visitor.identifierType
+				: undefined;
+		const normalizedIdentifier = normalizeIdentifier(
+			rawIdentifier,
+			expectedType,
+		);
 
-		let type: RegistrationType = "visitor";
-		if (registrationType !== "visitor") {
-			if (identifierValue.startsWith("h")) {
-				type = "professor";
-			} else {
-				type = "student";
-			}
+		if (!normalizedIdentifier) {
+			toast.error(
+				registrationType === "visitor"
+					? "Enter a valid phone number."
+					: "Enter a valid student ID or PSRN.",
+			);
+			return;
 		}
 
-		const identifierType = registrationTypeDetails[type].identifierType;
+		if (
+			registrationType !== "visitor" &&
+			normalizedIdentifier.type === "phone"
+		) {
+			setVisitor();
+			return;
+		}
+
+		const type: RegistrationType =
+			normalizedIdentifier.type === "student_id"
+				? "student"
+				: normalizedIdentifier.type === "psrn"
+					? "professor"
+					: "visitor";
+
+		setIdentifier(normalizedIdentifier.identifier);
 
 		const res = await client.api.existing.$get({
 			query: {
-				identifier: identifierValue,
-				identifierType,
+				identifier: normalizedIdentifier.identifier,
+				type: normalizedIdentifier.type,
 			},
 		});
 		const existing = await handleErrors(res);
 
 		// For actual errors, handle them
 		if (!existing) {
-			resetState();
 			return;
 		}
 
@@ -255,10 +285,10 @@ export function RegistrationForm({
 	const handleBarcodeScan = async (scanned: string) => {
 		await handleCheckExisting(scanned);
 		setShowScanner(false);
-		setIdentifier(scanned);
 	};
 
 	const initialRegisterText = showScanner ? "Scan ID Card" : "Register";
+	const age = getAge(birthdate.toISOString());
 
 	return (
 		<form
@@ -320,7 +350,7 @@ export function RegistrationForm({
 											const option = JSON.parse(v);
 											setPatientId(option.id);
 											setName(option.name);
-											setBirthdate(option.birthdate);
+											setBirthdate(new Date(option.birthdate));
 											setSex(option.sex);
 										}}
 									>
@@ -332,7 +362,10 @@ export function RegistrationForm({
 												<SelectItem
 													key={`${option.id}|${option.name}|${option.birthdate}|${option.sex}`}
 													value={JSON.stringify(option)}
-												>{`${option.name} | ${option.birthdate} | ${option.sex}`}</SelectItem>
+													className="flex flex-row justify-baseline"
+												>
+													<span className="text-base">{option.name}</span>
+												</SelectItem>
 											))}
 										</SelectContent>
 									</Select>
@@ -362,11 +395,20 @@ export function RegistrationForm({
 									/>
 								</>
 							)}
-							<DatePicker
-								disabled={disableForm}
-								onChange={(date) => date && setBirthdate(date)}
-								value={birthdate}
-							/>
+							<div className="flex items-end gap-3">
+								<div className="flex-1 [&>div]:w-full [&_button#date]:w-full">
+									<DatePicker
+										disabled={disableForm}
+										onChange={(date) => date && setBirthdate(date)}
+										value={birthdate}
+									/>
+								</div>
+								{age > 0 && (
+									<span className="text-sm text-muted-foreground whitespace-nowrap mb-2">
+										{age} y.o.
+									</span>
+								)}
+							</div>
 							<Label htmlFor={sexId}>Sex</Label>
 							<Select
 								required
@@ -454,24 +496,23 @@ export function RegistrationForm({
 type IdScannerProps = {
 	onScan: (scannedId: string) => void;
 };
-const validateResult = (scanned: string) => {
-	const studentIdPattern = /^((F)(20\d{2})(\d{4}))H$/i;
 
-	return studentIdPattern.exec(scanned);
-};
 function IdScanner({ onScan }: IdScannerProps) {
 	const [text, setText] = useState<string | null>(null);
 
-	const handleScan = (scanned: RegExpExecArray) => {
-		setText(scanned.slice(2).join(" "));
-		const extractedId = scanned[1];
-		onScan(extractedId);
+	const handleScan = (scanned: IdentifierResult) => {
+		setText(
+			scanned.type === "student_id"
+				? scanned.split.join(" ")
+				: scanned.identifier,
+		);
+		onScan(scanned.identifier);
 	};
 
 	if (text === null) {
 		return (
 			<BarcodeScanner
-				validateResult={validateResult}
+				validateResult={validateIdentifier}
 				onScanSuccess={handleScan}
 			/>
 		);

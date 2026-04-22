@@ -260,7 +260,9 @@ function AnalyticsPage() {
 										size="sm"
 										variant={topDiagnoses === n ? "default" : "outline"}
 										onClick={() =>
-											navigate({ search: (prev) => ({ ...prev, topDiagnoses: n }) })
+											navigate({
+												search: (prev) => ({ ...prev, topDiagnoses: n }),
+											})
 										}
 									>
 										{n}
@@ -294,7 +296,9 @@ function AnalyticsPage() {
 										size="sm"
 										variant={topMedicines === n ? "default" : "outline"}
 										onClick={() =>
-											navigate({ search: (prev) => ({ ...prev, topMedicines: n }) })
+											navigate({
+												search: (prev) => ({ ...prev, topMedicines: n }),
+											})
 										}
 									>
 										{n}
