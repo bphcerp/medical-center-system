@@ -186,6 +186,7 @@ export const useAutosave = ({
 		setTestItems,
 		autosaved,
 		autosaveError,
+		isSaving,
 		autosave,
 	};
 };

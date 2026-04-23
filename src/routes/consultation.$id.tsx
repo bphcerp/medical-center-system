@@ -1,16 +1,10 @@
 import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import {
-	ArrowLeft,
-	CloudCheck,
-	History,
-	RefreshCw,
-	TriangleAlert,
-	X,
-} from "lucide-react";
-import { useRef, useState } from "react";
+import { ArrowLeft, History, RefreshCw, TriangleAlert, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { toast } from "sonner";
+import { Separator } from "src/components/ui/separator";
 import DiagnosisCard from "@/components/diagnosis-card";
 import FinalizeCaseCard, {
 	type FinalizeButtonValue,
@@ -34,7 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import VitalsCard from "@/components/vitals-card";
 import useAuth from "@/lib/hooks/useAuth";
 import { useAutosave } from "@/lib/hooks/useAutosave";
-import { handleErrors } from "@/lib/utils";
+import { cn, handleErrors } from "@/lib/utils";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/consultation/$id")({
@@ -127,8 +121,8 @@ function ConsultationPage() {
 		setDiagnosisItems,
 		setPrescriptionItems,
 		setTestItems,
-		autosaved,
 		autosaveError,
+		isSaving,
 		autosave,
 	} = useAutosave({
 		id,
@@ -143,6 +137,27 @@ function ConsultationPage() {
 		contentRef,
 	});
 	const [openFinalizeDialog, setOpenFinalizeDialog] = useState(false);
+	const [showAutosaveIndicator, setShowAutosaveIndicator] = useState(false);
+
+	useEffect(() => {
+		if (autosaveError) {
+			setShowAutosaveIndicator(false);
+			return;
+		}
+
+		if (!isSaving) {
+			setShowAutosaveIndicator(false);
+			return;
+		}
+
+		const timeout = window.setTimeout(() => {
+			setShowAutosaveIndicator(true);
+		}, 1000);
+
+		return () => {
+			window.clearTimeout(timeout);
+		};
+	}, [autosaveError, isSaving]);
 
 	const hasPrescriptionContent = prescriptionItems.some((item) => {
 		const prescription = item.case_prescriptions;
@@ -227,48 +242,32 @@ function ConsultationPage() {
 
 	return (
 		<div className="flex flex-col h-full">
-			<TopBar title="Consultation Page" />
-			<div className="flex flex-col px-6 py-4 h-full">
-				<div className="flex justify-between items-start mb-4">
-					<div className="flex gap-4 items-end">
-						<PatientDetails
-							patient={caseDetail.patient}
-							token={caseDetail.cases.token}
-							label={
-								<div className="flex items-center gap-2">
-									<Button
-										variant="ghost"
-										onClick={() =>
-											navigate({
-												to: "/doctor",
-											})
-										}
-										size="sm"
-									>
-										<ArrowLeft className="text-muted-foreground" />
-									</Button>
-									Consultation for
-								</div>
-							}
+			<TopBar
+				title="Consultation"
+				actionButton={
+					<Button
+						onClick={() =>
+							navigate({
+								to: "/doctor",
+							})
+						}
+						variant="ghost"
+						className="p-4 aspect-square"
+					>
+						<ArrowLeft
+							className="text-muted-foreground size-5"
+							strokeWidth={2}
 						/>
-						<span
-							className={`py-2 flex items-center gap-2 ${autosaveError ? "text-destructive" : "text-muted-foreground"}`}
-						>
-							{autosaveError ? (
-								<>
-									<TriangleAlert className="size-4" />
-									{autosaveError}
-								</>
-							) : autosaved ? (
-								<CloudCheck className="size-4" />
-							) : (
-								<>
-									<RefreshCw className="animate-spin size-4" />
-									Saving...
-								</>
-							)}
-						</span>
-					</div>
+					</Button>
+				}
+			>
+				<div className="flex gap-4 items-stretch">
+					<PatientDetails
+						patient={caseDetail.patient}
+						token={caseDetail.cases.token}
+						size="sm"
+					/>
+					<div className="w-0 ms-2 border" />
 					<Button
 						onClick={() =>
 							navigate({
@@ -276,11 +275,38 @@ function ConsultationPage() {
 								params: { patientId: String(caseDetail.patient.id) },
 							})
 						}
-						variant="outline"
+						variant="ghost"
+						size="sm"
+						className="my-auto"
 					>
 						<History />
 						<span className="hidden md:inline">View History</span>
 					</Button>
+					{(autosaveError || showAutosaveIndicator) && (
+						<span
+							className={cn(
+								autosaveError ? "text-destructive" : "text-muted-foreground",
+								"flex gap-1 items-center h-fit text-xs mt-1.5",
+							)}
+						>
+							{autosaveError ? (
+								<>
+									<TriangleAlert className="size-4 stroke-destructive" />
+									{autosaveError}
+								</>
+							) : (
+								<>
+									<RefreshCw className="animate-spin size-3" />
+									Saving...
+								</>
+							)}
+						</span>
+					)}
+				</div>
+			</TopBar>
+			<div className="flex flex-col p-4 h-full">
+				<div className="flex justify-between items-start mb-4">
+					<div className="flex gap-4 items-start"></div>
 				</div>
 
 				{/* Chief Complaints textarea */}
@@ -290,7 +316,7 @@ function ConsultationPage() {
 						value={chiefComplaints}
 						onChange={(e) => setChiefComplaints(e.target.value)}
 						className="mt-2 resize-none min-h-20"
-						placeholder="Enter patient's chief complaints (e.g., fever for 3 days, headache, cough)..."
+						placeholder="Enter patient's chief complaints (e.g., fever for 3 days, headache, cough)"
 					/>
 				</Card>
 
