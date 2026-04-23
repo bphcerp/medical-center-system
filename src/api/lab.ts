@@ -1,4 +1,5 @@
 import { and, count, eq, inArray, ne } from "drizzle-orm";
+import { streamSSE } from "hono/streaming";
 import z from "zod";
 import { usersTable } from "@/db/auth";
 import { casesTable } from "@/db/case";
@@ -14,86 +15,113 @@ import { createStrictHono, strictValidator } from "@/lib/types/api";
 import { getAge } from "@/lib/utils";
 import { seaweedfs, uploadFileService } from "./files";
 import { db } from "./index";
+import { subscribe } from "./listener";
 import { rbacCheck } from "./rbac";
+
+async function queryLabPending() {
+	const pendingReports = await db
+		.select({
+			id: caseLabReportsTable.id,
+			caseId: caseLabReportsTable.caseId,
+			status: caseLabReportsTable.status,
+			token: casesTable.token,
+			associatedUsers: casesTable.associatedUsers,
+			testName: labTestsMasterTable.name,
+			patientName: patientsTable.name,
+		})
+		.from(caseLabReportsTable)
+		.innerJoin(
+			labTestsMasterTable,
+			eq(caseLabReportsTable.testId, labTestsMasterTable.id),
+		)
+		.innerJoin(casesTable, eq(caseLabReportsTable.caseId, casesTable.id))
+		.innerJoin(patientsTable, eq(casesTable.patient, patientsTable.id))
+		.where(ne(caseLabReportsTable.status, "Complete"));
+
+	if (pendingReports.length === 0) return [];
+
+	const doctorIds = Array.from(
+		new Set(
+			pendingReports
+				.map((r) => r.associatedUsers.at(0))
+				.filter((id) => id !== undefined),
+		),
+	);
+
+	const doctors =
+		doctorIds.length > 0
+			? await db
+					.select({ id: usersTable.id, name: usersTable.name })
+					.from(usersTable)
+					.where(inArray(usersTable.id, doctorIds))
+			: [];
+
+	const doctorMap = new Map(doctors.map((d) => [d.id, d.name]));
+
+	interface Case {
+		caseId: number;
+		patientName: string;
+		doctorName: string;
+		token: number;
+		tests: { id: number; name: string; status: (typeof statusEnums)[number] }[];
+	}
+
+	return pendingReports.reduce((acc: Case[], report) => {
+		let caseEntry = acc.find((c) => c.caseId === report.caseId);
+		if (!caseEntry) {
+			caseEntry = {
+				caseId: report.caseId,
+				patientName: report.patientName,
+				doctorName:
+					(report.associatedUsers.at(0) != null
+						? doctorMap.get(report.associatedUsers.at(0) ?? 0)
+						: null) ?? "Unknown Doctor",
+				token: report.token,
+				tests: [],
+			};
+			acc.push(caseEntry);
+		}
+		caseEntry.tests.push({
+			id: report.id,
+			name: report.testName,
+			status: report.status,
+		});
+		return acc;
+	}, []);
+}
 
 const lab = createStrictHono()
 	.use(rbacCheck({ permissions: ["lab"] }))
 	.get("/pending", async (c) => {
-		const pendingReports = await db
-			.select({
-				id: caseLabReportsTable.id,
-				caseId: caseLabReportsTable.caseId,
-				status: caseLabReportsTable.status,
-				token: casesTable.token,
-				associatedUsers: casesTable.associatedUsers,
-				testName: labTestsMasterTable.name,
-				patientName: patientsTable.name,
-			})
-			.from(caseLabReportsTable)
-			.innerJoin(
-				labTestsMasterTable,
-				eq(caseLabReportsTable.testId, labTestsMasterTable.id),
-			)
-			.innerJoin(casesTable, eq(caseLabReportsTable.caseId, casesTable.id))
-			.innerJoin(patientsTable, eq(casesTable.patient, patientsTable.id))
-			.where(ne(caseLabReportsTable.status, "Complete"));
-
-		if (pendingReports.length === 0) {
-			return c.json({ success: true, data: [] });
-		}
-
-		const doctorIds = Array.from(
-			new Set(
-				pendingReports
-					.map((r) => r.associatedUsers.at(0))
-					.filter((id) => id !== undefined),
-			),
-		);
-
-		const doctors =
-			doctorIds.length > 0
-				? await db
-						.select({ id: usersTable.id, name: usersTable.name })
-						.from(usersTable)
-						.where(inArray(usersTable.id, doctorIds))
-				: [];
-
-		const doctorMap = new Map(doctors.map((d) => [d.id, d.name]));
-
-		interface Case {
-			caseId: number;
-			patientName: string;
-			doctorName: string;
-			token: number;
-			tests: {
-				id: number;
-				name: string;
-				status: (typeof statusEnums)[number];
-			}[];
-		}
-		const cases = pendingReports.reduce((acc: Case[], report) => {
-			let caseEntry = acc.find((c) => c.caseId === report.caseId);
-			if (!caseEntry) {
-				caseEntry = {
-					caseId: report.caseId,
-					patientName: report.patientName,
-					doctorName:
-						(report.associatedUsers.at(0) != null
-							? doctorMap.get(report.associatedUsers.at(0) ?? 0)
-							: null) ?? "Unknown Doctor",
-					token: report.token,
-					tests: [],
-				};
-				acc.push(caseEntry);
-			}
-			caseEntry.tests.push({
-				id: report.id,
-				name: report.testName,
-				status: report.status,
+		return c.json({ success: true, data: await queryLabPending() });
+	})
+	.get("/stream", async (c) => {
+		return streamSSE(c, async (stream) => {
+			let closed = false;
+			stream.onAbort(() => {
+				closed = true;
 			});
-			return acc;
-		}, []);
-		return c.json({ success: true, data: cases });
+			const sendCurrent = async () => {
+				await stream.writeSSE({
+					event: "pending",
+					data: JSON.stringify(await queryLabPending()),
+				});
+			};
+			await sendCurrent();
+			const unsubscribe = subscribe("lab_changed", () => {
+				if (!closed) sendCurrent().catch(() => {});
+			});
+			stream.onAbort(unsubscribe);
+			while (!closed) {
+				await stream.sleep(30_000);
+				if (!closed)
+					await stream
+						.writeSSE({ event: "ping", data: "" })
+						.catch(() => {
+							closed = true;
+						});
+			}
+		});
 	})
 	.get(
 		"/details/:caseId",
