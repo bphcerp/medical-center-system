@@ -9,11 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AccessdbRouteImport } from './routes/accessdb'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as DoctorRouteImport } from './routes/doctor'
+import { Route as AccessdbRouteImport } from './routes/accessdb'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as ReceptionRouteRouteImport } from './routes/reception/route'
 import { Route as LabRouteRouteImport } from './routes/lab/route'
@@ -27,14 +27,10 @@ import { Route as AdminUserRouteImport } from './routes/admin/user'
 import { Route as AdminSpecialitiesRouteImport } from './routes/admin/specialities'
 import { Route as AdminRoleRouteImport } from './routes/admin/role'
 import { Route as AdminOtpOverridesRouteImport } from './routes/admin/otp-overrides'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin/analytics'
 import { Route as HistoryPatientIdIndexRouteImport } from './routes/history.$patientId/index'
 import { Route as HistoryPatientIdCaseIdRouteImport } from './routes/history.$patientId/$caseId'
 
-const AccessdbRoute = AccessdbRouteImport.update({
-  id: '/accessdb',
-  path: '/accessdb',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -53,6 +49,11 @@ const InventoryRoute = InventoryRouteImport.update({
 const DoctorRoute = DoctorRouteImport.update({
   id: '/doctor',
   path: '/doctor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccessdbRoute = AccessdbRouteImport.update({
+  id: '/accessdb',
+  path: '/accessdb',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -120,6 +121,11 @@ const AdminOtpOverridesRoute = AdminOtpOverridesRouteImport.update({
   path: '/otp-overrides',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const HistoryPatientIdIndexRoute = HistoryPatientIdIndexRouteImport.update({
   id: '/history/$patientId/',
   path: '/history/$patientId/',
@@ -137,11 +143,12 @@ export interface FileRoutesByFullPath {
   '/lab': typeof LabRouteRouteWithChildren
   '/reception': typeof ReceptionRouteRouteWithChildren
   '/about': typeof AboutRoute
+  '/accessdb': typeof AccessdbRoute
   '/doctor': typeof DoctorRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/accessdb': typeof AccessdbRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/otp-overrides': typeof AdminOtpOverridesRoute
   '/admin/role': typeof AdminRoleRoute
   '/admin/specialities': typeof AdminSpecialitiesRoute
@@ -159,11 +166,12 @@ export interface FileRoutesByTo {
   '/lab': typeof LabRouteRouteWithChildren
   '/reception': typeof ReceptionRouteRouteWithChildren
   '/about': typeof AboutRoute
+  '/accessdb': typeof AccessdbRoute
   '/doctor': typeof DoctorRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/accessdb': typeof AccessdbRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/otp-overrides': typeof AdminOtpOverridesRoute
   '/admin/role': typeof AdminRoleRoute
   '/admin/specialities': typeof AdminSpecialitiesRoute
@@ -182,11 +190,12 @@ export interface FileRoutesById {
   '/lab': typeof LabRouteRouteWithChildren
   '/reception': typeof ReceptionRouteRouteWithChildren
   '/about': typeof AboutRoute
+  '/accessdb': typeof AccessdbRoute
   '/doctor': typeof DoctorRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
-  '/accessdb': typeof AccessdbRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/otp-overrides': typeof AdminOtpOverridesRoute
   '/admin/role': typeof AdminRoleRoute
   '/admin/specialities': typeof AdminSpecialitiesRoute
@@ -206,11 +215,12 @@ export interface FileRouteTypes {
     | '/lab'
     | '/reception'
     | '/about'
+    | '/accessdb'
     | '/doctor'
     | '/inventory'
     | '/login'
     | '/register'
-    | '/accessdb'
+    | '/admin/analytics'
     | '/admin/otp-overrides'
     | '/admin/role'
     | '/admin/specialities'
@@ -228,11 +238,12 @@ export interface FileRouteTypes {
     | '/lab'
     | '/reception'
     | '/about'
+    | '/accessdb'
     | '/doctor'
     | '/inventory'
     | '/login'
     | '/register'
-    | '/accessdb'
+    | '/admin/analytics'
     | '/admin/otp-overrides'
     | '/admin/role'
     | '/admin/specialities'
@@ -250,11 +261,12 @@ export interface FileRouteTypes {
     | '/lab'
     | '/reception'
     | '/about'
+    | '/accessdb'
     | '/doctor'
     | '/inventory'
     | '/login'
     | '/register'
-    | '/accessdb'
+    | '/admin/analytics'
     | '/admin/otp-overrides'
     | '/admin/role'
     | '/admin/specialities'
@@ -273,11 +285,11 @@ export interface RootRouteChildren {
   LabRouteRoute: typeof LabRouteRouteWithChildren
   ReceptionRouteRoute: typeof ReceptionRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
+  AccessdbRoute: typeof AccessdbRoute
   DoctorRoute: typeof DoctorRoute
   InventoryRoute: typeof InventoryRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
-  AccessdbRoute: typeof AccessdbRoute
   ApiSplatRoute: typeof ApiSplatRoute
   ConsultationIdRoute: typeof ConsultationIdRoute
   HistoryPatientIdCaseIdRoute: typeof HistoryPatientIdCaseIdRoute
@@ -286,13 +298,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/accessdb': {
-      id: '/accessdb'
-      path: '/accessdb'
-      fullPath: '/accessdb'
-      preLoaderRoute: typeof AccessdbRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -319,6 +324,13 @@ declare module '@tanstack/react-router' {
       path: '/doctor'
       fullPath: '/doctor'
       preLoaderRoute: typeof DoctorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accessdb': {
+      id: '/accessdb'
+      path: '/accessdb'
+      fullPath: '/accessdb'
+      preLoaderRoute: typeof AccessdbRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -412,6 +424,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOtpOverridesRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/analytics': {
+      id: '/admin/analytics'
+      path: '/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/history/$patientId/': {
       id: '/history/$patientId/'
       path: '/history/$patientId'
@@ -430,6 +449,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteRouteChildren {
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminOtpOverridesRoute: typeof AdminOtpOverridesRoute
   AdminRoleRoute: typeof AdminRoleRoute
   AdminSpecialitiesRoute: typeof AdminSpecialitiesRoute
@@ -437,6 +457,7 @@ interface AdminRouteRouteChildren {
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminOtpOverridesRoute: AdminOtpOverridesRoute,
   AdminRoleRoute: AdminRoleRoute,
   AdminSpecialitiesRoute: AdminSpecialitiesRoute,
@@ -477,11 +498,11 @@ const rootRouteChildren: RootRouteChildren = {
   LabRouteRoute: LabRouteRouteWithChildren,
   ReceptionRouteRoute: ReceptionRouteRouteWithChildren,
   AboutRoute: AboutRoute,
+  AccessdbRoute: AccessdbRoute,
   DoctorRoute: DoctorRoute,
   InventoryRoute: InventoryRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
-  AccessdbRoute: AccessdbRoute,
   ApiSplatRoute: ApiSplatRoute,
   ConsultationIdRoute: ConsultationIdRoute,
   HistoryPatientIdCaseIdRoute: HistoryPatientIdCaseIdRoute,

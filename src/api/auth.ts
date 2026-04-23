@@ -16,6 +16,10 @@ import {
 } from "@/db/patient";
 import env from "@/lib/env";
 import {
+	IdentifierLookupQuerySchema,
+	normalizeIdentifier,
+} from "@/lib/identifier";
+import {
 	createStrictHono,
 	type JWTPayload,
 	type LoginError,
@@ -404,16 +408,10 @@ export const unauthenticated = createStrictHono()
 	)
 	.get(
 		"/existing",
-		strictValidator(
-			"query",
-			z.object({
-				identifierType: z.enum(identifierTypes),
-				identifier: z.string().min(1),
-			}),
-		),
+		strictValidator("query", IdentifierLookupQuerySchema),
 		async (c) => {
-			const identifier = c.req.valid("query").identifier;
-			switch (c.req.valid("query").identifierType) {
+			const { identifier, type } = c.req.valid("query");
+			switch (type) {
 				case "student_id": {
 					const student = await db
 						.select()
@@ -527,6 +525,17 @@ export const unauthenticated = createStrictHono()
 		),
 		async (c) => {
 			const { name, birthdate, sex, phone, email } = c.req.valid("json");
+			const normalizedPhone = normalizeIdentifier(phone, "phone");
+			if (!normalizedPhone) {
+				return c.json(
+					{
+						success: false,
+						error: { message: "Invalid phone number format" },
+					},
+					400,
+				);
+			}
+
 			const birthdateObj = new Date(birthdate);
 			if (birthdateObj > new Date()) {
 				return c.json(
@@ -549,14 +558,14 @@ export const unauthenticated = createStrictHono()
 					.returning();
 				await tx.insert(visitorsTable).values({
 					email,
-					phone,
+					phone: normalizedPhone.identifier,
 					patientId: patient[0].id,
 				});
 				return await tx
 					.insert(unprocessedTable)
 					.values({
-						identifier: phone,
-						identifierType: "phone",
+						identifier: normalizedPhone.identifier,
+						identifierType: normalizedPhone.type,
 						patientId: patient[0].id,
 					})
 					.returning();
@@ -582,11 +591,25 @@ export const unauthenticated = createStrictHono()
 		),
 		async (c) => {
 			const { identifierType, identifier, patientId } = c.req.valid("json");
+			const normalizedIdentifier = normalizeIdentifier(
+				identifier,
+				identifierType,
+			);
+			if (!normalizedIdentifier) {
+				return c.json(
+					{
+						success: false,
+						error: { message: "Invalid identifier format" },
+					},
+					400,
+				);
+			}
+
 			const token = await db
 				.insert(unprocessedTable)
 				.values({
-					identifier,
-					identifierType,
+					identifier: normalizedIdentifier.identifier,
+					identifierType: normalizedIdentifier.type,
 					patientId,
 				})
 				.returning();
