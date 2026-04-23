@@ -1,9 +1,20 @@
 import { createFileRoute, notFound, useRouter } from "@tanstack/react-router";
-import { Check } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 import { NotFound } from "@/components/not-found";
 import { PatientDetails } from "@/components/patient-details";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import {
@@ -46,6 +57,16 @@ function RouteComponent() {
 	const { navigate } = useRouter();
 
 	const { availableDoctors, patient } = Route.useLoaderData();
+
+	const handleRemoveFromQueue = async () => {
+		const res = await client.api.vitals.removeFromQueue[":token"].$delete({
+			param: { token: patient.token.toString() },
+		});
+		const data = await handleErrors(res);
+		if (data === undefined) return;
+		toast.success("Patient removed from queue.");
+		navigate({ to: "/reception" });
+	};
 
 	const handleCreateCase = async (
 		formData: FormData,
@@ -156,6 +177,35 @@ function RouteComponent() {
 										<Check />
 										Submit
 									</Button>
+								</Field>
+								<Field>
+									<AlertDialog>
+										<AlertDialogTrigger asChild>
+											<Button type="button" variant="destructive" className="text-base">
+												<Trash2 />
+												Remove from Queue
+											</Button>
+										</AlertDialogTrigger>
+										<AlertDialogContent>
+											<AlertDialogHeader>
+												<AlertDialogTitle>Remove from queue?</AlertDialogTitle>
+												<AlertDialogDescription>
+													This will remove{" "}
+													<span className="font-semibold">{patient.name}</span>{" "}
+													from the patient queue without creating a case.
+												</AlertDialogDescription>
+											</AlertDialogHeader>
+											<AlertDialogFooter>
+												<AlertDialogCancel>Cancel</AlertDialogCancel>
+												<AlertDialogAction
+													onClick={handleRemoveFromQueue}
+													className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+												>
+													Remove
+												</AlertDialogAction>
+											</AlertDialogFooter>
+										</AlertDialogContent>
+									</AlertDialog>
 								</Field>
 							</div>
 						</FieldGroup>
