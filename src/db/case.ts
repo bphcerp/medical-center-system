@@ -18,6 +18,7 @@ export const finalizedStateEnum = pgEnum("finalized_state", [
 	"referred",
 ]);
 export const identifierTypes = ["psrn", "student_id", "phone"] as const;
+export type IdentifierType = (typeof identifierTypes)[number];
 export const identifierType = pgEnum("identifier_type", identifierTypes);
 
 export const medicineCategories = [
