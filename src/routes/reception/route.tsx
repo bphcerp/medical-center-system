@@ -17,12 +17,19 @@ import {
 	INITIAL_STATE,
 	type Slot,
 } from "src/components/booking/types";
+import ViewAppointmentsDialog from "src/components/booking/view-appointments-dialog";
 import {
 	Accordion,
 	AccordionContent,
 	AccordionItem,
 	AccordionTrigger,
 } from "src/components/ui/accordion";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "src/components/ui/dropdown-menu";
 import { PatientTypeBadge } from "@/components/patient-type-badge";
 import { RegistrationForm } from "@/components/registration-card";
 import { TokenButton, TokenButtonTitle } from "@/components/token-button";
@@ -67,6 +74,8 @@ export const Route = createFileRoute("/reception")({
 
 function Vitals() {
 	const { unprocessed } = Route.useLoaderData();
+	const [bookAppointmentOpen, setBookAppointmentOpen] = useState(false);
+	const [viewAppointmentsOpen, setViewAppointmentsOpen] = useState(false);
 	const selectedToken = useParams({
 		from: "/reception/$token",
 		shouldThrow: false,
@@ -133,11 +142,42 @@ function Vitals() {
 								<Plus /> New Patient
 							</Button>
 						</NewPatientDialog>
-						<AppointmentDialog>
-							<Button variant="outline" size="lg" className="flex-1">
-								<CalendarIcon /> Book Appointment
-							</Button>
-						</AppointmentDialog>
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="lg" className="flex-1">
+									<CalendarIcon /> Appointments
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="end"
+								className="w-(--radix-popper-anchor-width)"
+							>
+								<DropdownMenuItem
+									onSelect={(e) => {
+										e.preventDefault();
+										setBookAppointmentOpen(true);
+									}}
+								>
+									Book Appointment
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onSelect={(e) => {
+										e.preventDefault();
+										setViewAppointmentsOpen(true);
+									}}
+								>
+									View Appointments
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+						<AppointmentDialog
+							open={bookAppointmentOpen}
+							onOpenChange={setBookAppointmentOpen}
+						/>
+						<ViewAppointmentsDialog
+							open={viewAppointmentsOpen}
+							onOpenChange={setViewAppointmentsOpen}
+						/>
 					</div>
 				</div>
 				<div
@@ -183,12 +223,23 @@ function NewPatientDialog({ children }: PropsWithChildren) {
 	);
 }
 
-function AppointmentDialog({ children }: PropsWithChildren) {
+function AppointmentDialog({
+	open,
+	onOpenChange,
+}: {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+}) {
 	const [token, setTokenInternal] = useState<number | null>(null);
 
 	return (
-		<Dialog onOpenChange={(open) => !open && setTokenInternal(null)}>
-			<DialogTrigger asChild>{children}</DialogTrigger>
+		<Dialog
+			open={open}
+			onOpenChange={(nextOpen) => {
+				onOpenChange(nextOpen);
+				if (!nextOpen) setTokenInternal(null);
+			}}
+		>
 			<DialogContent className="min-w-fit flex flex-col justify-stretch">
 				{token === null ? (
 					<Booking setToken={setTokenInternal} />
