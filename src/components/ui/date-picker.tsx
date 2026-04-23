@@ -46,6 +46,8 @@ export function DatePicker({
 						selected={value}
 						defaultMonth={value}
 						captionLayout="dropdown"
+						startMonth={new Date(1900, 0)}
+						endMonth={new Date()}
 						onSelect={(date) => {
 							setOpen(false);
 							onChange?.(date);
