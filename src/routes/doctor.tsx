@@ -1,12 +1,6 @@
-import {
-	createFileRoute,
-	useNavigate,
-	useRouter,
-} from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Stethoscope } from "lucide-react";
-import { useState } from "react";
 import TopBar from "@/components/topbar";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Empty,
@@ -24,7 +18,8 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import useAuth from "@/lib/hooks/useAuth";
-import { handleErrors } from "@/lib/utils";
+import { useSSE } from "@/lib/hooks/useSSE";
+import { handleErrors, titleCase } from "@/lib/utils";
 import { client } from "./api/$";
 
 export const Route = createFileRoute("/doctor")({
@@ -47,34 +42,14 @@ export const Route = createFileRoute("/doctor")({
 function DoctorDashboard() {
 	useAuth(["doctor"]);
 	const { queue: initialQueue } = Route.useLoaderData();
-	const navigate = useNavigate();
-	const router = useRouter();
-	const [isRefreshing, setIsRefreshing] = useState(false);
-
-	const handleRefresh = async () => {
-		setIsRefreshing(true);
-		await router.invalidate();
-		setIsRefreshing(false);
-	};
-
-	const handleRowClick = (caseId: number) => {
-		navigate({
-			to: "/consultation/$id",
-			params: { id: caseId.toString() },
-		});
-	};
+	const queue = useSSE("/api/doctor/stream", "queue", initialQueue);
 
 	return (
 		<>
 			<TopBar title="Doctor Dashboard" />
 			<div className="container mx-auto p-6">
-				<div className="mb-6 flex items-center justify-between">
-					<div>
-						<h1 className="text-3xl font-bold">Doctor Dashboard</h1>
-					</div>
-					<Button onClick={handleRefresh} disabled={isRefreshing}>
-						{isRefreshing ? "Refreshing..." : "Refresh"}
-					</Button>
+				<div className="mb-6">
+					<h1 className="text-3xl font-bold">Doctor Dashboard</h1>
 				</div>
 
 				<Card>
@@ -82,7 +57,7 @@ function DoctorDashboard() {
 						<CardTitle>My Patient Queue</CardTitle>
 					</CardHeader>
 					<CardContent>
-						{!initialQueue || initialQueue.length === 0 ? (
+						{queue.length === 0 ? (
 							<Empty>
 								<EmptyHeader>
 									<EmptyMedia variant="icon">
@@ -98,23 +73,55 @@ function DoctorDashboard() {
 							<Table>
 								<TableHeader>
 									<TableRow>
-										<TableHead>Case ID</TableHead>
+										<TableHead>Token</TableHead>
 										<TableHead>Patient Name</TableHead>
 										<TableHead>Status</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{initialQueue.map((item) => (
-										<TableRow
-											key={item.caseId}
-											onClick={() => handleRowClick(item.caseId)}
-											className="cursor-pointer"
-										>
-											<TableCell>{item.caseId}</TableCell>
-											<TableCell>{item.patientName}</TableCell>
-											<TableCell>{item.status}</TableCell>
-										</TableRow>
-									))}
+									{queue.map((item) => {
+										const consultationParams = {
+											id: item.caseId.toString(),
+										};
+
+										return (
+											<TableRow key={item.caseId} className="hover:bg-muted/50">
+												<TableCell className="p-0">
+													<Link
+														to="/consultation/$id"
+														params={consultationParams}
+														className="block px-4 py-2 font-medium"
+													>
+														{item.token}
+													</Link>
+												</TableCell>
+												<TableCell className="p-0">
+													<Link
+														to="/consultation/$id"
+														params={consultationParams}
+														className="block px-4 py-2"
+													>
+														<span className="flex flex-col">
+															<span>{item.patientName}</span>
+															<span className="text-sm text-muted-foreground">
+																{titleCase(item.patientSex)}, {item.patientAge}{" "}
+																y.o.
+															</span>
+														</span>
+													</Link>
+												</TableCell>
+												<TableCell className="p-0">
+													<Link
+														to="/consultation/$id"
+														params={consultationParams}
+														className="block px-4 py-2"
+													>
+														{item.status}
+													</Link>
+												</TableCell>
+											</TableRow>
+										);
+									})}
 								</TableBody>
 							</Table>
 						)}
