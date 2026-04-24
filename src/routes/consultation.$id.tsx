@@ -4,7 +4,6 @@ import { ArrowLeft, History, RefreshCw, TriangleAlert, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { toast } from "sonner";
-import { Separator } from "src/components/ui/separator";
 import DiagnosisCard from "@/components/diagnosis-card";
 import FinalizeCaseCard, {
 	type FinalizeButtonValue,
@@ -16,7 +15,6 @@ import PrescriptionPrintout from "@/components/prescription-printout";
 import TestsCard from "@/components/tests-card";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
@@ -261,91 +259,97 @@ function ConsultationPage() {
 					</Button>
 				}
 			>
-				<div className="flex gap-4 items-stretch">
+				<div className="flex gap-2 items-between w-full">
 					<PatientDetails
 						patient={caseDetail.patient}
 						token={caseDetail.cases.token}
 						size="sm"
 					/>
 					<div className="w-0 ms-2 border" />
-					<Button
-						onClick={() =>
-							navigate({
-								to: "/history/$patientId",
-								params: { patientId: String(caseDetail.patient.id) },
-							})
-						}
-						variant="ghost"
-						size="sm"
-						className="my-auto"
-					>
-						<History />
-						<span className="hidden md:inline">View History</span>
-					</Button>
-					{(autosaveError || showAutosaveIndicator) && (
-						<span
-							className={cn(
-								autosaveError ? "text-destructive" : "text-muted-foreground",
-								"flex gap-1 items-center h-fit text-xs mt-1.5",
-							)}
+					<div className="flex gap-2 items-center">
+						<Button
+							onClick={() =>
+								navigate({
+									to: "/history/$patientId",
+									params: { patientId: String(caseDetail.patient.id) },
+								})
+							}
+							variant="ghost"
+							size="sm"
 						>
-							{autosaveError ? (
-								<>
-									<TriangleAlert className="size-4 stroke-destructive" />
-									{autosaveError}
-								</>
-							) : (
-								<>
-									<RefreshCw className="animate-spin size-3" />
-									Saving...
-								</>
-							)}
-						</span>
-					)}
+							<History />
+							<span className="hidden md:inline">View History</span>
+						</Button>
+						{(autosaveError || showAutosaveIndicator) && (
+							<span
+								className={cn(
+									autosaveError ? "text-destructive" : "text-muted-foreground",
+									"flex gap-1 items-center h-fit text-xs mt-1.5",
+								)}
+							>
+								{autosaveError ? (
+									<>
+										<TriangleAlert className="size-4 stroke-destructive" />
+										{autosaveError}
+									</>
+								) : (
+									<>
+										<RefreshCw className="animate-spin size-3" />
+										Saving...
+									</>
+								)}
+							</span>
+						)}
+					</div>
 				</div>
 			</TopBar>
-			<div className="flex flex-col p-4 h-full">
-				<div className="flex justify-between items-start mb-4">
-					<div className="flex gap-4 items-start"></div>
+			<div className="flex flex-col py-4 *:px-4 h-full gap-4">
+				<div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-4 border-b pb-4">
+					<div className="flex items-center xl:pr-4 xl:border-r">
+						<span className="text-xs font-semibold uppercase text-muted-foreground xl:[writing-mode:vertical-rl] xl:rotate-180">
+							Vitals
+						</span>
+					</div>
+					<div className="min-w-0 flex-1">
+						<VitalsCard vitals={caseDetail.cases} condensed />
+					</div>
 				</div>
 
-				{/* Chief Complaints textarea */}
-				<Card className="mb-4 p-4">
+				<div className="flex flex-col gap-2">
 					<Label className="font-semibold text-lg">Chief Complaints</Label>
 					<Textarea
 						value={chiefComplaints}
 						onChange={(e) => setChiefComplaints(e.target.value)}
-						className="mt-2 resize-none min-h-20"
+						className="resize-none min-h-20"
 						placeholder="Enter patient's chief complaints (e.g., fever for 3 days, headache, cough)"
 					/>
-				</Card>
+				</div>
 
-				<Card className="mb-4 p-0">
-					<VitalsCard vitals={caseDetail.cases} condensed />
-				</Card>
-				<div className="flex grow shrink basis-auto">
-					<div className="grid xl:grid-cols-2 grid-cols-1 w-full">
-						<Card className="col-span-1 row-span-2 xl:rounded-tl-xl xl:rounded-r-none xl:rounded-bl-none rounded-t-xl rounded-b-none px-4 pt-3 pb-2">
-							<Label className="font-semibold text-lg">
-								Clinical Examination
-							</Label>
-							<Textarea
-								value={consultationNotes}
-								onChange={(e) => setConsultationNotes(e.target.value)}
-								className="h-full -mt-3.5 -mb-3.5 resize-none min-h-48"
-								placeholder="Write notes here..."
-							/>
-							<TestsCard
-								tests={tests}
-								testItems={testItems}
-								setTestItems={setTestItems}
-							/>
-						</Card>
+				<div className="grid xl:grid-cols-2 grid-cols-1 w-full border xl:rounded-xl rounded-t-xl rounded-b-none overflow-hidden grow shrink basis-auto">
+					<div className="text-card-foreground flex flex-col gap-6 col-span-1 row-span-2 px-4 pt-3 pb-2">
+						<Label className="font-semibold text-lg">
+							Clinical Examination
+						</Label>
+						<Textarea
+							value={consultationNotes}
+							onChange={(e) => setConsultationNotes(e.target.value)}
+							className="h-full -mt-3.5 -mb-3.5 resize-none min-h-48"
+							placeholder="Write notes here..."
+						/>
+						<TestsCard
+							tests={tests}
+							testItems={testItems}
+							setTestItems={setTestItems}
+						/>
+					</div>
+					<div className="col-span-1 row-span-1 border-t xl:border-t-0 xl:border-l">
 						<DiagnosisCard
 							diseases={diseases}
 							diagnosisItems={diagnosisItems}
 							setDiagnosisItems={setDiagnosisItems}
 						/>
+					</div>
+					<div className="col-span-1 row-span-1 border-t xl:border-l">
 						<PrescriptionCard
 							medicines={medicines}
 							prescriptionItems={prescriptionItems}
@@ -355,7 +359,7 @@ function ConsultationPage() {
 				</div>
 
 				{/* Clinical Remarks / Addendum textarea */}
-				<Card className="mt-4 p-4">
+				<div className="text-card-foreground mt-4">
 					<Label className="font-semibold text-lg">
 						History, Assessment and Plan
 					</Label>
@@ -365,7 +369,7 @@ function ConsultationPage() {
 						className="mt-2 resize-none min-h-24"
 						placeholder="Relevant history, assessment, plan, follow-up instructions, referral details, or other clinical notes..."
 					/>
-				</Card>
+				</div>
 
 				<FinalizeCaseDialog
 					open={openFinalizeDialog}

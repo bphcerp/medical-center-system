@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { AutoSizer } from "react-virtualized";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
 	Command,
 	CommandEmpty,
@@ -109,9 +108,9 @@ const DiagnosisCard = ({
 	};
 
 	return (
-		<Card className="col-span-1 row-span-1 xl:rounded-tr-xl xl:rounded-l-none xl:rounded-br-none rounded-none min-h-52 gap-2 pt-3 px-4">
+		<div className="text-card-foreground flex flex-col min-h-52 gap-2 pt-3 px-4">
 			<div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-2">
-				<Label className="font-semibold text-lg">Diagnosis: </Label>
+				<Label className="font-semibold text-lg">Diagnosis</Label>
 				{!readonly && (
 					<Popover
 						open={diseasesSearchOpen}
@@ -173,30 +172,28 @@ const DiagnosisCard = ({
 			</div>
 			{diagnosisItems.length > 0 ? (
 				diagnosisItems.map((item) => (
-					<div key={item.id}>
-						<div className="w-full flex flex-wrap gap-2">
-							<span className="font-medium">{item.name}</span>
-							<span className="font-medium text-muted-foreground">
-								(ICD: {item.icd})
-							</span>
-							{!readonly && (
-								<Button
-									variant="destructive"
-									onClick={() => handleRemoveDiagnosisItem(item.id)}
-									className="h-6 w-6"
-								>
-									<Trash2 />
-								</Button>
-							)}
-						</div>
+					<div key={item.id} className="w-full flex flex-wrap gap-2">
+						<span className="font-medium">{item.name}</span>
+						<span className="font-medium text-muted-foreground">
+							(ICD: {item.icd})
+						</span>
+						{!readonly && (
+							<Button
+								variant="destructive"
+								onClick={() => handleRemoveDiagnosisItem(item.id)}
+								className="h-6 w-6"
+							>
+								<Trash2 />
+							</Button>
+						)}
 					</div>
 				))
 			) : (
-				<div className="flex items-center justify-center h-full text-muted-foreground">
+				<div className="flex items-center justify-center my-auto text-muted-foreground">
 					No diagnosis recorded
 				</div>
 			)}
-		</Card>
+		</div>
 	);
 };
 

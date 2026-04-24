@@ -115,7 +115,7 @@ const TestsCard = ({
 	return (
 		<div>
 			<div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-2">
-				<Label className="font-semibold text-lg">Tests: </Label>
+				<Label className="font-semibold text-lg">Tests</Label>
 				{!readonly && (
 					<Popover open={testsSearchOpen} onOpenChange={setTestsSearchOpen}>
 						<PopoverTrigger asChild>

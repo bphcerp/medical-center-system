@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { AutoSizer } from "react-virtualized";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
 	Command,
 	CommandEmpty,
@@ -157,9 +156,9 @@ const PrescriptionCard = ({
 	};
 
 	return (
-		<Card className="col-span-1 gap-4 row-span-1 rounded-none min-h-52 pt-3 px-4">
+		<div className="text-card-foreground flex flex-col gap-4 min-h-52 pt-3 px-4">
 			<div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-2">
-				<Label className="font-semibold text-lg">Prescription: </Label>
+				<Label className="font-semibold text-lg">Prescription</Label>
 				<Popover
 					open={medicinesSearchOpen}
 					onOpenChange={setMedicinesSearchOpen}
@@ -261,11 +260,11 @@ const PrescriptionCard = ({
 					</div>
 				))
 			) : (
-				<div className="flex items-center justify-center h-full text-muted-foreground">
+				<div className="flex items-center justify-center my-auto text-muted-foreground">
 					No prescription recorded
 				</div>
 			)}
-		</Card>
+		</div>
 	);
 };
 

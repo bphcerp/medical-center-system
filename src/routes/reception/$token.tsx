@@ -2,6 +2,12 @@ import { createFileRoute, notFound, useRouter } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "src/components/ui/card";
 import { NotFound } from "@/components/not-found";
 import { PatientDetails } from "@/components/patient-details";
 import { Button } from "@/components/ui/button";
@@ -13,7 +19,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import VitalsCard from "@/components/vitals-card";
 import { handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
@@ -115,19 +120,28 @@ function RouteComponent() {
 					className="flex flex-col gap-4 w-full"
 					action={(e) => handleCreateCase(e, patient)}
 				>
-					<PatientDetails
-						patient={patient}
-						token={patient.token}
-						label="Entering vitals for"
-					/>
+					<PatientDetails patient={patient} token={patient.token} />
 					<FieldSet>
 						<FieldGroup className="pt-2">
-							<VitalsCard />
-							<Separator className="hidden lg:inline" />
+							<Card className="gap-4">
+								<CardHeader>
+									<CardTitle className="text-muted-foreground space-x-2">
+										<span className="tracking-wider font-bold text-sm uppercase ">
+											Vitals
+										</span>
+										<span className="italic text-xs font-normal">
+											(all fields optional)
+										</span>
+									</CardTitle>
+								</CardHeader>
+								<CardContent>
+									<VitalsCard />
+								</CardContent>
+							</Card>
 							<div className="flex items-end gap-4">
 								<Field>
 									<FieldLabel htmlFor={doctorAssignedId}>
-										Doctor Assigned
+										Assign Doctor
 									</FieldLabel>
 									<Select
 										required
