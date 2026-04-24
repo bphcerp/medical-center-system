@@ -31,7 +31,7 @@ export function DefaultHomeButton({
 
 const TopBar = ({
 	title,
-	actionButton = <DefaultHomeButton />,
+	actionButton,
 	children,
 	className,
 }: PropsWithChildren<{
@@ -41,6 +41,11 @@ const TopBar = ({
 	React.ComponentProps<"div">) => {
 	const location = useLocation();
 	const { allowedRoutes } = useAuth();
+	const shouldShowDefaultHomeButton =
+		allowedRoutes.length > 1 && location.pathname !== "/";
+	const leftAction = actionButton
+		? location.pathname !== "/" && actionButton
+		: shouldShowDefaultHomeButton && <DefaultHomeButton />;
 
 	if (title) document.title = title;
 
@@ -54,7 +59,7 @@ const TopBar = ({
 			)}
 		>
 			<div className="flex gap-4 items-center">
-				{allowedRoutes.length > 1 && location.pathname !== "/" && actionButton}
+				{leftAction}
 				{children ? (
 					children
 				) : (
