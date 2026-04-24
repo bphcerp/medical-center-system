@@ -113,8 +113,8 @@ const TestsSection = ({
 	};
 
 	return (
-		<div>
-			<div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-2">
+		<div className="h-full flex flex-col">
+			<div className="flex flex-col md:flex-row justify-between w-full gap-2">
 				<Label className="font-semibold text-lg">Tests</Label>
 				{!readonly && (
 					<Popover open={testsSearchOpen} onOpenChange={setTestsSearchOpen}>
@@ -123,6 +123,7 @@ const TestsSection = ({
 								variant="outline"
 								role="combobox"
 								className="justify-between text-muted-foreground xl:w-[calc(50dvw-8rem)] md:w-[calc(100dvw-10rem)] w-[calc(100dvw-6rem)]"
+								size="sm"
 							>
 								Select a test...
 								<ChevronsUpDown className="ml-2 h-4 w-4" />
@@ -239,7 +240,7 @@ const TestsSection = ({
 						))}
 				</div>
 			) : (
-				<div className="flex items-center justify-center text-muted-foreground py-6">
+				<div className="my-auto text-center text-muted-foreground py-6">
 					No tests recorded
 				</div>
 			)}

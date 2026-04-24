@@ -156,8 +156,8 @@ const PrescriptionSection = ({
 	};
 
 	return (
-		<div className="text-card-foreground flex flex-col gap-4 min-h-52 pt-3 px-4">
-			<div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-2">
+		<div className="text-card-foreground flex flex-col gap-4 min-h-40">
+			<div className="flex flex-col md:flex-row justify-between w-full gap-2">
 				<Label className="font-semibold text-lg">Prescription</Label>
 				<Popover
 					open={medicinesSearchOpen}
@@ -168,6 +168,7 @@ const PrescriptionSection = ({
 							variant="outline"
 							role="combobox"
 							className="justify-between text-muted-foreground xl:w-[calc(50dvw-11rem)] md:w-[calc(100dvw-13rem)] w-[calc(100dvw-6rem)]"
+							size="sm"
 						>
 							Select a medicine...
 							<ChevronsUpDown className="ml-2 h-4 w-4" />
@@ -260,7 +261,7 @@ const PrescriptionSection = ({
 					</div>
 				))
 			) : (
-				<div className="flex items-center justify-center my-auto text-muted-foreground">
+				<div className="text-center my-auto text-muted-foreground">
 					No prescription recorded
 				</div>
 			)}

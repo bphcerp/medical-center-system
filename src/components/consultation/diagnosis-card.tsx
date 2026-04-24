@@ -108,8 +108,8 @@ const DiagnosisSection = ({
 	};
 
 	return (
-		<div className="text-card-foreground flex flex-col min-h-52 gap-2 pt-3 px-4">
-			<div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-2">
+		<div className="text-card-foreground flex flex-col min-h-40 gap-2">
+			<div className="flex flex-col md:flex-row justify-between w-full gap-2">
 				<Label className="font-semibold text-lg">Diagnosis</Label>
 				{!readonly && (
 					<Popover
@@ -121,6 +121,7 @@ const DiagnosisSection = ({
 								variant="outline"
 								role="combobox"
 								className="justify-between text-muted-foreground xl:w-[calc(50dvw-10rem)] md:w-[calc(100dvw-12rem)] w-[calc(100dvw-6rem)]"
+								size="sm"
 							>
 								Select a disease...
 								<ChevronsUpDown className="ml-2 h-4 w-4" />
@@ -189,7 +190,7 @@ const DiagnosisSection = ({
 					</div>
 				))
 			) : (
-				<div className="flex items-center justify-center my-auto text-muted-foreground">
+				<div className="text-center my-auto text-muted-foreground">
 					No diagnosis recorded
 				</div>
 			)}

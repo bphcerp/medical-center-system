@@ -259,13 +259,13 @@ function ConsultationPage() {
 					</Button>
 				}
 			>
-				<div className="flex gap-2 items-between w-full">
+				<div className="flex gap-2 items-stretch">
 					<PatientDetails
 						patient={caseDetail.patient}
 						token={caseDetail.cases.token}
 						size="sm"
 					/>
-					<div className="w-0 ms-2 border" />
+					<div className="w-px ms-2 bg-border" />
 					<div className="flex gap-2 items-center">
 						<Button
 							onClick={() =>
@@ -303,19 +303,19 @@ function ConsultationPage() {
 					</div>
 				</div>
 			</TopBar>
-			<div className="flex flex-col py-4 *:px-4 h-full gap-4">
-				<div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-4 border-b pb-4">
-					<div className="flex items-center xl:pr-4 xl:border-r">
-						<span className="text-xs font-semibold uppercase text-muted-foreground xl:[writing-mode:vertical-rl] xl:rotate-180">
+			<div className="grid h-full grid-rows-[auto_auto_1fr_auto] grid-cols-1 gap-px *:p-4 bg-border *:bg-background md:grid-cols-2">
+				<div className="col-span-1 md:col-span-2">
+					<div className="flex flex-col xl:flex-row items-stretch gap-4">
+						<span className="text-xs font-semibold uppercase text-muted-foreground xl:[writing-mode:vertical-lr] xl:rotate-180 xl:border-l xl:pl-4">
 							Vitals
 						</span>
-					</div>
-					<div className="min-w-0 flex-1">
-						<VitalsList vitals={caseDetail.cases} condensed />
+						<div className="min-w-0 flex-1">
+							<VitalsList vitals={caseDetail.cases} condensed />
+						</div>
 					</div>
 				</div>
 
-				<div className="flex flex-col gap-2">
+				<div className="col-span-1 flex flex-col gap-2 md:col-span-2">
 					<Label className="font-semibold text-lg">Chief Complaints</Label>
 					<Textarea
 						value={chiefComplaints}
@@ -325,41 +325,43 @@ function ConsultationPage() {
 					/>
 				</div>
 
-				<div className="grid xl:grid-cols-2 grid-cols-1 w-full border xl:rounded-xl rounded-t-xl rounded-b-none overflow-hidden grow shrink basis-auto">
-					<div className="text-card-foreground flex flex-col gap-6 col-span-1 row-span-2 px-4 pt-3 pb-2">
-						<Label className="font-semibold text-lg">
-							Clinical Examination
-						</Label>
-						<Textarea
-							value={consultationNotes}
-							onChange={(e) => setConsultationNotes(e.target.value)}
-							className="h-full -mt-3.5 -mb-3.5 resize-none min-h-48"
-							placeholder="Write notes here..."
-						/>
-						<TestsSection
-							tests={tests}
-							testItems={testItems}
-							setTestItems={setTestItems}
-						/>
-					</div>
-					<div className="col-span-1 row-span-1 border-t xl:border-t-0 xl:border-l">
-						<DiagnosisSection
-							diseases={diseases}
-							diagnosisItems={diagnosisItems}
-							setDiagnosisItems={setDiagnosisItems}
-						/>
-					</div>
-					<div className="col-span-1 row-span-1 border-t xl:border-l">
-						<PrescriptionSection
-							medicines={medicines}
-							prescriptionItems={prescriptionItems}
-							setPrescriptionItems={setPrescriptionItems}
-						/>
+				<div className="col-span-1 md:col-span-2 p-0!">
+					<div className="h-full grid grid-cols-1 gap-px bg-border! *:py-4 *:px-4 *:bg-background xl:grid-cols-2">
+						<div className="col-span-1 row-span-1 flex flex-col gap-2">
+							<Label className="font-semibold text-lg">
+								Clinical Examination
+							</Label>
+							<Textarea
+								value={consultationNotes}
+								onChange={(e) => setConsultationNotes(e.target.value)}
+								className="flex-1 resize-none"
+								placeholder="Write notes here..."
+							/>
+						</div>
+						<div className="col-span-1 row-span-1">
+							<DiagnosisSection
+								diseases={diseases}
+								diagnosisItems={diagnosisItems}
+								setDiagnosisItems={setDiagnosisItems}
+							/>
+						</div>
+						<div className="col-span-1 row-span-1">
+							<TestsSection
+								tests={tests}
+								testItems={testItems}
+								setTestItems={setTestItems}
+							/>
+						</div>
+						<div className="col-span-1 row-span-1">
+							<PrescriptionSection
+								medicines={medicines}
+								prescriptionItems={prescriptionItems}
+								setPrescriptionItems={setPrescriptionItems}
+							/>
+						</div>
 					</div>
 				</div>
-
-				{/* Clinical Remarks / Addendum textarea */}
-				<div className="text-card-foreground mt-4">
+				<div className="col-span-1 text-card-foreground md:col-span-2">
 					<Label className="font-semibold text-lg">
 						History, Assessment and Plan
 					</Label>
@@ -377,12 +379,14 @@ function ConsultationPage() {
 					onConfirm={handleFinalize}
 				/>
 
-				<FinalizeCase
-					handleFinalize={handleOpenPrescriptionPreview}
-					finalizeButtonValue={finalizeButtonValue}
-					setFinalizeButtonValue={setFinalizeButtonValue}
-					disabled={isFinalizeDisabled}
-				/>
+				<div className="col-span-1 md:col-span-2">
+					<FinalizeCase
+						handleFinalize={handleOpenPrescriptionPreview}
+						finalizeButtonValue={finalizeButtonValue}
+						setFinalizeButtonValue={setFinalizeButtonValue}
+						disabled={isFinalizeDisabled}
+					/>
+				</div>
 
 				{/* Printable content kept offscreen so print styles still apply. */}
 				<div className="fixed -left-[10000px] top-0 w-[210mm] bg-white">
