@@ -115,11 +115,9 @@ const lab = createStrictHono()
 			while (!closed) {
 				await stream.sleep(30_000);
 				if (!closed)
-					await stream
-						.writeSSE({ event: "ping", data: "" })
-						.catch(() => {
-							closed = true;
-						});
+					await stream.writeSSE({ event: "ping", data: "" }).catch(() => {
+						closed = true;
+					});
 			}
 		});
 	})

@@ -8,7 +8,6 @@ import {
 import { format } from "date-fns";
 import { Activity, CalendarIcon, ClipboardPlus, Plus } from "lucide-react";
 import { type PropsWithChildren, useState } from "react";
-import { useSSE } from "@/lib/hooks/useSSE";
 import type { Doctor } from "src/api/doctor";
 import StepConfirmBooking from "src/components/booking/step-book-appointment";
 import StepSelectDoctor from "src/components/booking/step-select-doctor";
@@ -37,6 +36,7 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from "@/components/ui/empty";
+import { useSSE } from "@/lib/hooks/useSSE";
 import { cn, formatTime12, handleErrors, titleCase } from "@/lib/utils";
 import { client } from "../api/$";
 
@@ -68,7 +68,11 @@ export const Route = createFileRoute("/reception")({
 
 function Vitals() {
 	const { unprocessed: initialUnprocessed } = Route.useLoaderData();
-	const unprocessed = useSSE("/api/vitals/stream", "unprocessed", initialUnprocessed);
+	const unprocessed = useSSE(
+		"/api/vitals/stream",
+		"unprocessed",
+		initialUnprocessed,
+	);
 	const selectedToken = useParams({
 		from: "/reception/$token",
 		shouldThrow: false,
