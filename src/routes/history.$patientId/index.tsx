@@ -8,7 +8,6 @@ import { ClipboardClock, Lock, Minus, Unlock } from "lucide-react";
 import BackButton from "src/components/back-button";
 import { PatientDetails } from "@/components/patient-details";
 import TopBar, { DefaultHomeButton } from "@/components/topbar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
 	Empty,
 	EmptyDescription,
