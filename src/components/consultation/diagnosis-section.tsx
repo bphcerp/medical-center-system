@@ -181,7 +181,7 @@ const DiagnosisSection = ({
 							</span>
 							<Button
 								variant="ghost"
-								className="col-start-2 px-0 justify-start py-0 max-h-8 text-base font-normal hover:bg-transparent hover:cursor-pointer hover:line-through hover:text-destructive duration-200"
+								className="col-start-2 px-0 justify-start py-0 max-h-8 text-base font-normal hover:bg-transparent hover:cursor-pointer hover:line-through hover:text-destructive transition-none"
 								onClick={() => handleRemoveDiagnosisItem(item.id)}
 							>
 								{item.name}

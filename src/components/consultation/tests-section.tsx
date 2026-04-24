@@ -1,9 +1,8 @@
 import type { InferResponseType } from "hono";
-import { ChevronsUpDown, Download, Trash2 } from "lucide-react";
+import { ChevronsUpDown, Download } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AutoSizer } from "react-virtualized";
 import { toast } from "sonner";
-import { DeleteButton } from "@/components/delete-button";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -43,11 +42,11 @@ const TestsSection = ({
 	const [testsSearchOpen, setTestsSearchOpen] = useState<boolean>(false);
 	const [testQuery, setTestQuery] = useState<string>("");
 	const { renderList } = useVirtualList<Test>(300, {
-		"2xl": 48,
-		xl: 48,
-		lg: 48,
-		md: 48,
-		sm: 48,
+		"2xl": 52,
+		xl: 52,
+		lg: 52,
+		md: 52,
+		sm: 52,
 		xs: 108,
 	});
 
@@ -156,11 +155,12 @@ const TestsSection = ({
 																handleAddTest(item);
 																setTestsSearchOpen(false);
 															}}
-															className="flex w-full justify-between"
+															className="flex flex-col h-fit gap-0 items-start w-full justify-between"
 														>
-															<span>
-																{item.name} ({item.category})
+															<span className="uppercase font-medium text-xs text-muted-foreground">
+																{item.category}
 															</span>
+															<span>{item.name}</span>
 														</CommandItem>
 													),
 													width,
@@ -183,19 +183,30 @@ const TestsSection = ({
 						)
 						.map((item) => (
 							<div key={item.id} className="py-2">
-								<div className="w-full flex flex-wrap gap-2">
-									<span className="font-medium">{item.name}</span>
-									<span className="font-medium text-muted-foreground">
-										({item.category})
+								<Button
+									variant="ghost"
+									className="group w-full flex flex-col items-start h-fit p-0 hover:bg-transparent gap-1 "
+									onClick={() => handleRemoveTestItem(item.id)}
+								>
+									<span className="w-full flex gap-6 items-baseline-last text-xs">
+										<span className="group-hover:line-through uppercase font-medium text-muted-foreground">
+											{item.category}
+										</span>
+										<span
+											style={{ animationDuration: "1s" }}
+											className="hidden group-hover:inline font-semibold text-destructive animate-pulse scale-120 origin-bottom-left"
+										>
+											Click to delete
+										</span>
 									</span>
-									<LabTestStatusBadge status={item.status} />
-									{!readonly && (
-										<DeleteButton
-											onClick={() => handleRemoveTestItem(item.id)}
-											icon={<Trash2 />}
-										/>
-									)}
-								</div>
+									<div className="w-full flex flex-wrap items-baseline gap-2">
+										<span className="font-medium group-hover:line-through">
+											{item.name}
+										</span>
+										<span className="flex-1" />
+										<LabTestStatusBadge status={item.status} />
+									</div>
+								</Button>
 								{(readonly || item.files.length > 0) && (
 									<div>
 										{item.files.length > 0 ? (
