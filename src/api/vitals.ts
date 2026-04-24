@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { arrayContains, eq, getTableColumns } from "drizzle-orm";
+import { streamSSE } from "hono/streaming";
 import z from "zod";
 import { rolesTable, usersTable } from "@/db/auth";
 import { casesTable, unprocessedTable } from "@/db/case";
@@ -7,34 +8,101 @@ import { patientsTable } from "@/db/patient";
 import { createStrictHono, strictValidator } from "@/lib/types/api";
 import { getAge } from "@/lib/utils";
 import { db } from ".";
+import { subscribe } from "./listener";
 import { rbacCheck } from "./rbac";
+
+async function queryUnprocessed() {
+	const rows = await db
+		.select({
+			name: patientsTable.name,
+			birthdate: patientsTable.birthdate,
+			sex: patientsTable.sex,
+			token: unprocessedTable.id,
+			id: patientsTable.id,
+			type: patientsTable.type,
+			identifierType: unprocessedTable.identifierType,
+		})
+		.from(unprocessedTable)
+		.innerJoin(patientsTable, eq(unprocessedTable.patientId, patientsTable.id))
+		.orderBy(unprocessedTable.id);
+
+	return rows.map((p) => ({ ...p, age: getAge(p.birthdate) }));
+}
+
+async function queryUnprocessedByToken(token: number) {
+	const rows = await db
+		.select({
+			name: patientsTable.name,
+			birthdate: patientsTable.birthdate,
+			sex: patientsTable.sex,
+			token: unprocessedTable.id,
+			id: patientsTable.id,
+			type: patientsTable.type,
+			identifierType: unprocessedTable.identifierType,
+		})
+		.from(unprocessedTable)
+		.innerJoin(patientsTable, eq(unprocessedTable.patientId, patientsTable.id))
+		.where(eq(unprocessedTable.id, token))
+		.limit(1);
+
+	const patient = rows[0];
+	return patient ? { ...patient, age: getAge(patient.birthdate) } : null;
+}
 
 const vitals = createStrictHono()
 	.use(rbacCheck({ permissions: ["vitals"] }))
 	.get("/unprocessed", async (c) => {
-		const unprocessed = await db
-			.select({
-				name: patientsTable.name,
-				birthdate: patientsTable.birthdate,
-				sex: patientsTable.sex,
-				token: unprocessedTable.id,
-				id: patientsTable.id,
-				type: patientsTable.type,
-				identifierType: unprocessedTable.identifierType,
-			})
-			.from(unprocessedTable)
-			.innerJoin(
-				patientsTable,
-				eq(unprocessedTable.patientId, patientsTable.id),
-			)
-			.orderBy(unprocessedTable.id);
+		return c.json({ success: true, data: await queryUnprocessed() });
+	})
+	.get(
+		"/unprocessed/:token",
+		strictValidator(
+			"param",
+			z.object({ token: z.coerce.number().int().positive() }),
+		),
+		async (c) => {
+			const { token } = c.req.valid("param");
+			const patient = await queryUnprocessedByToken(token);
+			if (!patient) {
+				return c.json(
+					{ success: false, error: { message: "Patient not found" } },
+					404,
+				);
+			}
 
-		return c.json({
-			success: true,
-			data: unprocessed.map((patient) => ({
-				...patient,
-				age: getAge(patient.birthdate),
-			})),
+			return c.json({ success: true, data: patient });
+		},
+	)
+	.get("/stream", async (c) => {
+		return streamSSE(c, async (stream) => {
+			let closed = false;
+
+			stream.onAbort(() => {
+				closed = true;
+			});
+
+			const sendCurrent = async () => {
+				await stream.writeSSE({
+					event: "unprocessed",
+					data: JSON.stringify(await queryUnprocessed()),
+				});
+			};
+
+			await sendCurrent();
+
+			const unsubscribe = subscribe("unprocessed_changed", () => {
+				if (!closed) sendCurrent().catch(() => {});
+			});
+
+			stream.onAbort(unsubscribe);
+
+			while (!closed) {
+				await stream.sleep(30_000);
+				if (!closed)
+					await stream.writeSSE({ event: "ping", data: "" }).catch(() => {
+						closed = true;
+					});
+			}
 		});
 	})
 	.get("/availableDoctors", async (c) => {
@@ -102,6 +170,11 @@ const vitals = createStrictHono()
 				201,
 			);
 		},
-	);
+	)
+	.delete("/removeFromQueue/:token", async (c) => {
+		const token = Number(c.req.param("token"));
+		await db.delete(unprocessedTable).where(eq(unprocessedTable.id, token));
+		return c.json({ success: true, data: null });
+	});
 
 export default vitals;

@@ -43,6 +43,7 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from "@/components/ui/empty";
+import { useSSE } from "@/lib/hooks/useSSE";
 import { cn, formatTime12, handleErrors, titleCase } from "@/lib/utils";
 import { client } from "../api/$";
 
@@ -76,6 +77,12 @@ function Vitals() {
 	const { unprocessed } = Route.useLoaderData();
 	const [bookAppointmentOpen, setBookAppointmentOpen] = useState(false);
 	const [viewAppointmentsOpen, setViewAppointmentsOpen] = useState(false);
+	const { unprocessed: initialUnprocessed } = Route.useLoaderData();
+	const unprocessed = useSSE(
+		"/api/vitals/stream",
+		"unprocessed",
+		initialUnprocessed,
+	);
 	const selectedToken = useParams({
 		from: "/reception/$token",
 		shouldThrow: false,
