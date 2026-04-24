@@ -5,19 +5,12 @@ import {
 	MealTimeSelector,
 	PrescriptionFrequencySelector,
 } from "./selectors";
-import type { PrescriptionItemProps } from "./types";
+import type { CapsulePrescriptionItemProps } from "./types";
 
 const PrescriptionCapsuleFields = ({
 	item,
 	handleUpdate,
-}: PrescriptionItemProps) => {
-	if (
-		!item.case_prescriptions.categoryData ||
-		item.case_prescriptions.categoryData.category !== "Capsule/Tablet"
-	) {
-		return null;
-	}
-
+}: CapsulePrescriptionItemProps) => {
 	return (
 		<div className="flex flex-wrap gap-2 items-center w-full">
 			<DosageSelector

@@ -1,19 +1,19 @@
 import { Label } from "@radix-ui/react-label";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import DiagnosisCard from "@/components/diagnosis-card";
+import DiagnosisSection from "src/components/consultation/diagnosis-section";
+import TestsSection from "src/components/consultation/tests-section";
+import VitalsList from "src/components/vitals-list";
 import {
 	OTPVerificationDialog,
 	useOTP,
 } from "@/components/otp-verification-dialog";
 import { PatientDetails } from "@/components/patient-details";
-import TestsCard from "@/components/tests-card";
 import TopBar from "@/components/topbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import VitalsCard from "@/components/vitals-card";
 import useAuth from "@/lib/hooks/useAuth";
 
 export const Route = createFileRoute("/history/$patientId/$caseId")({
@@ -128,7 +128,7 @@ function CaseDetailsPage() {
 				</div>
 
 				<Card className="mb-4 p-0">
-					<VitalsCard vitals={caseDetail.cases} condensed />
+					<VitalsList vitals={caseDetail.cases} condensed />
 				</Card>
 
 				<div className="grid xl:grid-cols-2 grid-cols-1 mb-2">
@@ -141,7 +141,7 @@ function CaseDetailsPage() {
 							readOnly
 							className="h-full -mt-3.5 -mb-3.5 resize-none min-h-48"
 						/>
-						<TestsCard
+						<TestsSection
 							tests={[]}
 							testItems={tests}
 							setTestItems={() => {}}
@@ -149,7 +149,7 @@ function CaseDetailsPage() {
 						/>
 					</Card>
 
-					<DiagnosisCard
+					<DiagnosisSection
 						diseases={diseases}
 						diagnosisItems={diseases}
 						setDiagnosisItems={() => {}}

@@ -23,9 +23,7 @@ const VitalField = ({
 	const fieldId = useId();
 	return (
 		<Field>
-			<FieldLabel htmlFor={fieldId}>
-				{label} {value === undefined ? "(optional)" : null}
-			</FieldLabel>
+			<FieldLabel htmlFor={fieldId}>{label}</FieldLabel>
 			<InputGroup>
 				<InputGroupInput
 					id={fieldId}

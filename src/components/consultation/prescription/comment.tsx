@@ -1,10 +1,12 @@
-import { Input } from "../ui/input";
+import type React from "react";
+import { Input } from "@/components/ui/input";
 import type { PrescriptionItemProps } from "./types";
 
 const Comment = ({
 	item,
 	handleUpdate: handleUpdatePrescriptionItem,
-}: PrescriptionItemProps) => {
+	...props
+}: PrescriptionItemProps & React.ComponentProps<typeof Input>) => {
 	return (
 		<Input
 			value={item.case_prescriptions.comment || ""}
@@ -16,7 +18,8 @@ const Comment = ({
 				)
 			}
 			placeholder="Notes"
-			className="h-10 flex-1 min-w-[120px]"
+			className="h-8 flex-1 min-w-[120px]"
+			{...props}
 		/>
 	);
 };

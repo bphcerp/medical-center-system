@@ -1,10 +1,10 @@
-import { Label } from "@radix-ui/react-label";
-import { ChevronsUpDown, Trash2 } from "lucide-react";
+import { ChevronsUpDown, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AutoSizer } from "react-virtualized";
 import { toast } from "sonner";
+import { CondensedLabel } from "src/components/condensed-label";
+import { DeleteButton } from "src/components/delete-button";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
 	Command,
 	CommandEmpty,
@@ -23,9 +23,14 @@ import PrescriptionCapsuleFields from "./capsule-fields";
 import PrescriptionExternalFields from "./external-fields";
 import PrescriptionInjectionFields from "./injection-fields";
 import PrescriptionSyrupFields from "./syrup-fields";
-import type { MedicineItem, PrescriptionItem } from "./types";
+import {
+	isPrescriptionCategory,
+	type MedicineItem,
+	type PrescriptionHandleUpdate,
+	type PrescriptionItem,
+} from "./types";
 
-const PrescriptionCard = ({
+const PrescriptionSection = ({
 	medicines,
 	prescriptionItems,
 	setPrescriptionItems,
@@ -88,13 +93,10 @@ const PrescriptionCard = ({
 		[medicines, prescriptionQuery],
 	);
 
-	const handleUpdatePrescriptionItem = (
-		id: number,
-		field: keyof Omit<
-			PrescriptionItem["case_prescriptions"],
-			"id" | "medicine"
-		>,
-		value: string | PrescriptionItem["case_prescriptions"]["categoryData"],
+	const handleUpdatePrescriptionItem: PrescriptionHandleUpdate = (
+		id,
+		field,
+		value,
 	) => {
 		setPrescriptionItems(
 			prescriptionItems.map((item) =>
@@ -118,7 +120,6 @@ const PrescriptionCard = ({
 	};
 
 	const handleAddMedicine = (medicine: (typeof medicines)[0]) => {
-		//heck if medicine already exists in the prescription
 		if (prescriptionItems.some((item) => item.medicines.id === medicine.id)) {
 			toast.error("This medicine is already in the prescription");
 			return;
@@ -157,9 +158,9 @@ const PrescriptionCard = ({
 	};
 
 	return (
-		<Card className="col-span-1 gap-4 row-span-1 rounded-none min-h-52 pt-3 px-4">
-			<div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-2">
-				<Label className="font-semibold text-lg">Prescription: </Label>
+		<div className="text-card-foreground flex flex-col gap-4 h-full">
+			<div className="flex flex-col md:flex-row justify-between w-full gap-2">
+				<CondensedLabel>Prescription</CondensedLabel>
 				<Popover
 					open={medicinesSearchOpen}
 					onOpenChange={setMedicinesSearchOpen}
@@ -169,6 +170,7 @@ const PrescriptionCard = ({
 							variant="outline"
 							role="combobox"
 							className="justify-between text-muted-foreground xl:w-[calc(50dvw-11rem)] md:w-[calc(100dvw-13rem)] w-[calc(100dvw-6rem)]"
+							size="sm"
 						>
 							Select a medicine...
 							<ChevronsUpDown className="ml-2 h-4 w-4" />
@@ -199,7 +201,7 @@ const PrescriptionCard = ({
 														handleAddMedicine(item);
 														setMedicinesSearchOpen(false);
 													}}
-													className="flex w-full justify-between"
+													className="flex flex-wrap h-fit w-full justify-between rounded-none"
 												>
 													<span>
 														{item.company} {item.brand}
@@ -221,53 +223,61 @@ const PrescriptionCard = ({
 			{prescriptionItems.length > 0 ? (
 				prescriptionItems.map((item) => (
 					<div key={item.medicines.id}>
-						<div className="w-full pb-1 flex flex-wrap items-center gap-2">
-							<span className="font-semibold">
+						<div className="w-full pb-2 flex flex-wrap items-center gap-2">
+							<span className="font-medium text-sm">
 								{item.medicines.company} {item.medicines.brand}
 							</span>
 							<span className="text-muted-foreground text-sm">
 								({item.medicines.drug}) - {item.medicines.strength}
 							</span>
-							<span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+							<span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
 								{item.medicines.type}
 							</span>
 						</div>
-						<div className="gap-0.5 flex">
-							<PrescriptionCapsuleFields
-								item={item}
-								handleUpdate={handleUpdatePrescriptionItem}
-							/>
-							<PrescriptionExternalFields
-								item={item}
-								handleUpdate={handleUpdatePrescriptionItem}
-							/>
-							<PrescriptionInjectionFields
-								item={item}
-								handleUpdate={handleUpdatePrescriptionItem}
-							/>
-							<PrescriptionSyrupFields
-								item={item}
-								handleUpdate={handleUpdatePrescriptionItem}
-							/>
-							<Button
-								variant="destructive"
-								size="sm"
+						<div className="gap-2 flex">
+							{isPrescriptionCategory(item, "Capsule/Tablet") && (
+								<PrescriptionCapsuleFields
+									item={item}
+									handleUpdate={handleUpdatePrescriptionItem}
+								/>
+							)}
+
+							{isPrescriptionCategory(item, "External Application") && (
+								<PrescriptionExternalFields
+									item={item}
+									handleUpdate={handleUpdatePrescriptionItem}
+								/>
+							)}
+							{isPrescriptionCategory(item, "Injection") && (
+								<PrescriptionInjectionFields
+									item={item}
+									handleUpdate={handleUpdatePrescriptionItem}
+								/>
+							)}
+							{isPrescriptionCategory(item, "Liquids/Syrups") && (
+								<PrescriptionSyrupFields
+									item={item}
+									handleUpdate={handleUpdatePrescriptionItem}
+								/>
+							)}
+
+							<DeleteButton
+								variant="outline"
+								className="size-8"
+								icon={<X />}
 								onClick={() => handleRemovePrescriptionItem(item.medicines.id)}
-								className="h-10 w-10 p-0"
-							>
-								<Trash2 className="h-4 w-4" />
-							</Button>
+							/>
 						</div>
 					</div>
 				))
 			) : (
-				<div className="flex items-center justify-center h-full text-muted-foreground">
+				<div className="text-center my-auto text-muted-foreground">
 					No prescription recorded
 				</div>
 			)}
-		</Card>
+		</div>
 	);
 };
 
-export default PrescriptionCard;
+export default PrescriptionSection;
 export * from "./selectors";

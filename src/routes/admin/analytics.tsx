@@ -68,9 +68,9 @@ export const Route = createFileRoute("/admin/analytics")({
 	loader: async ({ deps }) => {
 		const res = await client.api.admin.analytics.$get({
 			query: {
-				days: String(deps.days),
-				topDiagnoses: String(deps.topDiagnoses),
-				topMedicines: String(deps.topMedicines),
+				days: deps.days,
+				topDiagnoses: deps.topDiagnoses,
+				topMedicines: deps.topMedicines,
 			},
 		});
 		const data = await handleErrors(res);

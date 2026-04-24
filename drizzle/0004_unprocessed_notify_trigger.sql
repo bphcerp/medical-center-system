@@ -1,3 +1,6 @@
+ALTER TABLE "cases" ADD COLUMN "chiefComplaints" text;--> statement-breakpoint
+ALTER TABLE "cases" ADD COLUMN "clinicalRemarks" text;
+
 CREATE OR REPLACE FUNCTION notify_unprocessed_changed()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -36,3 +39,4 @@ CREATE OR REPLACE TRIGGER lab_changed_trigger
 AFTER INSERT OR UPDATE OR DELETE ON case_lab_reports
 FOR EACH STATEMENT
 EXECUTE FUNCTION notify_lab_changed();
+
