@@ -1,8 +1,9 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, History, RefreshCw, TriangleAlert, X } from "lucide-react";
+import { History, RefreshCw, TriangleAlert, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { toast } from "sonner";
+import BackButton from "src/components/back-button";
 import { CondensedLabel } from "src/components/condensed-label";
 import DiagnosisSection from "src/components/consultation/diagnosis-section";
 import FinalizeCase, {
@@ -132,9 +133,7 @@ function ConsultationPage() {
 	});
 
 	const contentRef = useRef<HTMLDivElement>(null);
-	const reactToPrintFn = useReactToPrint({
-		contentRef,
-	});
+	const reactToPrintFn = useReactToPrint({ contentRef });
 	const [openFinalizeDialog, setOpenFinalizeDialog] = useState(false);
 	const [showAutosaveIndicator, setShowAutosaveIndicator] = useState(false);
 
@@ -244,20 +243,7 @@ function ConsultationPage() {
 			<TopBar
 				title="Consultation"
 				actionButton={
-					<Button
-						onClick={() =>
-							navigate({
-								to: "/doctor",
-							})
-						}
-						variant="ghost"
-						className="p-4 aspect-square"
-					>
-						<ArrowLeft
-							className="text-muted-foreground size-5"
-							strokeWidth={2}
-						/>
-					</Button>
+					<BackButton onClick={() => navigate({ to: "/doctor" })} />
 				}
 			>
 				<div className="flex gap-2 items-stretch">

@@ -193,7 +193,10 @@ const TestsSection = ({
 											{item.category}
 										</span>
 										<span
-											style={{ animationDuration: "1s" }}
+											style={{
+												animationDuration: "1s",
+												animationDelay: "0.5s",
+											}}
 											className="hidden group-hover:inline font-semibold text-destructive animate-pulse scale-120 origin-bottom-left"
 										>
 											Click to delete

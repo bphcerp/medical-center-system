@@ -158,7 +158,7 @@ const PrescriptionSection = ({
 	};
 
 	return (
-		<div className="text-card-foreground flex flex-col gap-4 min-h-40">
+		<div className="text-card-foreground flex flex-col gap-4 h-full">
 			<div className="flex flex-col md:flex-row justify-between w-full gap-2">
 				<CondensedLabel>Prescription</CondensedLabel>
 				<Popover

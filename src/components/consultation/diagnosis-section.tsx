@@ -108,7 +108,7 @@ const DiagnosisSection = ({
 	};
 
 	return (
-		<div className="text-card-foreground flex flex-col min-h-40 gap-2">
+		<div className="text-card-foreground flex flex-col h-full gap-2">
 			<div className="flex flex-col md:flex-row justify-between w-full gap-2">
 				<CondensedLabel>Diagnosis</CondensedLabel>
 				{!readonly && (
@@ -181,7 +181,7 @@ const DiagnosisSection = ({
 							</span>
 							<Button
 								variant="ghost"
-								className="col-start-2 px-0 justify-start py-0 max-h-8 text-base font-normal hover:bg-transparent hover:cursor-pointer hover:line-through hover:text-destructive transition-none"
+								className="col-start-2 px-0 justify-start py-0 max-h-8 text-base font-medium hover:bg-transparent hover:cursor-pointer hover:line-through hover:text-destructive transition-none"
 								onClick={() => handleRemoveDiagnosisItem(item.id)}
 							>
 								{item.name}

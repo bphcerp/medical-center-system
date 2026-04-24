@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap');
 
 @import "tailwindcss" source("../");
 @import "tw-animate-css";
@@ -41,7 +42,7 @@
   --sidebar-border: oklch(0.9195 0.0211 271.1836);
   --sidebar-ring: oklch(0.4759 0.2969 265.2798);
   --font-sans: Inter, ui-sans-serif, sans-serif, system-ui;
-  --font-serif: Merriweather, ui-serif, serif;
+  --font-serif: 'Noto Serif', Merriweather, ui-serif, serif;
   --font-mono: monospace;
   --radius: 0.55rem;
   --shadow-x: 0px;
