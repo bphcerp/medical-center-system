@@ -22,7 +22,12 @@ import PrescriptionCapsuleFields from "./capsule-fields";
 import PrescriptionExternalFields from "./external-fields";
 import PrescriptionInjectionFields from "./injection-fields";
 import PrescriptionSyrupFields from "./syrup-fields";
-import type { MedicineItem, PrescriptionItem } from "./types";
+import {
+	isPrescriptionCategory,
+	type MedicineItem,
+	type PrescriptionHandleUpdate,
+	type PrescriptionItem,
+} from "./types";
 
 const PrescriptionSection = ({
 	medicines,
@@ -87,13 +92,10 @@ const PrescriptionSection = ({
 		[medicines, prescriptionQuery],
 	);
 
-	const handleUpdatePrescriptionItem = (
-		id: number,
-		field: keyof Omit<
-			PrescriptionItem["case_prescriptions"],
-			"id" | "medicine"
-		>,
-		value: string | PrescriptionItem["case_prescriptions"]["categoryData"],
+	const handleUpdatePrescriptionItem: PrescriptionHandleUpdate = (
+		id,
+		field,
+		value,
 	) => {
 		setPrescriptionItems(
 			prescriptionItems.map((item) =>
@@ -117,7 +119,6 @@ const PrescriptionSection = ({
 	};
 
 	const handleAddMedicine = (medicine: (typeof medicines)[0]) => {
-		//heck if medicine already exists in the prescription
 		if (prescriptionItems.some((item) => item.medicines.id === medicine.id)) {
 			toast.error("This medicine is already in the prescription");
 			return;
@@ -199,7 +200,7 @@ const PrescriptionSection = ({
 														handleAddMedicine(item);
 														setMedicinesSearchOpen(false);
 													}}
-													className="flex w-full justify-between"
+													className="flex flex-wrap h-fit w-full justify-between rounded-none"
 												>
 													<span>
 														{item.company} {item.brand}
@@ -233,22 +234,32 @@ const PrescriptionSection = ({
 							</span>
 						</div>
 						<div className="gap-0.5 flex">
-							<PrescriptionCapsuleFields
-								item={item}
-								handleUpdate={handleUpdatePrescriptionItem}
-							/>
-							<PrescriptionExternalFields
-								item={item}
-								handleUpdate={handleUpdatePrescriptionItem}
-							/>
-							<PrescriptionInjectionFields
-								item={item}
-								handleUpdate={handleUpdatePrescriptionItem}
-							/>
-							<PrescriptionSyrupFields
-								item={item}
-								handleUpdate={handleUpdatePrescriptionItem}
-							/>
+							{isPrescriptionCategory(item, "Capsule/Tablet") && (
+								<PrescriptionCapsuleFields
+									item={item}
+									handleUpdate={handleUpdatePrescriptionItem}
+								/>
+							)}
+
+							{isPrescriptionCategory(item, "External Application") && (
+								<PrescriptionExternalFields
+									item={item}
+									handleUpdate={handleUpdatePrescriptionItem}
+								/>
+							)}
+							{isPrescriptionCategory(item, "Injection") && (
+								<PrescriptionInjectionFields
+									item={item}
+									handleUpdate={handleUpdatePrescriptionItem}
+								/>
+							)}
+							{isPrescriptionCategory(item, "Liquids/Syrups") && (
+								<PrescriptionSyrupFields
+									item={item}
+									handleUpdate={handleUpdatePrescriptionItem}
+								/>
+							)}
+
 							<Button
 								variant="destructive"
 								size="sm"

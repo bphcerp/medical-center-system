@@ -9,18 +9,12 @@ import {
 import { injectionRoutes } from "@/db/case";
 import Comment from "./comment";
 import { DurationInput, PrescriptionFrequencySelector } from "./selectors";
-import type { PrescriptionItemProps } from "./types";
+import type { InjectionPrescriptionItemProps } from "./types";
 
 const PrescriptionInjectionFields = ({
 	item,
 	handleUpdate,
-}: PrescriptionItemProps) => {
-	if (
-		!item.case_prescriptions.categoryData ||
-		item.case_prescriptions.categoryData.category !== "Injection"
-	) {
-		return null;
-	}
+}: InjectionPrescriptionItemProps) => {
 	return (
 		<div className="flex flex-wrap gap-2 items-center w-full">
 			<Input

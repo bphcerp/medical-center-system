@@ -20,7 +20,7 @@ const PrescriptionFrequencySelector = ({
 				handleUpdatePrescriptionItem(item.medicines.id, "frequency", value)
 			}
 		>
-			<SelectTrigger className="h-8 flex-1 min-w-[100px]">
+			<SelectTrigger className="h-8 flex-1 min-w-[100px]" size="sm">
 				<SelectValue placeholder="Frequency" />
 			</SelectTrigger>
 			<SelectContent>
@@ -66,7 +66,7 @@ const MealTimeSelector = ({
 				})
 			}
 		>
-			<SelectTrigger className="h-8 flex-1 min-w-[100px]">
+			<SelectTrigger className="h-8 flex-1 min-w-[100px]" size="sm">
 				<SelectValue placeholder="Meal Timing" />
 			</SelectTrigger>
 			<SelectContent>
@@ -98,13 +98,13 @@ const DurationInput = ({
 				value={duration}
 				onChange={(e) => onDurationChange(e.target.value)}
 				placeholder="0"
-				className="h-10 w-15"
+				className="h-8 w-15"
 			/>
 			<Select
 				value={durationUnit || "days"}
 				onValueChange={onDurationUnitChange}
 			>
-				<SelectTrigger className="h-8 w-28">
+				<SelectTrigger className="w-28" size="sm">
 					<SelectValue />
 				</SelectTrigger>
 				<SelectContent>
@@ -133,7 +133,7 @@ const DosageSelector = ({
 				handleUpdatePrescriptionItem(item.medicines.id, "dosage", value)
 			}
 		>
-			<SelectTrigger className="h-8 flex-1 min-w-20">
+			<SelectTrigger className="flex-1 min-w-20" size="sm">
 				<SelectValue placeholder="Dosage" />
 			</SelectTrigger>
 			<SelectContent>

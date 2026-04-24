@@ -5,19 +5,12 @@ import {
 	DurationInput,
 	PrescriptionFrequencySelector,
 } from "./selectors";
-import type { PrescriptionItemProps } from "./types";
+import type { ExternalPrescriptionItemProps } from "./types";
 
 const PrescriptionExternalFields = ({
 	item,
 	handleUpdate,
-}: PrescriptionItemProps) => {
-	if (
-		!item.case_prescriptions.categoryData ||
-		item.case_prescriptions.categoryData.category !== "External Application"
-	) {
-		return null;
-	}
-
+}: ExternalPrescriptionItemProps) => {
 	return (
 		<div className="flex flex-wrap gap-2 items-center w-full">
 			<DosageSelector
