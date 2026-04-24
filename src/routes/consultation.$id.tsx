@@ -8,6 +8,7 @@ import DiagnosisSection from "src/components/consultation/diagnosis-section";
 import FinalizeCase, {
 	type FinalizeButtonValue,
 } from "src/components/consultation/finalize-case-section";
+import OtherNotes from "src/components/consultation/other-notes";
 import PrescriptionSection from "src/components/consultation/prescription/prescription-section";
 import TestsSection from "src/components/consultation/tests-section";
 import VitalsList from "src/components/vitals-list";
@@ -359,15 +360,7 @@ function ConsultationPage() {
 						</div>
 					</div>
 				</div>
-				<div className="col-span-1 text-card-foreground md:col-span-2">
-					<CondensedLabel>Other notes</CondensedLabel>
-					<Textarea
-						value={clinicalRemarks}
-						onChange={(e) => setClinicalRemarks(e.target.value)}
-						className="mt-2 resize-none min-h-24"
-						placeholder="Relevant history, assessment, plan, follow-up instructions, referral details, or other clinical notes..."
-					/>
-				</div>
+				<OtherNotes value={clinicalRemarks} onChange={setClinicalRemarks} />
 
 				<FinalizeCaseDialog
 					open={openFinalizeDialog}

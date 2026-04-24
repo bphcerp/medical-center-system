@@ -44,7 +44,7 @@ const PrescriptionExternalFields = ({
 					})
 				}
 				placeholder="Application area"
-				className="h-10 flex-1 min-w-[120px]"
+				className="h-8 flex-1 min-w-[120px]"
 			/>
 			<Comment item={item} handleUpdate={handleUpdate} />
 		</div>

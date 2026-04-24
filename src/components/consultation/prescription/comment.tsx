@@ -18,7 +18,7 @@ const Comment = ({
 				)
 			}
 			placeholder="Notes"
-			className="h-10 flex-1 min-w-[120px]"
+			className="h-8 flex-1 min-w-[120px]"
 			{...props}
 		/>
 	);

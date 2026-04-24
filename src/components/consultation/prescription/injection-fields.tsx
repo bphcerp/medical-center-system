@@ -23,7 +23,7 @@ const PrescriptionInjectionFields = ({
 					handleUpdate(item.medicines.id, "dosage", e.target.value)
 				}
 				placeholder="Dosage (mg/mL/units)"
-				className="h-10 flex-1 min-w-[120px]"
+				className="h-8 flex-1 min-w-[120px]"
 			/>
 			<PrescriptionFrequencySelector item={item} handleUpdate={handleUpdate} />
 			<DurationInput
@@ -45,7 +45,7 @@ const PrescriptionInjectionFields = ({
 					})
 				}
 			>
-				<SelectTrigger className="h-8 flex-1 min-w-[120px]">
+				<SelectTrigger className="flex-1 min-w-[120px]" size="sm">
 					<SelectValue placeholder="Route" />
 				</SelectTrigger>
 				<SelectContent>

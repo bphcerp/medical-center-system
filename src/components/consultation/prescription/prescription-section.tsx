@@ -1,4 +1,4 @@
-import { ChevronsUpDown, Trash2 } from "lucide-react";
+import { ChevronsUpDown, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AutoSizer } from "react-virtualized";
 import { toast } from "sonner";
@@ -222,18 +222,18 @@ const PrescriptionSection = ({
 			{prescriptionItems.length > 0 ? (
 				prescriptionItems.map((item) => (
 					<div key={item.medicines.id}>
-						<div className="w-full pb-1 flex flex-wrap items-center gap-2">
-							<span className="font-semibold">
+						<div className="w-full pb-2 flex flex-wrap items-center gap-2">
+							<span className="font-medium text-sm">
 								{item.medicines.company} {item.medicines.brand}
 							</span>
 							<span className="text-muted-foreground text-sm">
 								({item.medicines.drug}) - {item.medicines.strength}
 							</span>
-							<span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+							<span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
 								{item.medicines.type}
 							</span>
 						</div>
-						<div className="gap-0.5 flex">
+						<div className="gap-2 flex">
 							{isPrescriptionCategory(item, "Capsule/Tablet") && (
 								<PrescriptionCapsuleFields
 									item={item}
@@ -261,12 +261,12 @@ const PrescriptionSection = ({
 							)}
 
 							<Button
-								variant="destructive"
-								size="sm"
+								variant="outline"
+								size="icon"
 								onClick={() => handleRemovePrescriptionItem(item.medicines.id)}
-								className="h-10 w-10 p-0"
+								className="size-8 border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground"
 							>
-								<Trash2 className="h-4 w-4" />
+								<X className="h-4 w-4" />
 							</Button>
 						</div>
 					</div>
