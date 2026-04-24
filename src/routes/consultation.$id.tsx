@@ -1,9 +1,9 @@
-import { Label } from "@radix-ui/react-label";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, History, RefreshCw, TriangleAlert, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { toast } from "sonner";
+import { CondensedLabel } from "src/components/condensed-label";
 import DiagnosisSection from "src/components/consultation/diagnosis-card";
 import FinalizeCase, {
 	type FinalizeButtonValue,
@@ -316,7 +316,7 @@ function ConsultationPage() {
 				</div>
 
 				<div className="col-span-1 flex flex-col gap-2 md:col-span-2">
-					<Label className="font-semibold text-lg">Chief Complaints</Label>
+					<CondensedLabel>Chief Complaints</CondensedLabel>
 					<Textarea
 						value={chiefComplaints}
 						onChange={(e) => setChiefComplaints(e.target.value)}
@@ -328,9 +328,7 @@ function ConsultationPage() {
 				<div className="col-span-1 md:col-span-2 p-0!">
 					<div className="h-full grid grid-cols-1 gap-px bg-border! *:py-4 *:px-4 *:bg-background xl:grid-cols-2">
 						<div className="col-span-1 row-span-1 flex flex-col gap-2">
-							<Label className="font-semibold text-lg">
-								Clinical Examination
-							</Label>
+							<CondensedLabel>Clinical Examination</CondensedLabel>
 							<Textarea
 								value={consultationNotes}
 								onChange={(e) => setConsultationNotes(e.target.value)}
@@ -362,9 +360,7 @@ function ConsultationPage() {
 					</div>
 				</div>
 				<div className="col-span-1 text-card-foreground md:col-span-2">
-					<Label className="font-semibold text-lg">
-						History, Assessment and Plan
-					</Label>
+					<CondensedLabel>Other notes</CondensedLabel>
 					<Textarea
 						value={clinicalRemarks}
 						onChange={(e) => setClinicalRemarks(e.target.value)}

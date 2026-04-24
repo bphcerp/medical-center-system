@@ -1,4 +1,3 @@
-import { Label } from "@radix-ui/react-label";
 import type { InferResponseType } from "hono";
 import { ChevronsUpDown, Download, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -21,6 +20,7 @@ import {
 import { statusEnums } from "@/db/lab";
 import useVirtualList from "@/lib/hooks/useVirtualList";
 import { client } from "@/routes/api/$";
+import { CondensedLabel } from "../condensed-label";
 import { LabTestStatusBadge } from "../lab-test-status-badge";
 import type { CaseDetail } from "../vitals-card";
 
@@ -115,7 +115,7 @@ const TestsSection = ({
 	return (
 		<div className="h-full flex flex-col">
 			<div className="flex flex-col md:flex-row justify-between w-full gap-2">
-				<Label className="font-semibold text-lg">Tests</Label>
+				<CondensedLabel>Tests</CondensedLabel>
 				{!readonly && (
 					<Popover open={testsSearchOpen} onOpenChange={setTestsSearchOpen}>
 						<PopoverTrigger asChild>

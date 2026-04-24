@@ -1,4 +1,3 @@
-import { Label } from "@radix-ui/react-label";
 import { ChevronsUpDown, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AutoSizer } from "react-virtualized";
@@ -18,6 +17,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import useVirtualList from "@/lib/hooks/useVirtualList";
+import { CondensedLabel } from "../condensed-label";
 
 export type DiagnosisItem = {
 	id: number;
@@ -110,7 +110,7 @@ const DiagnosisSection = ({
 	return (
 		<div className="text-card-foreground flex flex-col min-h-40 gap-2">
 			<div className="flex flex-col md:flex-row justify-between w-full gap-2">
-				<Label className="font-semibold text-lg">Diagnosis</Label>
+				<CondensedLabel>Diagnosis</CondensedLabel>
 				{!readonly && (
 					<Popover
 						open={diseasesSearchOpen}

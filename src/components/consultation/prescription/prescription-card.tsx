@@ -1,8 +1,8 @@
-import { Label } from "@radix-ui/react-label";
 import { ChevronsUpDown, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AutoSizer } from "react-virtualized";
 import { toast } from "sonner";
+import { CondensedLabel } from "src/components/condensed-label";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -158,7 +158,7 @@ const PrescriptionSection = ({
 	return (
 		<div className="text-card-foreground flex flex-col gap-4 min-h-40">
 			<div className="flex flex-col md:flex-row justify-between w-full gap-2">
-				<Label className="font-semibold text-lg">Prescription</Label>
+				<CondensedLabel>Prescription</CondensedLabel>
 				<Popover
 					open={medicinesSearchOpen}
 					onOpenChange={setMedicinesSearchOpen}
