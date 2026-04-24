@@ -33,13 +33,20 @@ export const Route = createFileRoute("/reception/$token")({
 	loader: async (c) => {
 		const token = Number(c.params.token);
 
-		const doctorsRes = await client.api.vitals.availableDoctors.$get();
-		const availableDoctors = await handleErrors(doctorsRes);
+		const [doctorsRes, patientRes] = await Promise.all([
+			client.api.vitals.availableDoctors.$get(),
+			client.api.vitals.unprocessed[":token"].$get({
+				param: { token: token.toString() },
+			}),
+		]);
+		if (patientRes.status === 404) {
+			throw notFound();
+		}
 
-		const parent = await c.parentMatchPromise;
-		const patient = parent.loaderData?.unprocessed.find(
-			(p) => p.token === token,
-		);
+		const [availableDoctors, patient] = await Promise.all([
+			handleErrors(doctorsRes),
+			handleErrors(patientRes),
+		]);
 		if (!patient) {
 			throw notFound();
 		}
@@ -181,7 +188,11 @@ function RouteComponent() {
 								<Field>
 									<AlertDialog>
 										<AlertDialogTrigger asChild>
-											<Button type="button" variant="destructive" className="text-base">
+											<Button
+												type="button"
+												variant="destructive"
+												className="text-base"
+											>
 												<Trash2 />
 												Remove from Queue
 											</Button>

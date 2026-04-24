@@ -29,11 +29,50 @@ async function queryUnprocessed() {
 	return rows.map((p) => ({ ...p, age: getAge(p.birthdate) }));
 }
 
+async function queryUnprocessedByToken(token: number) {
+	const rows = await db
+		.select({
+			name: patientsTable.name,
+			birthdate: patientsTable.birthdate,
+			sex: patientsTable.sex,
+			token: unprocessedTable.id,
+			id: patientsTable.id,
+			type: patientsTable.type,
+			identifierType: unprocessedTable.identifierType,
+		})
+		.from(unprocessedTable)
+		.innerJoin(patientsTable, eq(unprocessedTable.patientId, patientsTable.id))
+		.where(eq(unprocessedTable.id, token))
+		.limit(1);
+
+	const patient = rows[0];
+	return patient ? { ...patient, age: getAge(patient.birthdate) } : null;
+}
+
 const vitals = createStrictHono()
 	.use(rbacCheck({ permissions: ["vitals"] }))
 	.get("/unprocessed", async (c) => {
 		return c.json({ success: true, data: await queryUnprocessed() });
 	})
+	.get(
+		"/unprocessed/:token",
+		strictValidator(
+			"param",
+			z.object({ token: z.coerce.number().int().positive() }),
+		),
+		async (c) => {
+			const { token } = c.req.valid("param");
+			const patient = await queryUnprocessedByToken(token);
+			if (!patient) {
+				return c.json(
+					{ success: false, error: { message: "Patient not found" } },
+					404,
+				);
+			}
+
+			return c.json({ success: true, data: patient });
+		},
+	)
 	.get("/stream", async (c) => {
 		return streamSSE(c, async (stream) => {
 			let closed = false;
@@ -60,11 +99,9 @@ const vitals = createStrictHono()
 			while (!closed) {
 				await stream.sleep(30_000);
 				if (!closed)
-					await stream
-						.writeSSE({ event: "ping", data: "" })
-						.catch(() => {
-							closed = true;
-						});
+					await stream.writeSSE({ event: "ping", data: "" }).catch(() => {
+						closed = true;
+					});
 			}
 		});
 	})
