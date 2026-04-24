@@ -8,7 +8,7 @@ const caseDetailsResponse =
 	client.api.patientHistory.otp[":caseId"].verify.$post;
 export type CaseDetail = InferResponseType<typeof caseDetailsResponse, 200>;
 
-const VitalsCard = ({
+const VitalsList = ({
 	vitals,
 	condensed = false,
 	className,
@@ -153,4 +153,4 @@ const VitalsCard = ({
 	);
 };
 
-export default VitalsCard;
+export default VitalsList;

@@ -19,7 +19,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import VitalsCard from "@/components/vitals-card";
+import VitalsList from "@/components/vitals-card";
 import { handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
 
@@ -135,7 +135,7 @@ function RouteComponent() {
 									</CardTitle>
 								</CardHeader>
 								<CardContent>
-									<VitalsCard />
+									<VitalsList />
 								</CardContent>
 							</Card>
 							<div className="flex items-end gap-4">

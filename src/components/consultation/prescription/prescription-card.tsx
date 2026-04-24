@@ -24,7 +24,7 @@ import PrescriptionInjectionFields from "./injection-fields";
 import PrescriptionSyrupFields from "./syrup-fields";
 import type { MedicineItem, PrescriptionItem } from "./types";
 
-const PrescriptionCard = ({
+const PrescriptionSection = ({
 	medicines,
 	prescriptionItems,
 	setPrescriptionItems,
@@ -268,5 +268,5 @@ const PrescriptionCard = ({
 	);
 };
 
-export default PrescriptionCard;
+export default PrescriptionSection;
 export * from "./selectors";

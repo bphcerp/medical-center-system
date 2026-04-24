@@ -1,3 +1,4 @@
+import { Input } from "@/components/ui/input";
 import {
 	Select,
 	SelectContent,
@@ -6,7 +7,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { mealTimings } from "@/db/case";
-import { Input } from "../ui/input";
 import type { PrescriptionItemProps } from "./types";
 
 const PrescriptionFrequencySelector = ({

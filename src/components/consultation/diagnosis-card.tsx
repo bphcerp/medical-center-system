@@ -25,7 +25,7 @@ export type DiagnosisItem = {
 	icd: string;
 };
 
-const DiagnosisCard = ({
+const DiagnosisSection = ({
 	diseases,
 	diagnosisItems,
 	setDiagnosisItems,
@@ -197,4 +197,4 @@ const DiagnosisCard = ({
 	);
 };
 
-export default DiagnosisCard;
+export default DiagnosisSection;

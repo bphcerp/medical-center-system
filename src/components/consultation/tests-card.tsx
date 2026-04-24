@@ -21,14 +21,14 @@ import {
 import { statusEnums } from "@/db/lab";
 import useVirtualList from "@/lib/hooks/useVirtualList";
 import { client } from "@/routes/api/$";
-import { LabTestStatusBadge } from "./lab-test-status-badge";
-import type { CaseDetail } from "./vitals-card";
+import { LabTestStatusBadge } from "../lab-test-status-badge";
+import type { CaseDetail } from "../vitals-card";
 
 export type TestItem = CaseDetail["data"]["tests"][number];
 const testsResponse = client.api.doctor.tests.$get;
 export type Test = InferResponseType<typeof testsResponse, 200>["data"][number];
 
-const TestsCard = ({
+const TestsSection = ({
 	tests,
 	testItems,
 	setTestItems,
@@ -247,4 +247,4 @@ const TestsCard = ({
 	);
 };
 
-export default TestsCard;
+export default TestsSection;

@@ -1,9 +1,9 @@
 import type { JWTPayload } from "@/lib/types/api";
 import Logo from "@/styles/logo.svg";
-import type { DiagnosisItem } from "./diagnosis-card";
-import type { FinalizeButtonValue } from "./finalize-case-card";
-import type { PrescriptionItem } from "./prescription/types";
-import type { TestItem } from "./tests-card";
+import type { DiagnosisItem } from "./consultation/diagnosis-card";
+import type { FinalizeButtonValue } from "./consultation/finalize-case-card";
+import type { PrescriptionItem } from "./consultation/prescription/types";
+import type { TestItem } from "./consultation/tests-card";
 import type { CaseDetail } from "./vitals-card";
 
 const PrescriptionPrintout = ({

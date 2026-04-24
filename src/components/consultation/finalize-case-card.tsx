@@ -10,7 +10,7 @@ import {
 
 export type FinalizeButtonValue = "Finalize (OPD)" | "Admit" | "Referral";
 
-const FinalizeCaseCard = ({
+const FinalizeCase = ({
 	handleFinalize,
 	finalizeButtonValue,
 	setFinalizeButtonValue,
@@ -67,4 +67,4 @@ const FinalizeCaseCard = ({
 	);
 };
 
-export default FinalizeCaseCard;
+export default FinalizeCase;

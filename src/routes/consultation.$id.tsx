@@ -4,15 +4,15 @@ import { ArrowLeft, History, RefreshCw, TriangleAlert, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { toast } from "sonner";
-import DiagnosisCard from "@/components/diagnosis-card";
-import FinalizeCaseCard, {
+import DiagnosisSection from "src/components/consultation/diagnosis-card";
+import FinalizeCase, {
 	type FinalizeButtonValue,
-} from "@/components/finalize-case-card";
+} from "src/components/consultation/finalize-case-card";
+import TestsSection from "src/components/consultation/tests-card";
+import PrescriptionSection from "@/components/consultation/prescription/prescription-card";
 import FinalizeCaseDialog from "@/components/finalize-case-dialog";
 import { PatientDetails } from "@/components/patient-details";
-import PrescriptionCard from "@/components/prescription/prescription-card";
 import PrescriptionPrintout from "@/components/prescription-printout";
-import TestsCard from "@/components/tests-card";
 import TopBar from "@/components/topbar";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +23,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import VitalsCard from "@/components/vitals-card";
+import VitalsList from "@/components/vitals-card";
 import useAuth from "@/lib/hooks/useAuth";
 import { useAutosave } from "@/lib/hooks/useAutosave";
 import { cn, handleErrors } from "@/lib/utils";
@@ -311,7 +311,7 @@ function ConsultationPage() {
 						</span>
 					</div>
 					<div className="min-w-0 flex-1">
-						<VitalsCard vitals={caseDetail.cases} condensed />
+						<VitalsList vitals={caseDetail.cases} condensed />
 					</div>
 				</div>
 
@@ -336,21 +336,21 @@ function ConsultationPage() {
 							className="h-full -mt-3.5 -mb-3.5 resize-none min-h-48"
 							placeholder="Write notes here..."
 						/>
-						<TestsCard
+						<TestsSection
 							tests={tests}
 							testItems={testItems}
 							setTestItems={setTestItems}
 						/>
 					</div>
 					<div className="col-span-1 row-span-1 border-t xl:border-t-0 xl:border-l">
-						<DiagnosisCard
+						<DiagnosisSection
 							diseases={diseases}
 							diagnosisItems={diagnosisItems}
 							setDiagnosisItems={setDiagnosisItems}
 						/>
 					</div>
 					<div className="col-span-1 row-span-1 border-t xl:border-l">
-						<PrescriptionCard
+						<PrescriptionSection
 							medicines={medicines}
 							prescriptionItems={prescriptionItems}
 							setPrescriptionItems={setPrescriptionItems}
@@ -377,7 +377,7 @@ function ConsultationPage() {
 					onConfirm={handleFinalize}
 				/>
 
-				<FinalizeCaseCard
+				<FinalizeCase
 					handleFinalize={handleOpenPrescriptionPreview}
 					finalizeButtonValue={finalizeButtonValue}
 					setFinalizeButtonValue={setFinalizeButtonValue}
