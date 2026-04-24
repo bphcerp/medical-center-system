@@ -10,6 +10,7 @@ import {
 	Trash,
 } from "lucide-react";
 import React, { useState } from "react";
+import { DeleteButton } from "@/components/delete-button";
 import { AddBatchModal } from "@/components/inventory/add-batch-modal";
 import { AddMedicinesModal } from "@/components/inventory/add-medicines-modal";
 import { MedicineBatchesSheet } from "@/components/inventory/batches-sheet";
@@ -316,15 +317,14 @@ function InventoryPage() {
 												<span className="align-middle px-2 py-2 rounded-sm bg-primary/10 text-primary mr-2">
 													{item.medicine.type}
 												</span>
-												<Button
-													variant="outline"
-													className="align-middle hover:bg-destructive hover:text-destructive-foreground hover:border-destructive ml-1"
+												<DeleteButton
+													shape="square"
+													className="align-middle ml-1"
 													onClick={() =>
 														openDeleteMedicine(item.id, item.medicine)
 													}
-												>
-													<Trash />
-												</Button>
+													icon={<Trash />}
+												/>
 											</TableCell>
 											<TableCell>
 												<span className="align-middle mr-2">

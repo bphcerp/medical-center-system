@@ -17,7 +17,7 @@ export default function OtherNotes({ value, onChange }: OtherNotesProps) {
 	useEffect(() => {
 		// scroll into view when expanded
 		if (isExpanded && textareaRef.current) {
-			textareaRef.current.scrollIntoView({ behavior: "smooth" });
+			textareaRef.current.scrollIntoView();
 		}
 	}, [isExpanded]);
 

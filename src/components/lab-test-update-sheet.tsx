@@ -2,6 +2,7 @@ import { useRouter } from "@tanstack/react-router";
 import { Eye, File, Plus, TestTube, Trash, Undo } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
+import { DeleteButton } from "@/components/delete-button";
 import { handleErrors } from "@/lib/utils";
 import { client } from "@/routes/api/$";
 import { LabTestStatusBadge } from "./lab-test-status-badge";
@@ -274,7 +275,7 @@ const LabTestUpdateSheet = ({
 														: file.file.name}
 												</span>
 											</span>
-											<div className="flex gap-1">
+											<div className="flex gap-1 items-center">
 												<Button
 													variant="link"
 													className="text-sm px-4"
@@ -284,13 +285,14 @@ const LabTestUpdateSheet = ({
 													<Eye className="size-4" />
 													<span className="ml-1">View</span>
 												</Button>
-												<Button
-													variant="ghost"
+												<DeleteButton
+													shape="square"
 													data-slot={file.action}
-													className={`text-sm px-4 duration-300 transition ${
+													icon={file.action === "remove" ? <Undo /> : <Trash />}
+													className={`text-sm p-4 duration-300 transition ${
 														file.action === "remove"
-															? "text-bits-red bg-bits-red/10 hover:text-foreground hover:bg-accent"
-															: "text-foreground bg-accent hover:text-bits-red hover:bg-bits-red/10"
+															? "bg-bits-red/10 text-bits-red hover:text-foreground hover:bg-accent"
+															: "bg-accent text-foreground hover:text-bits-red hover:bg-bits-red/10"
 													}`}
 													onClick={() => {
 														if (file.action === "add") {
@@ -315,15 +317,7 @@ const LabTestUpdateSheet = ({
 															);
 														}
 													}}
-												>
-													{file.action === "add" ? (
-														<Trash />
-													) : file.action === "remove" ? (
-														<Undo />
-													) : (
-														<Trash />
-													)}
-												</Button>
+												></DeleteButton>
 											</div>
 										</div>
 									))

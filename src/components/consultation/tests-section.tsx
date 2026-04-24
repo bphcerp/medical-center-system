@@ -3,6 +3,7 @@ import { ChevronsUpDown, Download, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AutoSizer } from "react-virtualized";
 import { toast } from "sonner";
+import { DeleteButton } from "@/components/delete-button";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -189,13 +190,10 @@ const TestsSection = ({
 									</span>
 									<LabTestStatusBadge status={item.status} />
 									{!readonly && (
-										<Button
-											variant="destructive"
+										<DeleteButton
 											onClick={() => handleRemoveTestItem(item.id)}
-											className="h-6 w-6"
-										>
-											<Trash2 />
-										</Button>
+											icon={<Trash2 />}
+										/>
 									)}
 								</div>
 								{(readonly || item.files.length > 0) && (

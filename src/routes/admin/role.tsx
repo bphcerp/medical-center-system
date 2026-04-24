@@ -2,6 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Pencil, Plus, ShieldUser, Trash, X } from "lucide-react";
 import { useState } from "react";
 import { CircleButton } from "src/components/circle-button";
+import { DeleteButton } from "src/components/delete-button";
 import DeletableBadge from "@/components/deleteable-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -277,13 +278,13 @@ function RowItem({
 				</div>
 			</TableCell>
 			<TableCell>
-				<DeleteButton name={name} onDelete={onDeleteRole} />
+				<DeleteRoleButton name={name} onDelete={onDeleteRole} />
 			</TableCell>
 		</TableRow>
 	);
 }
 
-function DeleteButton({
+function DeleteRoleButton({
 	name,
 	onDelete,
 }: {
@@ -300,9 +301,12 @@ function DeleteButton({
 	return (
 		<Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
 			<DialogTrigger asChild>
-				<CircleButton variant="destructive">
-					<Trash />
-				</CircleButton>
+				<DeleteButton
+					shape="circle"
+					variant="outline"
+					icon={<Trash />}
+					className="border border-border text-foreground"
+				/>
 			</DialogTrigger>
 
 			<DialogContent>

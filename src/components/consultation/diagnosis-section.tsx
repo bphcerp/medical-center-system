@@ -2,6 +2,7 @@ import { ChevronsUpDown, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AutoSizer } from "react-virtualized";
 import { toast } from "sonner";
+import { DeleteButton } from "@/components/delete-button";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -179,13 +180,10 @@ const DiagnosisSection = ({
 							(ICD: {item.icd})
 						</span>
 						{!readonly && (
-							<Button
-								variant="destructive"
-								onClick={() => handleRemoveDiagnosisItem(item.id)}
-								className="h-6 w-6"
-							>
-								<Trash2 />
-							</Button>
+								<DeleteButton
+									onClick={() => handleRemoveDiagnosisItem(item.id)}
+									icon={<Trash2 />}
+								/>
 						)}
 					</div>
 				))

@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { AutoSizer } from "react-virtualized";
 import { toast } from "sonner";
 import { CondensedLabel } from "src/components/condensed-label";
+import { DeleteButton } from "src/components/delete-button";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -260,14 +261,12 @@ const PrescriptionSection = ({
 								/>
 							)}
 
-							<Button
+							<DeleteButton
 								variant="outline"
-								size="icon"
+								className="size-8"
+								icon={<X />}
 								onClick={() => handleRemovePrescriptionItem(item.medicines.id)}
-								className="size-8 border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-							>
-								<X className="h-4 w-4" />
-							</Button>
+							/>
 						</div>
 					</div>
 				))
