@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap');
 
 @import "tailwindcss" source("../");
 @import "tw-animate-css";
@@ -20,8 +21,10 @@
   --muted-foreground: oklch(0.5228 0.0709 272.9615);
   --accent: oklch(0.9523 0.0154 269.9827);
   --accent-foreground: oklch(0.1822 0.0671 273.8235);
-  --destructive: oklch(0.6907 0.2022 35.9452);
-  --destructive-foreground: oklch(1.0000 0 0);
+  /* --destructive: oklch(0.6907 0.2022 35.9452);
+  --destructive-foreground: oklch(1.0000 0 0); */
+  --destructive: var(--color-red-500);
+  --destructive-foreground: var(--color-red-50);
   --border: oklch(0.9195 0.0211 271.1836);
   --input: oklch(0.9195 0.0211 271.1836);
   --ring: oklch(0.6850 0.1690 237.3230);
@@ -39,7 +42,7 @@
   --sidebar-border: oklch(0.9195 0.0211 271.1836);
   --sidebar-ring: oklch(0.4759 0.2969 265.2798);
   --font-sans: Inter, ui-sans-serif, sans-serif, system-ui;
-  --font-serif: Merriweather, ui-serif, serif;
+  --font-serif: 'Noto Serif', Merriweather, ui-serif, serif;
   --font-mono: monospace;
   --radius: 0.55rem;
   --shadow-x: 0px;
@@ -200,5 +203,14 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* remove up and down buttons for number fields */
+  input[type=number] {
+    -moz-appearance: textfield;
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+    }
   }
 }

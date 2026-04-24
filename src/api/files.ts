@@ -108,7 +108,7 @@ const app = createStrictHono().get(
 		);
 		c.header(
 			"Content-Disposition",
-			`attachment; filename="${encodeURIComponent(file.filename)}"`,
+			`inline; filename="${encodeURIComponent(file.filename)}"`,
 		);
 
 		if (fileResponse.body) return c.body(fileResponse.body);

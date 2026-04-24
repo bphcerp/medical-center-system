@@ -1,5 +1,8 @@
 import { useLocation, useRouter } from "@tanstack/react-router";
 import { House, User } from "lucide-react";
+import type React from "react";
+import type { PropsWithChildren } from "react";
+import { cn } from "src/lib/utils";
 import useAuth from "@/lib/hooks/useAuth";
 import { Button } from "./ui/button";
 import {
@@ -10,37 +13,58 @@ import {
 	DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 
-const DefaultHomeButton = () => {
+export function DefaultHomeButton({
+	...props
+}: React.ComponentProps<typeof Button>) {
 	const { navigate } = useRouter();
 	return (
 		<Button
 			variant="outline"
 			className="p-4 aspect-square"
 			onClick={() => navigate({ to: "/" })}
+			{...props}
 		>
 			<House className="size-4" />
 		</Button>
 	);
-};
+}
 
 const TopBar = ({
 	title,
-	actionButton = <DefaultHomeButton />,
-}: {
-	title: string;
+	actionButton,
+	children,
+	className,
+}: PropsWithChildren<{
+	title?: string;
 	actionButton?: React.ReactNode;
-}) => {
+}> &
+	React.ComponentProps<"div">) => {
 	const location = useLocation();
 	const { allowedRoutes } = useAuth();
-	document.title = title;
+	const shouldShowDefaultHomeButton =
+		allowedRoutes.length > 1 && location.pathname !== "/";
+	const leftAction = actionButton
+		? location.pathname !== "/" && actionButton
+		: shouldShowDefaultHomeButton && <DefaultHomeButton />;
+
+	if (title) document.title = title;
 
 	// We use h-18 to fix the height of the topbar to 4.5rem. This value is used in the tailwind class `h-after-topbar`.
 	// If you change this height, make sure to update the CSS variable --spacing-after-topbar in src/styles/app.css accordingly.
 	return (
-		<div className="p-4 flex justify-between items-center border-b border-border box-border h-18">
+		<div
+			className={cn(
+				"p-4 flex justify-between items-center border-b border-border box-border h-18",
+				className,
+			)}
+		>
 			<div className="flex gap-4 items-center">
-				{allowedRoutes.length > 1 && location.pathname !== "/" && actionButton}
-				<span className="text-2xl lg:text-3xl font-bold">{title}</span>
+				{leftAction}
+				{children ? (
+					children
+				) : (
+					<span className="text-2xl lg:text-3xl font-bold">{title}</span>
+				)}
 			</div>
 			<DropdownMenu>
 				<DropdownMenuTrigger>

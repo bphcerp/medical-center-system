@@ -1,8 +1,24 @@
+import { cva } from "class-variance-authority";
 import type { patientTypeEnum } from "@/db/patient";
 import { cn } from "@/lib/utils";
 import { Badge } from "./ui/badge";
 
 type PatientType = (typeof patientTypeEnum.enumValues)[number];
+
+const patientTypeBadgeVariants = cva("border rounded-sm", {
+	variants: {
+		patientType: {
+			professor: "text-bits-light-blue border-bits-light-blue",
+			dependent: "text-bits-light-blue border-bits-light-blue",
+			visitor: "text-bits-red border-bits-red",
+			student: "text-bits-green border-bits-green",
+			default: "text-muted-foreground border-muted-foreground",
+		},
+	},
+	defaultVariants: {
+		patientType: "default",
+	},
+});
 
 export function PatientTypeBadge({
 	type,
@@ -13,26 +29,10 @@ export function PatientTypeBadge({
 	type?: PatientType;
 }> &
 	React.ComponentProps<typeof Badge>) {
-	let color: string;
-	switch (type) {
-		case "professor":
-		case "dependent":
-			color = "text-bits-light-blue border-bits-light-blue";
-			break;
-		case "visitor":
-			color = "text-bits-red border-bits-red";
-			break;
-		case "student":
-			color = "text-bits-green border-bits-green";
-			break;
-		default:
-			color = "text-muted-foreground border-muted-foreground";
-			break;
-	}
 	return (
 		<Badge
 			variant="outline"
-			className={cn("border rounded-sm", color, className)}
+			className={cn(patientTypeBadgeVariants({ patientType: type }), className)}
 			{...props}
 		>
 			{children ?? type}

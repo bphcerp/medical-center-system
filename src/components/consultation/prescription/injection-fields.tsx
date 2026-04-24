@@ -9,18 +9,12 @@ import {
 import { injectionRoutes } from "@/db/case";
 import Comment from "./comment";
 import { DurationInput, PrescriptionFrequencySelector } from "./selectors";
-import type { PrescriptionItemProps } from "./types";
+import type { InjectionPrescriptionItemProps } from "./types";
 
 const PrescriptionInjectionFields = ({
 	item,
 	handleUpdate,
-}: PrescriptionItemProps) => {
-	if (
-		!item.case_prescriptions.categoryData ||
-		item.case_prescriptions.categoryData.category !== "Injection"
-	) {
-		return null;
-	}
+}: InjectionPrescriptionItemProps) => {
 	return (
 		<div className="flex flex-wrap gap-2 items-center w-full">
 			<Input
@@ -29,7 +23,7 @@ const PrescriptionInjectionFields = ({
 					handleUpdate(item.medicines.id, "dosage", e.target.value)
 				}
 				placeholder="Dosage (mg/mL/units)"
-				className="h-10 flex-1 min-w-[120px]"
+				className="h-8 flex-1 min-w-[120px]"
 			/>
 			<PrescriptionFrequencySelector item={item} handleUpdate={handleUpdate} />
 			<DurationInput
@@ -51,7 +45,7 @@ const PrescriptionInjectionFields = ({
 					})
 				}
 			>
-				<SelectTrigger className="h-8 flex-1 min-w-[120px]">
+				<SelectTrigger className="flex-1 min-w-[120px]" size="sm">
 					<SelectValue placeholder="Route" />
 				</SelectTrigger>
 				<SelectContent>

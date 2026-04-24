@@ -118,6 +118,8 @@ export const casesTable = pgTable("cases", {
 	spo2: integer(),
 
 	consultationNotes: text(),
+	chiefComplaints: text(),
+	clinicalRemarks: text(),
 	diagnosis: integer().array(),
 
 	finalizedState: finalizedStateEnum("finalized_state"),

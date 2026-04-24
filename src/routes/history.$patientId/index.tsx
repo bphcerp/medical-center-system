@@ -1,9 +1,13 @@
-import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
-import { ClipboardClock, Lock, Unlock } from "lucide-react";
+import {
+	createFileRoute,
+	notFound,
+	Outlet,
+	useNavigate,
+} from "@tanstack/react-router";
+import { ClipboardClock, Lock, Minus, Unlock } from "lucide-react";
+import BackButton from "src/components/back-button";
 import { PatientDetails } from "@/components/patient-details";
-import TopBar from "@/components/topbar";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import TopBar, { DefaultHomeButton } from "@/components/topbar";
 import {
 	Empty,
 	EmptyDescription,
@@ -29,9 +33,11 @@ export const Route = createFileRoute("/history/$patientId/")({
 			param: { patientId: params.patientId },
 		});
 		const history = await handleErrors(historyRes);
+
 		if (!history) {
-			return { patientId: params.patientId, patient: null, cases: [] };
+			throw notFound();
 		}
+
 		return {
 			patientId: params.patientId,
 			patient: history.patient,
@@ -68,92 +74,84 @@ function HistoryPage() {
 
 	return (
 		<>
-			<TopBar title="Patient History" />
-			<div className="container mx-auto p-6">
-				<div className="mb-6 flex justify-between items-start">
-					<div>
-						{patient && (
-							<PatientDetails patient={patient} label="Case history of" />
-						)}
-					</div>
-					{latestCase && (
-						<Button
+			<TopBar
+				title="Patient History"
+				actionButton={
+					latestCase ? (
+						<BackButton
+							variant="outline"
 							onClick={() =>
 								navigate({
 									to: "/consultation/$id",
 									params: { id: String(latestCase.caseId) },
 								})
 							}
-						>
-							Back to Consultation
-						</Button>
-					)}
-				</div>
-
-				<Card>
-					{finalizedCases.length === 0 ? (
-						<Empty>
-							<EmptyHeader>
-								<EmptyMedia variant="icon">
-									<ClipboardClock />
-								</EmptyMedia>
-								<EmptyTitle>No case records found for this patient</EmptyTitle>
-								<EmptyDescription>
-									When cases are finalized, they will appear here.
-								</EmptyDescription>
-							</EmptyHeader>
-						</Empty>
+						/>
 					) : (
-						<>
-							<CardHeader>
-								<CardTitle>Case History</CardTitle>
-							</CardHeader>
-							<CardContent>
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>Case ID</TableHead>
-											<TableHead>Finalized State</TableHead>
-											<TableHead>Created</TableHead>
-											<TableHead>Last Updated</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{finalizedCases.map((caseItem) => (
-											<TableRow
-												key={caseItem.caseId}
-												className="cursor-pointer hover:bg-muted/50"
-												onClick={() =>
-													navigate({
-														to: `/history/${patientId}/${caseItem.caseId}`,
-													})
-												}
-											>
-												<TableCell>
-													<span className="flex items-center gap-4">
-														{caseItem.caseId}{" "}
-														<span className="text-foreground-muted">
-															{caseItem.associatedUsers.includes(
-																user?.id || -1,
-															) ? (
-																<Unlock className="size-4" />
-															) : (
-																<Lock className="size-4" />
-															)}
-														</span>
-													</span>
-												</TableCell>
-												<TableCell>{caseItem.finalizedState || "—"}</TableCell>
-												<TableCell>{formatDate(caseItem.createdAt)}</TableCell>
-												<TableCell>{formatDate(caseItem.updatedAt)}</TableCell>
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-							</CardContent>
-						</>
-					)}
-				</Card>
+						<DefaultHomeButton />
+					)
+				}
+			>
+				<div className="flex items-center">
+					<h1 className="text-2xl font-bold">Patient History</h1>
+					<Minus className="mx-4 text-muted-foreground" />
+					<PatientDetails patient={patient} size="sm" />
+				</div>
+			</TopBar>
+			<div className="container mx-auto p-6">
+				{finalizedCases.length === 0 ? (
+					<Empty>
+						<EmptyHeader>
+							<EmptyMedia variant="icon">
+								<ClipboardClock />
+							</EmptyMedia>
+							<EmptyTitle>No case records found for this patient</EmptyTitle>
+							<EmptyDescription>
+								When cases are finalized, they will appear here.
+							</EmptyDescription>
+						</EmptyHeader>
+					</Empty>
+				) : (
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>Case ID</TableHead>
+								<TableHead>Finalized State</TableHead>
+								<TableHead>Created</TableHead>
+								<TableHead>Last Updated</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{finalizedCases.map((caseItem) => (
+								<TableRow
+									key={caseItem.caseId}
+									className="cursor-pointer hover:bg-muted/50"
+									onClick={() =>
+										navigate({
+											to: `/history/${patientId}/${caseItem.caseId}`,
+										})
+									}
+								>
+									<TableCell>
+										<span className="flex items-center gap-4">
+											{caseItem.caseId}{" "}
+											<span className="text-foreground-muted">
+												{caseItem.associatedUsers.includes(user?.id || -1) ? (
+													<Unlock className="size-4" />
+												) : (
+													<Lock className="size-4" />
+												)}
+											</span>
+										</span>
+									</TableCell>
+									<TableCell>{caseItem.finalizedState || "—"}</TableCell>
+									<TableCell>{formatDate(caseItem.createdAt)}</TableCell>
+									<TableCell>{formatDate(caseItem.updatedAt)}</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+				)}
 			</div>
 			<Outlet />
 		</>

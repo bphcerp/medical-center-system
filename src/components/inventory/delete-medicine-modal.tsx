@@ -46,15 +46,15 @@ export function DeleteMedicineModal({
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>
-						<div className="mb-3">Delete medicine:</div>
-						<div>
-							<p className="text-3xl font-bold mt-2 mb-1">
+						<div className="mb-3">Delete medicine?</div>
+						<div className="text-lg font-medium space-x-2">
+							<span>
 								{medicine.company} {medicine.brand}
-							</p>
-							<p className="text-muted-foreground mr-2 mb-5">
+							</span>
+							<span className="text-muted-foreground">
 								({medicine.drug}) - {medicine.strength}
-							</p>
-							<span className="px-2 py-2 rounded-sm bg-primary/10 text-primary mr-2">
+							</span>
+							<span className="text-base py-1 px-2 rounded-sm bg-primary/10 text-primary">
 								{medicine.type}
 							</span>
 						</div>

@@ -1,6 +1,5 @@
-import { Label } from "@radix-ui/react-label";
 import type { InferResponseType } from "hono";
-import { ChevronsUpDown, Download, Trash2 } from "lucide-react";
+import { ChevronsUpDown, Download } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AutoSizer } from "react-virtualized";
 import { toast } from "sonner";
@@ -21,14 +20,15 @@ import {
 import { statusEnums } from "@/db/lab";
 import useVirtualList from "@/lib/hooks/useVirtualList";
 import { client } from "@/routes/api/$";
-import { LabTestStatusBadge } from "./lab-test-status-badge";
-import type { CaseDetail } from "./vitals-card";
+import { CondensedLabel } from "../condensed-label";
+import { LabTestStatusBadge } from "../lab-test-status-badge";
+import type { CaseDetail } from "../vitals-list";
 
 export type TestItem = CaseDetail["data"]["tests"][number];
 const testsResponse = client.api.doctor.tests.$get;
 export type Test = InferResponseType<typeof testsResponse, 200>["data"][number];
 
-const TestsCard = ({
+const TestsSection = ({
 	tests,
 	testItems,
 	setTestItems,
@@ -42,11 +42,11 @@ const TestsCard = ({
 	const [testsSearchOpen, setTestsSearchOpen] = useState<boolean>(false);
 	const [testQuery, setTestQuery] = useState<string>("");
 	const { renderList } = useVirtualList<Test>(300, {
-		"2xl": 48,
-		xl: 48,
-		lg: 48,
-		md: 48,
-		sm: 48,
+		"2xl": 52,
+		xl: 52,
+		lg: 52,
+		md: 52,
+		sm: 52,
 		xs: 108,
 	});
 
@@ -113,9 +113,9 @@ const TestsCard = ({
 	};
 
 	return (
-		<div>
-			<div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-2">
-				<Label className="font-semibold text-lg">Tests: </Label>
+		<div className="h-full flex flex-col">
+			<div className="flex flex-col md:flex-row justify-between w-full gap-2">
+				<CondensedLabel>Tests</CondensedLabel>
 				{!readonly && (
 					<Popover open={testsSearchOpen} onOpenChange={setTestsSearchOpen}>
 						<PopoverTrigger asChild>
@@ -123,6 +123,7 @@ const TestsCard = ({
 								variant="outline"
 								role="combobox"
 								className="justify-between text-muted-foreground xl:w-[calc(50dvw-8rem)] md:w-[calc(100dvw-10rem)] w-[calc(100dvw-6rem)]"
+								size="sm"
 							>
 								Select a test...
 								<ChevronsUpDown className="ml-2 h-4 w-4" />
@@ -154,11 +155,12 @@ const TestsCard = ({
 																handleAddTest(item);
 																setTestsSearchOpen(false);
 															}}
-															className="flex w-full justify-between"
+															className="flex flex-col h-fit gap-0 items-start w-full justify-between"
 														>
-															<span>
-																{item.name} ({item.category})
+															<span className="uppercase font-medium text-xs text-muted-foreground">
+																{item.category}
 															</span>
+															<span>{item.name}</span>
 														</CommandItem>
 													),
 													width,
@@ -181,22 +183,33 @@ const TestsCard = ({
 						)
 						.map((item) => (
 							<div key={item.id} className="py-2">
-								<div className="w-full flex flex-wrap gap-2">
-									<span className="font-medium">{item.name}</span>
-									<span className="font-medium text-muted-foreground">
-										({item.category})
-									</span>
-									<LabTestStatusBadge status={item.status} />
-									{!readonly && (
-										<Button
-											variant="destructive"
-											onClick={() => handleRemoveTestItem(item.id)}
-											className="h-6 w-6"
+								<Button
+									variant="ghost"
+									className="group w-full flex flex-col items-start h-fit p-0 hover:bg-transparent gap-1 "
+									onClick={() => handleRemoveTestItem(item.id)}
+								>
+									<span className="w-full flex gap-6 items-baseline-last text-xs">
+										<span className="group-hover:line-through uppercase font-medium text-muted-foreground">
+											{item.category}
+										</span>
+										<span
+											style={{
+												animationDuration: "1s",
+												animationDelay: "0.5s",
+											}}
+											className="hidden group-hover:inline font-semibold text-destructive animate-pulse scale-120 origin-bottom-left"
 										>
-											<Trash2 />
-										</Button>
-									)}
-								</div>
+											Click to delete
+										</span>
+									</span>
+									<div className="w-full flex flex-wrap items-baseline gap-2">
+										<span className="font-medium group-hover:line-through">
+											{item.name}
+										</span>
+										<span className="flex-1" />
+										<LabTestStatusBadge status={item.status} />
+									</div>
+								</Button>
 								{(readonly || item.files.length > 0) && (
 									<div>
 										{item.files.length > 0 ? (
@@ -239,7 +252,7 @@ const TestsCard = ({
 						))}
 				</div>
 			) : (
-				<div className="flex items-center justify-center text-muted-foreground py-6">
+				<div className="my-auto text-center text-muted-foreground py-6">
 					No tests recorded
 				</div>
 			)}
@@ -247,4 +260,4 @@ const TestsCard = ({
 	);
 };
 
-export default TestsCard;
+export default TestsSection;
