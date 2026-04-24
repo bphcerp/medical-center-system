@@ -1,9 +1,10 @@
 import "dotenv/config";
-import { and, eq, max } from "drizzle-orm";
+import { and, eq, ilike, max, or, sql } from "drizzle-orm";
 import nodemailer from "nodemailer";
 import z from "zod";
 import { usersTable } from "@/db/auth";
-import { appointmentsTable } from "@/db/booking";
+import { appointmentStatusEnum, appointmentsTable } from "@/db/booking";
+import { unprocessedTable } from "@/db/case";
 import {
 	doctorScheduleOverridesTable,
 	doctorScheduleTable,
@@ -21,6 +22,7 @@ import env from "@/lib/env";
 import { createStrictHono, strictValidator } from "@/lib/types/api";
 import { daysOfWeek } from "@/lib/types/day";
 import { db } from ".";
+import { rbacCheck } from "./rbac";
 
 function generateSlots(
 	startTime: string,
@@ -106,6 +108,60 @@ async function getPatientEmail(patientId: number): Promise<string | null> {
 	}
 }
 
+async function getPatientQueueIdentifier(patientId: number): Promise<{
+	identifierType: "student_id" | "psrn" | "phone";
+	identifier: string;
+} | null> {
+	const [patient] = await db
+		.select({ id: patientsTable.id, type: patientsTable.type })
+		.from(patientsTable)
+		.where(eq(patientsTable.id, patientId))
+		.limit(1);
+
+	if (!patient) return null;
+
+	switch (patient.type) {
+		case "student": {
+			const [student] = await db
+				.select({ studentId: studentsTable.studentId })
+				.from(studentsTable)
+				.where(eq(studentsTable.patientId, patientId))
+				.limit(1);
+			if (!student?.studentId) return null;
+			return { identifierType: "student_id", identifier: student.studentId };
+		}
+		case "professor": {
+			const [professor] = await db
+				.select({ psrn: professorsTable.psrn })
+				.from(professorsTable)
+				.where(eq(professorsTable.patientId, patientId))
+				.limit(1);
+			if (!professor?.psrn) return null;
+			return { identifierType: "psrn", identifier: professor.psrn };
+		}
+		case "dependent": {
+			const [dependent] = await db
+				.select({ psrn: dependentsTable.psrn })
+				.from(dependentsTable)
+				.where(eq(dependentsTable.patientId, patientId))
+				.limit(1);
+			if (!dependent?.psrn) return null;
+			return { identifierType: "psrn", identifier: dependent.psrn };
+		}
+		case "visitor": {
+			const [visitor] = await db
+				.select({ phone: visitorsTable.phone })
+				.from(visitorsTable)
+				.where(eq(visitorsTable.patientId, patientId))
+				.limit(1);
+			if (!visitor?.phone) return null;
+			return { identifierType: "phone", identifier: visitor.phone };
+		}
+		default:
+			return null;
+	}
+}
+
 const booking = createStrictHono()
 	.get("/categories", async (c) => {
 		const categories = await db
@@ -143,6 +199,100 @@ const booking = createStrictHono()
 				.orderBy(usersTable.name);
 
 			return c.json({ success: true, data: doctors });
+		},
+	)
+
+	// list appointments with optional filters for reception views
+	.get(
+		"/appointments",
+		strictValidator(
+			"query",
+			z.object({
+				appointmentDate: z.iso.date().optional(),
+				doctorId: z.coerce.number().int().positive().optional(),
+				patientId: z.coerce.number().int().positive().optional(),
+				status: z.enum(appointmentStatusEnum.enumValues).optional(),
+				search: z.string().trim().min(1).max(255).optional(),
+				limit: z.coerce.number().int().min(1).max(100).default(20),
+				offset: z.coerce.number().int().min(0).default(0),
+			}),
+		),
+		async (c) => {
+			const query = c.req.valid("query");
+			const appointmentDateTime = sql`(${appointmentsTable.appointmentDate} + ${appointmentsTable.slotStart})`;
+			const statusFilter = query.status ?? "scheduled";
+
+			const filters = and(
+				query.appointmentDate
+					? eq(appointmentsTable.appointmentDate, query.appointmentDate)
+					: undefined,
+				query.doctorId
+					? eq(appointmentsTable.doctorId, query.doctorId)
+					: undefined,
+				query.patientId
+					? eq(appointmentsTable.patientId, query.patientId)
+					: undefined,
+				eq(appointmentsTable.status, statusFilter),
+				query.search
+					? or(
+							ilike(patientsTable.name, `%${query.search}%`),
+							ilike(usersTable.name, `%${query.search}%`),
+						)
+					: undefined,
+			);
+
+			const [appointments, [totalRow]] = await Promise.all([
+				db
+					.select({
+						id: appointmentsTable.id,
+						patientId: appointmentsTable.patientId,
+						patientName: patientsTable.name,
+						doctorId: appointmentsTable.doctorId,
+						doctorName: usersTable.name,
+						appointmentDate: appointmentsTable.appointmentDate,
+						slotStart: appointmentsTable.slotStart,
+						slotEnd: appointmentsTable.slotEnd,
+						status: appointmentsTable.status,
+						tokenNumber: appointmentsTable.tokenNumber,
+						notes: appointmentsTable.notes,
+						bookedById: appointmentsTable.bookedById,
+						createdAt: appointmentsTable.createdAt,
+						updatedAt: appointmentsTable.updatedAt,
+					})
+					.from(appointmentsTable)
+					.innerJoin(
+						patientsTable,
+						eq(appointmentsTable.patientId, patientsTable.id),
+					)
+					.innerJoin(usersTable, eq(appointmentsTable.doctorId, usersTable.id))
+					.where(filters)
+					.orderBy(
+						sql`CASE WHEN ${appointmentDateTime} >= now() THEN 0 ELSE 1 END`,
+						sql`CASE WHEN ${appointmentDateTime} >= now() THEN ${appointmentDateTime} END ASC`,
+						sql`CASE WHEN ${appointmentDateTime} < now() THEN ${appointmentDateTime} END DESC`,
+					)
+					.limit(query.limit)
+					.offset(query.offset),
+				db
+					.select({ total: sql<number>`count(*)`.mapWith(Number) })
+					.from(appointmentsTable)
+					.innerJoin(
+						patientsTable,
+						eq(appointmentsTable.patientId, patientsTable.id),
+					)
+					.innerJoin(usersTable, eq(appointmentsTable.doctorId, usersTable.id))
+					.where(filters),
+			]);
+
+			return c.json({
+				success: true,
+				data: {
+					appointments,
+					total: totalRow?.total ?? 0,
+					limit: query.limit,
+					offset: query.offset,
+				},
+			});
 		},
 	)
 
@@ -250,6 +400,107 @@ const booking = createStrictHono()
 			return c.json({
 				success: true,
 				data: { slots: availableSlots, unavailable: false },
+			});
+		},
+	)
+
+	.patch(
+		"/appointments/:appointmentId/status",
+		rbacCheck({ permissions: ["vitals"] }),
+		strictValidator(
+			"param",
+			z.object({ appointmentId: z.coerce.number().int().positive() }),
+		),
+		strictValidator(
+			"json",
+			z.object({
+				status: z.enum(appointmentStatusEnum.enumValues),
+				cancellationReason: z.string().trim().max(500).optional(),
+			}),
+		),
+		async (c) => {
+			const { appointmentId } = c.req.valid("param");
+			const { status, cancellationReason } = c.req.valid("json");
+
+			const [updated, queueToken] = await db.transaction(async (tx) => {
+				const [appointment] = await tx
+					.select({
+						id: appointmentsTable.id,
+						patientId: appointmentsTable.patientId,
+					})
+					.from(appointmentsTable)
+					.where(eq(appointmentsTable.id, appointmentId))
+					.limit(1);
+
+				if (!appointment) {
+					return [null, null] as const;
+				}
+
+				const [next] = await tx
+					.update(appointmentsTable)
+					.set({
+						status,
+						cancelledAt: status === "cancelled" ? new Date() : null,
+						cancellationReason:
+							status === "cancelled" ? (cancellationReason ?? null) : null,
+					})
+					.where(eq(appointmentsTable.id, appointmentId))
+					.returning({
+						id: appointmentsTable.id,
+						status: appointmentsTable.status,
+						updatedAt: appointmentsTable.updatedAt,
+					});
+
+				let nextQueueToken: number | null = null;
+				if (status === "completed") {
+					const queueIdentifier = await getPatientQueueIdentifier(
+						appointment.patientId,
+					);
+
+					if (!queueIdentifier) {
+						throw new Error("Could not derive patient identifier for queue");
+					}
+
+					const [existingQueue] = await tx
+						.select({ id: unprocessedTable.id })
+						.from(unprocessedTable)
+						.where(eq(unprocessedTable.patientId, appointment.patientId))
+						.limit(1);
+
+					if (existingQueue) {
+						nextQueueToken = existingQueue.id;
+					} else {
+						const [enqueued] = await tx
+							.insert(unprocessedTable)
+							.values({
+								identifierType: queueIdentifier.identifierType,
+								identifier: queueIdentifier.identifier,
+								patientId: appointment.patientId,
+							})
+							.returning({ id: unprocessedTable.id });
+						nextQueueToken = enqueued.id;
+					}
+				}
+
+				return [next, nextQueueToken] as const;
+			});
+
+			if (!updated) {
+				return c.json(
+					{
+						success: false,
+						error: { message: "Appointment not found" },
+					},
+					404,
+				);
+			}
+
+			return c.json({
+				success: true,
+				data: {
+					...updated,
+					queueToken,
+				},
 			});
 		},
 	)
