@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/empty";
 import type { statusEnums } from "@/db/lab";
 import useAuth from "@/lib/hooks/useAuth";
+import { useSSE } from "@/lib/hooks/useSSE";
 import { cn, handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
 
@@ -39,7 +40,8 @@ export const Route = createFileRoute("/lab")({
 
 function LabDashboard() {
 	useAuth(["lab"]);
-	const { cases } = Route.useLoaderData();
+	const { cases: initialCases } = Route.useLoaderData();
+	const cases = useSSE("/api/lab/stream", "pending", initialCases);
 
 	const caseId = useParams({
 		from: "/lab/$caseId",

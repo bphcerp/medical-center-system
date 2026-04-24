@@ -9,6 +9,7 @@ import {
 	sql,
 } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
+import { streamSSE } from "hono/streaming";
 import { rolesTable, usersTable } from "src/db/auth";
 import {
 	doctorAvailabilityTypeEnum,
@@ -42,6 +43,7 @@ import {
 import { createStrictHono, strictValidator } from "@/lib/types/api";
 import { getAge } from "@/lib/utils";
 import { db } from ".";
+import { subscribe } from "./listener";
 import { rbacCheck } from "./rbac";
 import speciality from "./speciality";
 import { getPermissionsForUser } from "./utils";
@@ -183,6 +185,35 @@ export const getCaseDetail = async (caseId: number) => {
 		tests,
 	};
 };
+
+async function queryDoctorQueue(userId: number) {
+	const cases = await db
+		.select({
+			caseId: casesTable.id,
+			patientName: patientsTable.name,
+			patientsBirthdate: patientsTable.birthdate,
+			patientSex: patientsTable.sex,
+			token: casesTable.token,
+		})
+		.from(casesTable)
+		.innerJoin(patientsTable, eq(casesTable.patient, patientsTable.id))
+		.where(
+			and(
+				arrayContains(casesTable.associatedUsers, [userId]),
+				isNull(casesTable.finalizedState),
+			),
+		)
+		.orderBy(casesTable.token);
+
+	return cases.map((c) => ({
+		caseId: c.caseId,
+		patientName: c.patientName,
+		patientAge: getAge(c.patientsBirthdate),
+		patientSex: c.patientSex,
+		token: c.token,
+		status: "Waiting for Consultation",
+	}));
+}
 
 export type Doctor =
 	(typeof doctor._schema)["/all"]["$get"]["output"]["data"][number];
@@ -332,40 +363,35 @@ const doctor = createStrictHono()
 	// These endpoints are for doctor use only
 	.use(rbacCheck({ permissions: ["doctor"] }))
 	.get("/queue", async (c) => {
-		const payload = c.get("jwtPayload");
-		const userId = payload.id;
-
-		const cases = await db
-			.select({
-				caseId: casesTable.id,
-				patientName: patientsTable.name,
-				patientsBirthdate: patientsTable.birthdate,
-				patientSex: patientsTable.sex,
-				token: casesTable.token,
-				finalizedState: casesTable.finalizedState,
-			})
-			.from(casesTable)
-			.innerJoin(patientsTable, eq(casesTable.patient, patientsTable.id))
-			.where(
-				and(
-					arrayContains(casesTable.associatedUsers, [userId]),
-					isNull(casesTable.finalizedState),
-				),
-			)
-			.orderBy(casesTable.id);
-
-		const queue = cases.map((c) => {
-			return {
-				caseId: c.caseId,
-				patientName: c.patientName,
-				patientAge: getAge(c.patientsBirthdate),
-				patientSex: c.patientSex,
-				token: c.token,
-				status: "Waiting for Consultation",
+		const { id: userId } = c.get("jwtPayload");
+		return c.json({ success: true, data: await queryDoctorQueue(userId) });
+	})
+	.get("/stream", async (c) => {
+		const { id: userId } = c.get("jwtPayload");
+		return streamSSE(c, async (stream) => {
+			let closed = false;
+			stream.onAbort(() => {
+				closed = true;
+			});
+			const sendCurrent = async () => {
+				await stream.writeSSE({
+					event: "queue",
+					data: JSON.stringify(await queryDoctorQueue(userId)),
+				});
 			};
+			await sendCurrent();
+			const unsubscribe = subscribe("cases_changed", () => {
+				if (!closed) sendCurrent().catch(() => {});
+			});
+			stream.onAbort(unsubscribe);
+			while (!closed) {
+				await stream.sleep(30_000);
+				if (!closed)
+					await stream.writeSSE({ event: "ping", data: "" }).catch(() => {
+						closed = true;
+					});
+			}
 		});
-
-		return c.json({ success: true, data: queue });
 	})
 	.get("/consultation/:caseId", async (c) => {
 		const payload = c.get("jwtPayload");
