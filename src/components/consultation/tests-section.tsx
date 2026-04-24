@@ -22,7 +22,7 @@ import useVirtualList from "@/lib/hooks/useVirtualList";
 import { client } from "@/routes/api/$";
 import { CondensedLabel } from "../condensed-label";
 import { LabTestStatusBadge } from "../lab-test-status-badge";
-import type { CaseDetail } from "../vitals-card";
+import type { CaseDetail } from "../vitals-list";
 
 export type TestItem = CaseDetail["data"]["tests"][number];
 const testsResponse = client.api.doctor.tests.$get;

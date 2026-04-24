@@ -4,12 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { toast } from "sonner";
 import { CondensedLabel } from "src/components/condensed-label";
-import DiagnosisSection from "src/components/consultation/diagnosis-card";
+import DiagnosisSection from "src/components/consultation/diagnosis-section";
 import FinalizeCase, {
 	type FinalizeButtonValue,
-} from "src/components/consultation/finalize-case-card";
-import TestsSection from "src/components/consultation/tests-card";
-import PrescriptionSection from "@/components/consultation/prescription/prescription-card";
+} from "src/components/consultation/finalize-case-section";
+import PrescriptionSection from "src/components/consultation/prescription/prescription-section";
+import TestsSection from "src/components/consultation/tests-section";
+import VitalsList from "src/components/vitals-list";
 import FinalizeCaseDialog from "@/components/finalize-case-dialog";
 import { PatientDetails } from "@/components/patient-details";
 import PrescriptionPrintout from "@/components/prescription-printout";
@@ -23,7 +24,6 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import VitalsList from "@/components/vitals-card";
 import useAuth from "@/lib/hooks/useAuth";
 import { useAutosave } from "@/lib/hooks/useAutosave";
 import { cn, handleErrors } from "@/lib/utils";

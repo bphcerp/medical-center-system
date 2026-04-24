@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { DiagnosisItem } from "src/components/consultation/diagnosis-card";
-import type { TestItem } from "src/components/consultation/tests-card";
+import type { DiagnosisItem } from "src/components/consultation/diagnosis-section";
+import type { TestItem } from "src/components/consultation/tests-section";
+import type { CaseDetail } from "src/components/vitals-list";
 import type { PrescriptionItem } from "@/components/consultation/prescription/types";
-import type { CaseDetail } from "@/components/vitals-card";
 import { client } from "@/routes/api/$";
 import { handleErrors } from "../utils";
 import { useDebounce } from "./useDebounce";

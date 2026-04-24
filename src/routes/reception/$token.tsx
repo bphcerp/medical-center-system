@@ -8,6 +8,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "src/components/ui/card";
+import VitalsList from "src/components/vitals-list";
 import { NotFound } from "@/components/not-found";
 import { PatientDetails } from "@/components/patient-details";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import VitalsList from "@/components/vitals-card";
 import { handleErrors } from "@/lib/utils";
 import { client } from "../api/$";
 

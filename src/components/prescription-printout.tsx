@@ -1,10 +1,10 @@
 import type { JWTPayload } from "@/lib/types/api";
 import Logo from "@/styles/logo.svg";
-import type { DiagnosisItem } from "./consultation/diagnosis-card";
-import type { FinalizeButtonValue } from "./consultation/finalize-case-card";
+import type { DiagnosisItem } from "./consultation/diagnosis-section";
+import type { FinalizeButtonValue } from "./consultation/finalize-case-section";
 import type { PrescriptionItem } from "./consultation/prescription/types";
-import type { TestItem } from "./consultation/tests-card";
-import type { CaseDetail } from "./vitals-card";
+import type { TestItem } from "./consultation/tests-section";
+import type { CaseDetail } from "./vitals-list";
 
 const PrescriptionPrintout = ({
 	caseDetail,

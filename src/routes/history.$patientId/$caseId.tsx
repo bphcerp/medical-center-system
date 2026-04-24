@@ -1,8 +1,9 @@
 import { Label } from "@radix-ui/react-label";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import DiagnosisSection from "src/components/consultation/diagnosis-card";
-import TestsSection from "src/components/consultation/tests-card";
+import DiagnosisSection from "src/components/consultation/diagnosis-section";
+import TestsSection from "src/components/consultation/tests-section";
+import VitalsList from "src/components/vitals-list";
 import {
 	OTPVerificationDialog,
 	useOTP,
@@ -13,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import VitalsList from "@/components/vitals-card";
 import useAuth from "@/lib/hooks/useAuth";
 
 export const Route = createFileRoute("/history/$patientId/$caseId")({
