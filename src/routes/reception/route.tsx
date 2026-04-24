@@ -74,7 +74,6 @@ export const Route = createFileRoute("/reception")({
 });
 
 function Vitals() {
-	const { unprocessed } = Route.useLoaderData();
 	const [bookAppointmentOpen, setBookAppointmentOpen] = useState(false);
 	const [viewAppointmentsOpen, setViewAppointmentsOpen] = useState(false);
 	const { unprocessed: initialUnprocessed } = Route.useLoaderData();
